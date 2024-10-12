@@ -138,10 +138,6 @@ alias gp='git push origin master'
 
 source /usr/share/nvm/init-nvm.sh
 
-### MANAGED BY RANCHER DESKTOP START (DO NOT EDIT)
-export PATH="/home/lex/.rd/bin:$PATH"
-### MANAGED BY RANCHER DESKTOP END (DO NOT EDIT)
-
 # Add pyenv to PATH [Python THingS]
 export PATH="$HOME/.pyenv/bin:$PATH"
 eval "$(pyenv init --path)"
