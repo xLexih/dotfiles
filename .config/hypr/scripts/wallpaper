@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+## Copyright (C) 2020-2024 Aditya Shakya <adi1090x@gmail.com>
+##
+## Set Wallpaper in Hyprland
+
+WALLPAPER='/home/lex/Pictures/wallpapers/wallpaper_8.png'
+
+swaybg --output '*' --mode fill --image "$WALLPAPER"
