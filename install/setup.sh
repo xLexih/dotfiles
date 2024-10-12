@@ -1,3 +1,4 @@
+DOTFILE"$HOME/dotfiles"
 git submodule init
 git submodule update
-./nvm/install.sh
+$DOTFILES/install/nvm/install.sh
