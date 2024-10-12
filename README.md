@@ -16,8 +16,9 @@ For example .zshrc from the repository will be symlinked to $HOME/.zshrc
 
 (this is a fine grained token for the repo so its fine)
 `git clone https://oath2:<yet_used_to_be_leaked_removed_it_now>@github.com/xLexih/dotfiles.git $HOME/dotfiles`
-`git submodule init`
-`git submodule update`
+
+`chmod +x ./install/setup.sh`
+`./install/setup.sh`
 
 `cd $HOME/dotfiles/`
 
