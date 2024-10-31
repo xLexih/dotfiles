@@ -71,7 +71,7 @@
         //"timezone": "America/New_York",
         "tooltip-format": "<big>{:%B(%m) %Y}</big>\n<tt><small>{calendar}</small></tt>",
         "format": " {:%I:%M %p}",
-        "format-alt": " {:%a %b %d, %G}"
+        "format-alt": " {:%a %d-%m-%G}"
     },
 
 	// waybar-cpu
@@ -82,7 +82,7 @@
            
 	// waybar-custom
     "custom/themes": {
-        "format": "",
+        "format": " ",
         "tooltip": false,
         "on-click": "$HOME/.config/hypr/theme/theme.sh --pywal",
         "on-click-right": "$HOME/.config/hypr/theme/theme.sh --default",
@@ -97,7 +97,7 @@
     },
 
     "custom/power": {
-         "format": "襤",
+         "format": "⏻",
          "tooltip": false,
          //"on-click": "$HOME/.config/hypr/scripts/wlogout",
          "on-click": "$HOME/.config/hypr/scripts/rofi_powermenu",
@@ -108,12 +108,12 @@
          "interval": 30,
          "format": " FREE: {free}",
          // "on-click": /.config/hypr/waybar/config",
-    },         	
+    },
     "idle_inhibitor": {  
          "format": "{icon}", 
          "format-icons": { 
-             "activated": "\uf06e", 
-             "deactivated": "\uf070", 
+             "activated": "\uf06e ", 
+             "deactivated": "\uf070 ", 
          }, 
      },
 	
@@ -209,7 +209,7 @@
          "active-only": false,
 /*
          "format-icons": {
-             "1": "t1", // "",
+             "1": "1", // "",
              "2": "2", // "",
              "3": "3", // "",
              "4": "4", // "",
