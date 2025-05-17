@@ -4,8 +4,8 @@
     ../../home/program
   ];
 
-  # programs.git = {
-  #   userName = "lex";
-  #   userEmail = "lex@lexih.dev";
-  # };
+  programs.git = {
+    userName = "lex";
+    userEmail = "lex@lexih.dev";
+  };
 }

@@ -28,16 +28,16 @@
           system = "x86_64-linux";
           modules = [
             ./device/desktop
-            #  ./user/lex/home.nix
             ./user/${username}/nixos.nix
-
             home-manager.nixosModules.home-manager
             {
               home-manager.useGlobalPkgs = true;
               home-manager.useUserPackages = true;
 
               home-manager.extraSpecialArgs = inputs // specialArgs;
-              home-manager.users.lex = import ./user/lex/home.nix;
+              home-manager.users.lex = nixpkgs.lib.recursiveUpdate
+                                                           (import ./user/lex/home.nix)
+                                                           (import ./device/desktop/home/apps.nix);
             }
           ];
         };
