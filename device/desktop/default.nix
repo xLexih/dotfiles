@@ -7,11 +7,12 @@
 {
   imports =
     [ # Include the results of the hardware scan.
-      <nixpkgs/nixos/modules/installer/scan/not-detected.nix>
+#      <nixpkgs/nixos/modules/installer/scan/not-detected.nix>
       ./boot.nix
-      ./hyprland.nix
+#      ./hyprland.nix
     ];
-  
+            nixpkgs.config.allowUnfree = true;
+
   networking.hostName = "desktop"; # Define your hostname.
   
   services.xserver.videoDrivers = [ "nvidia" ];
