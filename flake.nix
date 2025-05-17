@@ -1,37 +1,46 @@
 {
-  description = "My NixOS configuration with device modules";
+  description = "NixOS configuration of Ryan Yin";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";  # or your preferred nixpkgs version
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-24.11";
+    home-manager.url = "github:nix-community/home-manager/release-24.11";
+    home-manager.inputs.nixpkgs.follows = "nixpkgs";
+
+    catppuccin-bat = {
+      url = "github:catppuccin/bat";
+      flake = false;
+    };
   };
 
-  outputs = { self, nixpkgs, ... }:
-    let
-      system = "x86_64-linux";
+  outputs = inputs @ {
+    self,
+    nixpkgs,
+    home-manager,
+    ...
+  }: {
+    nixosConfigurations = {
+      desktop = let
+        username = "lex";
+        specialArgs = {inherit username;};
+      in
+        nixpkgs.lib.nixosSystem {
+          inherit specialArgs;
+          system = "x86_64-linux";
+          modules = [
+            ./device/desktop
+            #  ./user/lex/home.nix
+            ./user/${username}/nixos.nix
 
-      # Import your device modules from default.nix logic
-      deviceModules = import ./default.nix;
+            home-manager.nixosModules.home-manager
+            {
+              home-manager.useGlobalPkgs = true;
+              home-manager.useUserPackages = true;
 
-    in
-    {
-      nixosConfigurations = builtins.listToAttrs (map (deviceName: {
-        name = deviceName;
-        value = nixpkgs.lib.nixosSystem {
-          system = system;
-          modules = [ deviceModules.${deviceName} ];
-          configuration = {
-            # You can add global config here if needed
-            nix = {
-              settings.experimental-features = [ "nix-command" "flakes" ];
-              packageOverrides = self: super: {
-                # your package overrides if any
-              };
-            };
-            nixpkgs.config.allowUnfree = true;
-            environment.variables.TESTING2 = "updated?";
-            system.stateVersion = "24.11";
-          };
+              home-manager.extraSpecialArgs = inputs // specialArgs;
+              home-manager.users.lex = import ./user/lex/home.nix;
+            }
+          ];
         };
-      }) (builtins.attrNames deviceModules));
     };
+  };
 }
