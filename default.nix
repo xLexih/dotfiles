@@ -9,27 +9,32 @@ let
       imports = [
         # ...the device module holding the system configuration...
         devicePath
-      ] ++ (import ./modules/module-list.nix) lib; # ...and all the extra modules.
+      ] ++ (import ./module/module-list.nix) lib; # ...and all the extra modules.
 
-      nixpkgs.config = {
-        packageOverrides = (import ./pkgs/all-packages.nix) lib;
-      };
+#      nixpkgs.config = {
+#        packageOverrides = (import ./pkgs/all-packages.nix) lib;
+#      };
 
       nix.nixPath = [
-        # Where to get the top-level nix file, i.e. this one
         "nixos-config=/etc/nixos/configuration.nix"
-        # The channel to be subscribed on
-        "nixpkgs=/home/gpyh/nixpkgs"
+        "nixpkgs=/nix/var/nix/profiles/per-user/root/channels/nixos"
+        "/nix/var/nix/profiles/per-user/root/channels"
       ];
       
-      system.stateVersion = "15.09";
+      nixpkgs.config.allowUnfree = true;
+      environment.variables = {
+        TESTING2 = "updated?";
+      };
+
+
+      system.stateVersion = "24.11";
 
     };
   deviceModules =
     builtins.listToAttrs (map (deviceName: {
       name = deviceName;
-      value = makeDevice (./devices + "/${deviceName}");
-    }) (import ./devices/all-devices.nix));
+      value = makeDevice (./device + "/${deviceName}");
+    }) (import ./device/all-devices.nix));
 in
 
 deviceModules
