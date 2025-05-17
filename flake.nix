@@ -23,9 +23,6 @@
         username = "lex";
         specialArgs = {inherit username;};
         system = "x86_64-linux";
-        pkgs = import nixpkgs {
-          inherit system;
-        };
       in
         nixpkgs.lib.nixosSystem {
           inherit specialArgs;
@@ -39,9 +36,9 @@
               home-manager.useUserPackages = true;
 
               home-manager.extraSpecialArgs = inputs // specialArgs;
-              home-manager.users.lex = nixpkgs.lib.recursiveUpdate
-                                                           (import ./user/lex/home.nix )
-                                                           (import ./device/desktop/home/apps.nix { inherit pkgs; });
+              home-manager.users.lex = import ./device/desktop/home.nix {
+                inherit username;
+              };
             }
           ];
         };
