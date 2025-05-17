@@ -1,4 +1,6 @@
-{ pkgs, ...}: {
+{ pkgs, username....}: let
+user = import ./user/${username}/home.nix;
+in{
   home.packages = with pkgs; [
     wl-clipboard
     kitty
@@ -8,3 +10,4 @@
     gnome-icon-theme
   ];
 }
+user
