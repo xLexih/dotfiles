@@ -22,10 +22,14 @@
       desktop = let
         username = "lex";
         specialArgs = {inherit username;};
+        system = "x86_64-linux";
+        pkgs = import nixpkgs {
+          inherit system;
+        };
       in
         nixpkgs.lib.nixosSystem {
           inherit specialArgs;
-          system = "x86_64-linux";
+          inherit system;
           modules = [
             ./device/desktop
             ./user/${username}/nixos.nix
@@ -36,8 +40,8 @@
 
               home-manager.extraSpecialArgs = inputs // specialArgs;
               home-manager.users.lex = nixpkgs.lib.recursiveUpdate
-                                                           (import ./user/lex/home.nix)
-                                                           (import ./device/desktop/home/apps.nix);
+                                                           (import ./user/lex/home.nix )
+                                                           (import ./device/desktop/home/apps.nix { inherit pkgs; });
             }
           ];
         };
