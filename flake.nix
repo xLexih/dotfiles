@@ -23,6 +23,11 @@
         username = "lex";
         specialArgs = {inherit username;};
         system = "x86_64-linux";
+        pkgs = import nixpkgs {
+          inherit system;
+        };
+        lib = pkgs.lib;
+        config = {}; # or your actual config if any
       in
         nixpkgs.lib.nixosSystem {
           inherit specialArgs;
@@ -37,7 +42,7 @@
 
               home-manager.extraSpecialArgs = inputs // specialArgs;
               home-manager.users.lex = import ./device/desktop/home.nix {
-                inherit username;
+                 inherit config pkgs username lib;
               };
             }
           ];
