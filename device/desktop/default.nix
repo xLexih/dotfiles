@@ -7,34 +7,12 @@
 {
   imports =
     [ # Include the results of the hardware scan.
-      ./hardware-configuration.nix
-#      ./flake.nix
+      <nixpkgs/nixos/modules/installer/scan/not-detected.nix>
+      ./boot.nix
     ];
-
-  nix.nixPath = [
-    "nixos-config=/home/lex/.dotfile"
-    "nixpkgs=/nix/var/nix/profiles/per-user/root/channels/nixos"
-    "/nix/var/nix/profiles/per-user/root/channels"
-  ];
-
-
-
-  # Bootloader.
-  boot.loader.systemd-boot.enable = true;
-  boot.loader.efi.efiSysMountPoint = "/boot";
-  boot.loader.systemd-boot.editor = true;
-  hardware = {
-    graphics = {
-      enable = true;
-    };
-    nvidia = {
-      modesetting.enable = true;
-      open = false;
-      nvidiaSettings = true;
-      package = config.boot.kernelPackages.nvidiaPackages.stable;
-    };
-  };
-
+  
+  networking.hostName = "desktop"; # Define your hostname.
+  
   services.xserver.videoDrivers = [ "nvidia" ];
   programs.xwayland.enable = true;  
   programs.hyprland = {
@@ -43,7 +21,7 @@
     package = pkgs.hyprland;
   };
 
-  networking.hostName = "desktop"; # Define your hostname.
+  
   networking.networkmanager.enable = true;
   users.users.lex = {
     isNormalUser = true;
@@ -52,7 +30,10 @@
     packages = with pkgs; [];
   };
   environment.systemPackages = with pkgs; [
-    wl-copy
+    
+    git  
+ 
+    wl-clipboard
     kitty
     hyprpaper
     rofi-wayland
