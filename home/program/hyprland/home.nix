@@ -46,6 +46,8 @@
 
   wayland.windowManager.hyprland = {
     enable = true;
+    # Using this approach, beacuse it lets me "override" default behaviour using "unbind"
+    # Using the setting: unbind = [], doesn't work. beacuse order matters!
     extraConfig = builtins.readFile ../../../.config/hypr/hyprland.conf + ''
       $mod = SUPER
       $terminal = alacritty
@@ -54,7 +56,7 @@
       workspace = 1,monitor:HDMI-A-3
       workspace = 2,monitor:HDMI-A-2
       bind = $mod SHIFT, F, exec, firefox
-      unbind = $mod, Q # unbinds the default terminal keybind
+      unbind = $mod, Q                    # unbinds the default terminal keybind
       bind = $mod, Q, exec, alacritty
     '';
     # extraConfig = builtins.readFile ../../../.config/hypr/hyprland.conf;
