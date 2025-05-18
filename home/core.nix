@@ -1,9 +1,10 @@
-{username, ...}: {
+{config, username, stateVersion, ...}: {
   home = {
     inherit username;
     homeDirectory = "/home/${username}";
 
-    stateVersion = "24.11";
+    stateVersion = stateVersion;
+    
   };
 
   # Let Home Manager install and manage itself.

@@ -1,15 +1,13 @@
-{ pkgs
-, lib
-, username
-, ...
-}: {
+{ pkgs, lib, username, ... }:
+
+{
   # ============================= User related =============================
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.${username} = {
     isNormalUser = true;
     description = username;
-    extraGroups = [ "networkmanager" "wheel" ];
+    extraGroups = [ "networkmanager" "wheel" "audio" ];
   };
   # given the users in this list the right to specify additional substituters via:
   #    1. `nixConfig.substituers` in `flake.nix`
@@ -102,8 +100,6 @@
     # };
   };
 
-  programs.dconf.enable = true;
-
   # networking.firewall.allowedTCPPorts = [ ... ];
   # networking.firewall.allowedUDPPorts = [ ... ];
   # Or disable the firewall altogether.
@@ -124,9 +120,9 @@
   # $ nix search wget
   environment.systemPackages = with pkgs; [
     vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
-    wget
-    curl
-    git
+    wget # wget duuuuh
+    curl # curl duuuh
+    git # git duuuuh
     sysstat
     lm_sensors # for `sensors` command
     # minimal screen capture tool, used by i3 blur lock to take a screenshot
@@ -136,15 +132,17 @@
     xfce.thunar # xfce4's file manager
     nnn # terminal file manager
     nixpkgs-fmt # nixos formatter
+    direnv # i want it.
+    pavucontrol # Controls for the audio~
   ];
 
   # Enable sound with pipewire.
   # sound.enable = true;
   hardware.pulseaudio.enable = false;
-  services.power-profiles-daemon = {
-    enable = true;
-  };
+  hardware.pulseaudio.support32Bit = true;
+  services.power-profiles-daemon.enable = true;
   security.polkit.enable = true;
+  programs.dconf.enable = true;
 
   services = {
     dbus.packages = [ pkgs.gcr ];

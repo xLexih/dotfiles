@@ -1,6 +1,5 @@
 {
   description = "NixOS configuration of Ryan Yin";
-
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-24.11";
     home-manager.url = "github:nix-community/home-manager/release-24.11";
@@ -19,8 +18,9 @@
     nixosConfigurations = {
       desktop = let
         username = "lex";
+        stateVersion = "24.11";
         system = "x86_64-linux";
-        specialArgs = {inherit username system;}; # Pass in variables, that other things MIGHT use.
+        specialArgs = {inherit username system stateVersion;}; # Pass in variables, that other things MIGHT use.
       in
         nixpkgs.lib.nixosSystem {
           inherit specialArgs;

@@ -3,14 +3,14 @@
 {
 
   home.packages = with pkgs; [
-    wl-clipboard
-    kitty
-    hyprpaper
-    rofi-wayland
-    waybar
-    gnome-icon-theme
-    hyprshot
-    alacritty
+    wl-clipboard # Clipboard
+    kitty # Wayland's default terminal, fall back
+    hyprpaper # Wallpaper
+    rofi-wayland # Application launcher
+    waybar #  Top bar
+    gnome-icon-theme # Icon pack for fallback support
+    hyprshot # Screenshot tool
+    hyprcursor # Cursors for hyprland
   ];
 
   home.pointerCursor = {
@@ -46,22 +46,17 @@
 
   wayland.windowManager.hyprland = {
     enable = true;
-    settings = {
-      "$mod" = "SUPER";
-      bind = [ "$mod, F, exec, firefox" ] ++ (
-        # workspaces
-        # binds $mod + [shift +] {1..9} to [move to] workspace {1..9}
-        builtins.concatLists (builtins.genList
-          (i:
-            let ws = i + 1;
-            in [
-              "$mod, code:1${toString i}, workspace, ${toString ws}"
-              "$mod SHIFT, code:1${toString i}, movetoworkspace, ${toString ws}"
-            ]
-          )
-          9)
-      );
-    };
-    extraConfig = builtins.readFile ../../../.config/hypr/hyprland.conf;
+    extraConfig = builtins.readFile ../../../.config/hypr/hyprland.conf + ''
+      $mod = SUPER
+      $terminal = alacritty
+      env = HYPRCURSOR_THEME,${pkgs.adwaita-icon-theme.name}
+
+      workspace = 1,monitor:HDMI-A-3
+      workspace = 2,monitor:HDMI-A-2
+      bind = $mod SHIFT, F, exec, firefox
+      unbind = $mod, Q # unbinds the default terminal keybind
+      bind = $mod, Q, exec, alacritty
+    '';
+    # extraConfig = builtins.readFile ../../../.config/hypr/hyprland.conf;
   };
 }
