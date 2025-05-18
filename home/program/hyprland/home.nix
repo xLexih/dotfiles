@@ -7,10 +7,15 @@
     kitty # Wayland's default terminal, fall back
     hyprpaper # Wallpaper
     rofi-wayland # Application launcher
-    waybar #  Top bar
+    waybar # Top bar
     gnome-icon-theme # Icon pack for fallback support
     hyprshot # Screenshot tool
     hyprcursor # Cursors for hyprland
+    # nvidia-utils # support for nvidia
+    # lib32-nvidia-utils # game support for more specific wine stuff
+    egl-wayland # more compatibility stuff
+    libva # hardware acceleration nvidia
+    libva-utils # hardware acceleration nvidia
   ];
 
   home.pointerCursor = {
@@ -58,6 +63,12 @@
       bind = $mod SHIFT, F, exec, firefox
       unbind = $mod, Q                    # unbinds the default terminal keybind
       bind = $mod, Q, exec, alacritty
+
+      # nvidia compatibility
+      env = LIBVA_DRIVER_NAME,nvidia
+      env = __GLX_VENDOR_LIBRARY_NAME,nvidia
+      env = ELECTRON_OZONE_PLATFORM_HINT,auto
+      env = NVD_BACKEND,direct
     '';
     # extraConfig = builtins.readFile ../../../.config/hypr/hyprland.conf;
   };

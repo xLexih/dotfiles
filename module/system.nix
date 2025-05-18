@@ -132,7 +132,9 @@
     xfce.thunar # xfce4's file manager
     nnn # terminal file manager
     nixpkgs-fmt # nixos formatter
+    nixfmt-classic # nixos formatter
     direnv # i want it.
+
     pavucontrol # Controls for the audio~
   ];
 

@@ -15,8 +15,6 @@
 
   networking.hostName = "desktop"; # Define your hostname.
 
-  services.xserver.videoDrivers = [ "nvidia" ];
-
   networking.networkmanager.enable = true;
 
   system.stateVersion = stateVersion;

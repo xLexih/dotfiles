@@ -9,5 +9,6 @@
     firefox # browser duuh
     vesktop # Discord, but better!
     alacritty # My preferred terminal 
+    vscodium.fhs # Editorrrr
   ];
 }
