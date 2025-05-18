@@ -1,8 +1,7 @@
-{
-  pkgs,
-  lib,
-  username,
-  ...
+{ pkgs
+, lib
+, username
+, ...
 }: {
   # ============================= User related =============================
 
@@ -10,31 +9,31 @@
   users.users.${username} = {
     isNormalUser = true;
     description = username;
-    extraGroups = ["networkmanager" "wheel"];
+    extraGroups = [ "networkmanager" "wheel" ];
   };
   # given the users in this list the right to specify additional substituters via:
   #    1. `nixConfig.substituers` in `flake.nix`
   #    2. command line args `--options substituers http://xxx`
-  nix.settings.trusted-users = [username];
+  nix.settings.trusted-users = [ username ];
 
   # customise /etc/nix/nix.conf declaratively via `nix.settings`
   nix.settings = {
     # enable flakes globally
-    experimental-features = ["nix-command" "flakes"];
+    experimental-features = [ "nix-command" "flakes" ];
 
-    substituters = [
-      # cache mirror located in China
-      # status: https://mirror.sjtu.edu.cn/
-      "https://mirror.sjtu.edu.cn/nix-channels/store"
-      # status: https://mirrors.ustc.edu.cn/status/
-      # "https://mirrors.ustc.edu.cn/nix-channels/store"
+    # substituters = [
+    #   # cache mirror located in China
+    #   # status: https://mirror.sjtu.edu.cn/
+    #   "https://mirror.sjtu.edu.cn/nix-channels/store"
+    #   # status: https://mirrors.ustc.edu.cn/status/
+    #   # "https://mirrors.ustc.edu.cn/nix-channels/store"
 
-      "https://cache.nixos.org"
-    ];
+    #   "https://cache.nixos.org"
+    # ];
 
-    trusted-public-keys = [
-      "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
-    ];
+    # trusted-public-keys = [
+    #   "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+    # ];
     builders-use-substitutes = true;
   };
 
@@ -55,15 +54,15 @@
   i18n.defaultLocale = "en_US.UTF-8";
 
   i18n.extraLocaleSettings = {
-    LC_ADDRESS = "zh_CN.UTF-8";
-    LC_IDENTIFICATION = "zh_CN.UTF-8";
-    LC_MEASUREMENT = "zh_CN.UTF-8";
-    LC_MONETARY = "zh_CN.UTF-8";
-    LC_NAME = "zh_CN.UTF-8";
-    LC_NUMERIC = "zh_CN.UTF-8";
-    LC_PAPER = "zh_CN.UTF-8";
-    LC_TELEPHONE = "zh_CN.UTF-8";
-    LC_TIME = "zh_CN.UTF-8";
+    LC_ADDRESS = "en_US.UTF8";
+    LC_IDENTIFICATION = "en_US.UTF8";
+    LC_MEASUREMENT = "en_US.UTF8";
+    LC_MONETARY = "en_US.UTF8";
+    LC_NAME = "en_US.UTF8";
+    LC_NUMERIC = "en_US.UTF8";
+    LC_PAPER = "en_US.UTF8";
+    LC_TELEPHONE = "en_US.UTF8";
+    LC_TIME = "en_US.UTF8";
   };
 
   # Enable CUPS to print documents.
@@ -76,25 +75,31 @@
 
       # normal fonts
       noto-fonts
-      noto-fonts-cjk
+      noto-fonts-cjk-sans
       noto-fonts-emoji
 
+      dejavu_fonts
+      freefont_ttf
+      gyre-fonts
+      liberation_ttf
+      unifont
+      noto-fonts-color-emoji
       # nerdfonts
-      (nerdfonts.override {fonts = ["FiraCode" "JetBrainsMono"];})
+      # (nerdfonts.override { fonts = [ "FiraCode" "JetBrainsMono" ]; })
     ];
 
     # use fonts specified by user rather than default ones
-    enableDefaultPackages = false;
+    # enableDefaultPackages = false;
 
     # user defined fonts
     # the reason there's Noto Color Emoji everywhere is to override DejaVu's
     # B&W emojis that would sometimes show instead of some Color emojis
-    fontconfig.defaultFonts = {
-      serif = ["Noto Serif" "Noto Color Emoji"];
-      sansSerif = ["Noto Sans" "Noto Color Emoji"];
-      monospace = ["JetBrainsMono Nerd Font" "Noto Color Emoji"];
-      emoji = ["Noto Color Emoji"];
-    };
+    # fontconfig.defaultFonts = {
+    #   serif = [ "Noto Serif" "Noto Color Emoji" ];
+    #   sansSerif = [ "Noto Sans" "Noto Color Emoji" ];
+    #   monospace = [ "JetBrainsMono Nerd Font" "Noto Color Emoji" ];
+    #   emoji = [ "Noto Color Emoji" ];
+    # };
   };
 
   programs.dconf.enable = true;
@@ -130,10 +135,11 @@
     neofetch
     xfce.thunar # xfce4's file manager
     nnn # terminal file manager
+    nixpkgs-fmt # nixos formatter
   ];
 
   # Enable sound with pipewire.
-  sound.enable = true;
+  # sound.enable = true;
   hardware.pulseaudio.enable = false;
   services.power-profiles-daemon = {
     enable = true;
@@ -141,7 +147,7 @@
   security.polkit.enable = true;
 
   services = {
-    dbus.packages = [pkgs.gcr];
+    dbus.packages = [ pkgs.gcr ];
 
     geoclue2.enable = true;
 
@@ -158,6 +164,6 @@
       #media-session.enable = true;
     };
 
-    udev.packages = with pkgs; [gnome.gnome-settings-daemon];
+    udev.packages = with pkgs; [ gnome-settings-daemon ];
   };
 }
