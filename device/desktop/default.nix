@@ -2,7 +2,7 @@
 # your system.  Help is available in the configuration.nix(5) man page
 # and in the NixOS manual (accessible by running ‘nixos-help’).
 
-{ config, pkgs, username, system, ... }:
+{ config, pkgs, username, system, stateVersion, ... }:
 
 {
   imports =
@@ -14,10 +14,10 @@
   nixpkgs.config.allowUnfree = true;
 
   networking.hostName = "desktop"; # Define your hostname.
-  
+
   services.xserver.videoDrivers = [ "nvidia" ];
-  
+
   networking.networkmanager.enable = true;
 
-  system.stateVersion = "24.11";
+  system.stateVersion = stateVersion;
 }
