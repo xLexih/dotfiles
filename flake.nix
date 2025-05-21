@@ -5,18 +5,19 @@
     home-manager.url = "github:nix-community/home-manager/release-24.11";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
     hyprland.url = "github:hyprwm/Hyprland";
-    nur.url = "github:nix-community/NUR";
-    nur.inputs.nixpkgs.follows = "nixpkgs";
+    firefox-addons.url = "gitlab:rycee/nur-expressions?dir=pkgs/firefox-addons";
+    firefox-addons.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = inputs@{ self, nixpkgs, home-manager, hyprland, ... }: {
+  outputs = inputs@{ self, nixpkgs, home-manager, hyprland, firefox-addons, ... }: 
+  {
     nixosConfigurations = {
       desktop = let
         username = "lex";
         stateVersion = "24.11";
         system = "x86_64-linux";
         specialArgs = {
-          inherit username system stateVersion self;
+          inherit self username system stateVersion firefox-addons;
         }; # Pass in variables, that other things MIGHT use.
       in nixpkgs.lib.nixosSystem {
         inherit specialArgs;

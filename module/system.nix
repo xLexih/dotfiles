@@ -1,6 +1,8 @@
 { pkgs, lib, username, ... }:
 
 {
+  # Allow unfree packages
+  nixpkgs.config.allowUnfree = true;
   # ============================= User related =============================
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
@@ -42,8 +44,6 @@
     options = lib.mkDefault "--delete-older-than 32d";
   };
 
-  # Allow unfree packages
-  nixpkgs.config.allowUnfree = true;
 
   # Set your time zone.
   time.timeZone = "Europe/Ljubljana";
