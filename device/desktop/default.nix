@@ -4,14 +4,13 @@
 
 { config, pkgs, username, system, stateVersion, ... }:
 
-{
+{  
   imports =
     [
-      ./boot.nix
       ../../module/system.nix
+      ./boot.nix
       ../../home/program/hyprland # Set's up hyprland
     ];
-  nixpkgs.config.allowUnfree = true;
 
   networking.hostName = "desktop"; # Define your hostname.
 
