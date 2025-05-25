@@ -1,4 +1,4 @@
-{ pkgs, username, firefox-addons, config, ... }: {
+{ pkgs, nur, username, config, ... }: {
   programs.firefox = {
     enable = true;
     package = pkgs.firefox;
@@ -6,11 +6,12 @@
       id = 0;
       name = username;
       isDefault = true;
-      extensions = with firefox-addons.packages.${pkgs.system}; [
+      extensions = with pkgs.nur.repos.rycee.firefox-addons; [
         ublock-origin
         read-aloud
         proton-pass
-        # tampermonkey # have to get licenses right
+        tampermonkey # have to get licenses right
+        sidebery
       ];
     };
   };

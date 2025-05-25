@@ -5,36 +5,37 @@
     home-manager.url = "github:nix-community/home-manager/release-24.11";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
     hyprland.url = "github:hyprwm/Hyprland";
-    firefox-addons.url = "gitlab:rycee/nur-expressions?dir=pkgs/firefox-addons";
-    firefox-addons.inputs.nixpkgs.follows = "nixpkgs";
+    nur.url = "github:nix-community/nur";
+    nur.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = inputs@{ self, nixpkgs, home-manager, hyprland, firefox-addons, ... }: 
-  {
-    nixosConfigurations = {
-      desktop = let
-        username = "lex";
-        stateVersion = "24.11";
-        system = "x86_64-linux";
-        specialArgs = {
-          inherit self username system stateVersion firefox-addons;
-        }; # Pass in variables, that other things MIGHT use.
-      in nixpkgs.lib.nixosSystem {
-        inherit specialArgs;
-        inherit system;
-        modules = [
-          ./device/desktop
-          home-manager.nixosModules.home-manager
-          {
-            home-manager.useGlobalPkgs = true;
-            home-manager.useUserPackages = true;
-            home-manager.backupFileExtension = "backup";
-            home-manager.extraSpecialArgs = inputs // specialArgs;
+  outputs =
+    inputs@{ self, nixpkgs, home-manager, hyprland, nur, ... }: {
+      nixosConfigurations = {
+        desktop = let
+          username = "lex";
+          stateVersion = "24.11";
+          system = "x86_64-linux";
+          specialArgs = {
+            inherit self username system stateVersion nur;
+          }; # Pass in variables, that other things MIGHT use.
+        in nixpkgs.lib.nixosSystem {
+          inherit specialArgs;
+          inherit system;
+          modules = [
+            nur.modules.nixos.default
+            ./device/desktop
+            home-manager.nixosModules.home-manager
+            {
+              # home-manager.useGlobalPkgs = true;
+              home-manager.useUserPackages = true;
+              home-manager.backupFileExtension = "backup";
+              home-manager.extraSpecialArgs = inputs // specialArgs;
 
-            home-manager.users.lex = import ./device/desktop/home.nix;
-          }
-        ];
+              home-manager.users.lex = import ./device/desktop/home.nix;
+            }
+          ];
+        };
       };
     };
-  };
 }
