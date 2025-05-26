@@ -1,7 +1,7 @@
-{ nur, config, username, stateVersion, ... }: {
-  nixpkgs = {
-    overlays = [ nur.overlay ];
-    config = { allowUnfree = true; };
+{ inputs, config, username, stateVersion, ... }: {
+ nixpkgs = {
+   overlays = [ inputs.nur.overlay ];
+   config = { allowUnfree = true; };
   };
   home = {
     inherit username;
