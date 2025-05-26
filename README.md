@@ -7,3 +7,6 @@ Once the flake is int he correct location, the next step is to setup the flake f
 ```
 sudo nixos-rebuild switch --flake .#[desktop]
 ```
+### Helpful commands used while working on the configuration.
+
+`nix flake init --template github:aylur/ags`
