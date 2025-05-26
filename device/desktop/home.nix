@@ -1,9 +1,9 @@
 { config, pkgs, username, lib, self, ... }: {
-  imports = map (path: self + path) [
-    /user/${username}/home.nix
-    /home/program/hyprland/home.nix # Set's up hyprland
-    /home/program/firefox/home.nix # Set's up firefox
-    /home/program/lutris/home.nix # Set's up firefox
+  imports = /*map (path: self + path)*/ [
+    ../../user/lex/home.nix
+    ../../home/program/hyprland/home.nix # Set's up hyprland
+    ../../home/program/firefox/home.nix # Set's up firefox
+    ../../home/program/lutris/home.nix # Set's up firefox
 
   ];
   home.packages = with pkgs; [
