@@ -40,6 +40,7 @@
     };
     boot.initrd.kernelModules = [ "nvidia" "nvidia_modeset" ];
     boot.kernelModules = [ "nvidia-drm.fbdev=1" ];
+    # boot.kernelPackages = pkgs.linuxPackages_latest;
     boot.blacklistedKernelModules = [ "nouveau" ];
 
     services.xserver.videoDrivers = [ "nvidia" ];

@@ -13,7 +13,7 @@
     ];
 
   graphicsModule = {
-    amd.enable = true;
+    amd.enable = false;
     nvidia = {
       enable = true;
       hybrid = {
