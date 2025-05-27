@@ -1,4 +1,5 @@
-{ config, lib, pkgs, modulesPath, system, ... }:
+{ config, lib, pkgs, modulesPath, settings, ... }:
+
 
 {
   imports = [ (modulesPath + "/installer/scan/not-detected.nix") ];
@@ -18,31 +19,9 @@
     [{ device = "/dev/disk/by-uuid/73354cf4-f3b2-49b1-9c26-94c925f5c5fa"; }];
   # Boot options
   boot.loader.efi.efiSysMountPoint = "/boot";
-  boot.loader.systemd-boot.editor = true;
-  boot.initrd.availableKernelModules =
-    [ "nvme" "xhci_pci" "ahci" "usbhid" "sd_mod" ];
-  boot.initrd.kernelModules = [ "nvidia" "nvidia_modeset" ];
-  # boot.kernelModules = [ "nvidia-drm.fbdev=1" ];
-  boot.extraModulePackages = [ ];
-  boot.loader.systemd-boot.enable = true;
-  boot.loader.efi.canTouchEfiVariables = true;
-
-  services.xserver.videoDrivers = [ "nvidia" ];
-  hardware = {
-    graphics = { enable = true; };
-    nvidia = {
-      powerManagement.finegrained = false;
-      powerManagement.enable = false;
-      # forceFullCompositionPipeline = true;
-      modesetting.enable = true;
-      open = false;
-      nvidiaSettings = true;
-      package = config.boot.kernelPackages.nvidiaPackages.latest;
-    };
-  };
 
   networking.useDHCP = lib.mkDefault true;
-  nixpkgs.hostPlatform = lib.mkDefault system;
+  nixpkgs.hostPlatform = lib.mkDefault settings.system;
 
   hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
 }
