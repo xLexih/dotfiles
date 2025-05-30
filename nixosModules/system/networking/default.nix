@@ -1,7 +1,5 @@
-{...}: {
-  imports = [
-    ./bluetooth.nix
-  ];
+{ ... }: {
+  imports = [ ./bluetooth.nix ];
 
   networking = {
     nftables.enable = true;
@@ -15,8 +13,8 @@
 
     firewall = {
       enable = true;
-      allowedTCPPortRanges = [];
-      allowedUDPPortRanges = [];
+      allowedTCPPortRanges = [ ];
+      allowedUDPPortRanges = [ ];
     };
   };
 }

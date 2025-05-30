@@ -2,11 +2,11 @@
   description = "NixOS configuration of Ryan Yin";
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-    home-manager.url = "github:nix-community/home-manager/release-24.11";
-    home-manager.inputs.nixpkgs.follows = "nixpkgs";
-    hyprland.url = "github:hyprwm/Hyprland";
-    nur.url = "github:nix-community/nur";
-    nur.inputs.nixpkgs.follows = "nixpkgs";
+    # home-manager.url = "github:nix-community/home-manager/release-24.11";
+    # home-manager.inputs.nixpkgs.follows = "nixpkgs";
+    # hyprland.url = "github:hyprwm/Hyprland";
+    # nur.url = "github:nix-community/nur";
+    # nur.inputs.nixpkgs.follows = "nixpkgs";
     hjem.url = "github:feel-co/hjem";
     hjem.inputs.nixpkgs.follows = "nixpkgs";
   };
@@ -27,8 +27,9 @@
       nixosConfigurations = {
         desktop = let
           settings = {
-            stateVersion = "24.11";
+            stateVersion = "25.05";
             system = "x86_64-linux";
+            kernal = "linuxPackages_xanmod_latest";#"linuxPackages_zen";
             users = [ "lex" ];
           };
           specialArgs = { inherit inputs outputs settings; };
@@ -39,19 +40,6 @@
             ./users
             ./device/desktop
             ./nixosModules
-            # inputs.nur.modules.nixos.default
-            # inputs.home-manager.nixosModules.home-manager
-            # {
-            #   nixpkgs.config.allowUnfree = true; # <--- Add this here!
-            #   #              home-manager.backupFileExtension = "backup";
-            #   home-manager.backupFileExtension =
-            #     "backup-"; # + nixpkgs.lib.readFile (nixpkgs.runCommand "timestamp" {} ''date '+%Y%m%d%H%M%S'` > $out'');
-            #   home-manager.useGlobalPkgs = false;
-            #   home-manager.useUserPackages = true;
-            #   home-manager.extraSpecialArgs = inputs // specialArgs;
-
-            #   home-manager.users.lex = import ./device/desktop/home.nix;
-            # }
           ];
         };
       };

@@ -31,6 +31,7 @@ in {
     enable = true;
     user = username;
     directory = config.users.users.${username}.home;
+    clobberFiles = lib.mkForce true;
     files = let
       hypr_user_conf = ./${username}/config/hyprland/hyprland.conf;
       hypr_global_conf = ../.config/hypr/hyprland.conf;

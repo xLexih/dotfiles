@@ -5,7 +5,7 @@
   programs.hyprland = {
     enable = true;
     xwayland.enable = true;
-    withUWSM = true; 
+  #  withUWSM = true; 
     package = pkgs.hyprland;
     portalPackage = pkgs.xdg-desktop-portal-hyprland;
   };
@@ -30,21 +30,10 @@
     libva # hardware acceleration nvidia
     libva-utils # hardware acceleration nvidia
   ];
-
-  # # Cursor theme for X11 and Wayland
   # services.xserver = {
-  #   enable = true;
-  #   # Might replace with greetd (with ReGreet), looking into UWSM.
-  #   # displayManager.sddm.wayland.enable = true;
-
-  #   displayManager.sessionCommands = ''
-  #     # Set cursor theme for X11
-  #     xsetroot -cursor_name left_ptr
-  #     export XCURSOR_THEME=Bibata-Modern-Classic
-  #     export XCURSOR_SIZE=16
-  #   '';
-  #   # desktopManager.default = "none"; # if you don't use X11 desktop manager
-  # };
+  #  enable = true;};
+  # # Cursor theme for X11 and Wayland
+  # services.spice-vdagentd.enable = true;
 
   environment.variables = {
     XCURSOR_THEME = "Bibata-Modern-Classic";

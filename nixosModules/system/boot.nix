@@ -1,5 +1,7 @@
-{...}: {
+{settings, pkgs, ...}: {
   boot = {
+    kernelPackages = pkgs.${settings.kernal};
+
     loader.systemd-boot.enable = true;
     loader.efi.canTouchEfiVariables = true;
     loader.systemd-boot.editor = true;
