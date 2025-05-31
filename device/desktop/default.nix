@@ -17,14 +17,14 @@
       enable = true;
       boost = false;
       hybrid = {
-        enable = false; # I belive i can't do it on my main machine? might be a laptop only thing. (enables prime)
+        enable = true; # I belive i can't do it on my main machine? might be a laptop only thing. (enables prime)
         igpu = {
           vendor = "amd";
           # [AMD/ATI] Raphael  | 10:00.0 VGA
-          port = "PCI:16@0:0:0"; #"pci@0000:10:00.0";
+          port = "PCI:10:0:0"; #"PCI:16@0:0:0"; #"pci@0000:10:00.0";
         };
         # GeForce RTX 3070 Ti  |  01:00.0 
-        dgpu.port = "PCI:1@0:0:0";#"pci@0000:01:00.0";
+        dgpu.port = "PCI:1:0:0"; #"pci@0000:01:00.0";
       };
     };
   };

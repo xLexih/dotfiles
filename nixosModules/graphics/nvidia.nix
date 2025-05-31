@@ -87,7 +87,7 @@
       prime = lib.mkIf cfg.hybrid.enable {
         offload = {
           enable = true;
-        #   enableOffloadCmd = true;
+          enableOffloadCmd = true;
         };
 
         amdgpuBusId =
