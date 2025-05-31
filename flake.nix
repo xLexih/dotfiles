@@ -29,7 +29,7 @@
           settings = {
             stateVersion = "25.05";
             system = "x86_64-linux";
-            kernal = "linuxPackages_xanmod_latest";#"linuxPackages_zen";
+            kernal = "linuxPackages_zen"; #_xanmod_latest";#"linuxPackages_zen";
             users = [ "lex" ];
           };
           specialArgs = { inherit inputs outputs settings; };

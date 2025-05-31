@@ -8,7 +8,7 @@ in {
     inherit description;
 
     isNormalUser = true;
-    extraGroups = [ "networkmanager" "wheel" "multimedia" ];
+    extraGroups = [  "docker" "networkmanager" "wheel" "libvirtd" "i2c" "video" "plugdev"];
     packages = with pkgs; [ 
       btop 
       git

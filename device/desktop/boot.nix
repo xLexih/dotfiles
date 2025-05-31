@@ -19,7 +19,7 @@
     [{ device = "/dev/disk/by-uuid/73354cf4-f3b2-49b1-9c26-94c925f5c5fa"; }];
   # Boot options
   boot.loader.efi.efiSysMountPoint = "/boot";
-  boot.kernelModules = [ "kvm-amd" ];
+  boot.kernelModules = [ "kvm-amd" "nvidia" ];
   networking.useDHCP = lib.mkDefault true;
   nixpkgs.hostPlatform = lib.mkDefault settings.system;
   

@@ -4,8 +4,8 @@
   programs.xwayland.enable = true;
   programs.hyprland = {
     enable = true;
-    xwayland.enable = true;
-  #  withUWSM = true; 
+#    xwayland.enable = true;
+ #   withUWSM = true; 
     package = pkgs.hyprland;
     portalPackage = pkgs.xdg-desktop-portal-hyprland;
   };
@@ -15,7 +15,19 @@
     extraPortals = with pkgs; [ xdg-desktop-portal-hyprland ];
   };
 
-  environment.systemPackages = with pkgs; [
+    # Login Screen
+  services.greetd = {
+    enable = true;
+    restart = false;
+    settings = {
+      default_session = {
+        command = "${pkgs.hyprland}/bin/Hyprland";
+        user = "lex";
+      };
+    };
+  };
+
+    environment.systemPackages = with pkgs; [
     wl-clipboard # Clipboard
     kitty # Wayland's default terminal, fall back
     hyprpaper # Wallpaper
@@ -30,8 +42,9 @@
     libva # hardware acceleration nvidia
     libva-utils # hardware acceleration nvidia
   ];
-  # services.xserver = {
-  #  enable = true;};
+# services.xserver = {
+#  enable = true;
+# };
   # # Cursor theme for X11 and Wayland
   # services.spice-vdagentd.enable = true;
 
