@@ -1,3 +1,4 @@
+# BIG THANKS TO https://github.com/Rexcrazy804/Zaphkiel
 # Setup
 Symlink setup is needed, because I don't want to clone this into /etc/nixos and have root own it, yock yock, we can just symlink and modify it normally ourselves~
 ```bash
