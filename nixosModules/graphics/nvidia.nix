@@ -46,14 +46,14 @@
       environment.systemPackages = [pkgs.zenith-nvidia];
       boot.kernelParams = [ "nvidia_drm.modeset=1" "nvidia_drm.fbdev=1" ];  # Enables DRM modesetting for better integration
       hardware.nvidia = {
-        nvidiaPersistenced = true;  # Enables the NVIDIA Persistence Daemon
+        # nvidiaPersistenced = true;  # Enables the NVIDIA Persistence Daemon
         modesetting.enable = true;
         # dynamicBoost.enable = false;
 
-        powerManagement = {
-          enable = false; # cfg.hybrid.enable; # we all hate this!!!
-          finegrained = cfg.hybrid.enable;
-        };
+        # powerManagement = {
+        #   enable = false; # cfg.hybrid.enable; # we all hate this!!!
+        #   finegrained = cfg.hybrid.enable;
+        # };
 
         # Use the NVidia open source kernel module (not to be confused with the
         # independent third-party "nouveau" open source driver).

@@ -50,6 +50,8 @@
   # services.spice-vdagentd.enable = true;
 
   environment.variables = {
+    XDG_SESSION_TYPE = "auto"; # This makes VSCode work (starts with x11 by default yayay)
+    ELECTRON_OZONE_PLATFORM_HINT = "auto"; # idk i just want it to be safe will test later
     XCURSOR_THEME = "Bibata-Modern-Classic";
     XCURSOR_SIZE = "16";
     GTK_THEME = "Flat-Remix-GTK-Grey-Darkest";

@@ -26,7 +26,6 @@ in {
         });
       })];
   };
-
   hjem.users.${username} = {
     enable = true;
     user = username;
@@ -41,7 +40,7 @@ in {
       in lib.mkForce
       (builtins.replaceStrings from to (builtins.readFile hypr_user_conf));
     in {
-  ".config/hypr/hyprland.conf".text = builtins.readFile hypr_global_conf + hypr_user_conf_replaced.content;
+      ".config/hypr/hyprland.conf".text = builtins.readFile hypr_global_conf + hypr_user_conf_replaced.content;
     };
   };
 }
