@@ -2,6 +2,6 @@
   imports = [
     ./nix
     ./system
-    ./graphics
+    # ./graphics
   ];
 }

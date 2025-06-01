@@ -44,7 +44,7 @@
       };
       services.xserver.videoDrivers = ["nvidia"];
       environment.systemPackages = [pkgs.zenith-nvidia];
-      boot.kernelParams = [ "nvidia_drm.modeset=1" ];  # Enables DRM modesetting for better integration
+      boot.kernelParams = [ "nvidia_drm.modeset=1" "nvidia_drm.fbdev=1" ];  # Enables DRM modesetting for better integration
       hardware.nvidia = {
         nvidiaPersistenced = true;  # Enables the NVIDIA Persistence Daemon
         modesetting.enable = true;

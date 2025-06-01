@@ -4,8 +4,8 @@
   programs.xwayland.enable = true;
   programs.hyprland = {
     enable = true;
-#    xwayland.enable = true;
- #   withUWSM = true; 
+#    nvidiaPatches = true;
+    xwayland.enable = true;
     package = pkgs.hyprland;
     portalPackage = pkgs.xdg-desktop-portal-hyprland;
   };
@@ -16,18 +16,19 @@
   };
 
     # Login Screen
-  services.greetd = {
-    enable = true;
-    restart = false;
-    settings = {
-      default_session = {
-        command = "${pkgs.hyprland}/bin/Hyprland";
-        user = "lex";
-      };
-    };
-  };
+  # services.greetd = {
+  #   enable = true;
+  #   restart = false;
+  #   settings = {
+  #     default_session = {
+  #       command = "${pkgs.hyprland}/bin/Hyprland";
+  #       user = "lex";
+  #     };
+  #   };
+  # };
 
     environment.systemPackages = with pkgs; [
+    neofetch # woo
     wl-clipboard # Clipboard
     kitty # Wayland's default terminal, fall back
     hyprpaper # Wallpaper
@@ -38,9 +39,9 @@
     hyprcursor # Cursors for hyprland
     # nvidia-utils # support for nvidia
     # lib32-nvidia-utils # game support for more specific wine stuff
-    egl-wayland # more compatibility stuff
-    libva # hardware acceleration nvidia
-    libva-utils # hardware acceleration nvidia
+    # egl-wayland # more compatibility stuff
+    # libva # hardware acceleration nvidia
+    # libva-utils # hardware acceleration nvidia
   ];
 # services.xserver = {
 #  enable = true;
