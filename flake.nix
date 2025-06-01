@@ -1,21 +1,21 @@
 {
-  description = "NixOS configuration of Ryan Yin";
+  description = "NixOS Flakes Rahhh";
   inputs = {
+    
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-    # home-manager.url = "github:nix-community/home-manager/release-24.11";
-    # home-manager.inputs.nixpkgs.follows = "nixpkgs";
-    # hyprland.url = "github:hyprwm/Hyprland";
-    # nur.url = "github:nix-community/nur";
-    # nur.inputs.nixpkgs.follows = "nixpkgs";
+
     hjem.url = "github:feel-co/hjem";
     hjem.inputs.nixpkgs.follows = "nixpkgs";
+    
+    firefox-addons.url = "gitlab:rycee/nur-expressions?dir=pkgs/firefox-addons";
+    firefox-addons.inputs.nixpkgs.follows = "nixpkgs";
+  
   };
 
   outputs = { self, nixpkgs, ... }@inputs:
     let
       inherit (self) outputs;
-      systems =
-        [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ];
+      systems = [ "x86_64-linux" "x86_64-darwin" "aarch64-linux" "aarch64-darwin" ];
       forAllSystems = function:
         nixpkgs.lib.genAttrs systems (system:
           function (import nixpkgs {
@@ -23,13 +23,15 @@
             config.allowUnfree = true;
           }));
     in {
-      formatter = forAllSystems (pkgs: pkgs.alejandra);
+      formatter = forAllSystems (pkgs: [pkgs.alejandra]);
       nixosConfigurations = {
         desktop = let
           settings = {
             stateVersion = "25.05";
             system = "x86_64-linux";
-            kernal = "linuxPackages_zen"; #_xanmod_latest";#"linuxPackages_zen";
+            kernal = "linuxPackages_xanmod_latest"; #_xanmod_latest";#"linuxPackages_zen";
+            
+            hostName = "desktop";
             users = [ "lex" ];
           };
           specialArgs = { inherit inputs outputs settings; };

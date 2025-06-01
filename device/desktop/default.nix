@@ -10,64 +10,24 @@
       ./boot.nix
       ../../program/hyprland # Set's up hyprland
     ];
- graphicsModule = {
-   amd.enable = false;
-   nvidia = {
-     enable = true;
-      # This option is only for laptops.. If you have dual gpus (igpu)
-      # DISABLE IT FROM THE BIOSSSS HOW DARE YOU EVEN CONSIDER MAKING IT WORKKK
-     hybrid = {
-       enable = false; # I belive i can't do it on my main machine? might be a laptop only thing. (enables prime)
-       igpu = {
-         vendor = "amd";
-          # [AMD/ATI] Raael  | 10:00.0 VGA
-         port = "PCI:16@0:0:0"; #"pci@0000:10:00.0";
-       };
-        # GeForce RTX 3070 Ti  |  01:00.0 
-       dgpu.port = "PCI:1@0:0:0"; #"pci@0000:01:00.0";
-     };
-   };
- };
+  boot.kernelModules = [ "kvm-amd" "nvidia" ];
 
-  # Load nvidia driver for Xorg and Wayland
-  # services.xserver.displayManager.gdm.wayland = true;
-
-  # Environment variables for Wayland/Nvidia compatibility
-  environment.sessionVariables = {
-    WLR_NO_HARDWARE_CURSORS = "1";
-    LIBVA_DRIVER_NAME = "nvidia";
-    GBM_BACKEND = "nvidia-drm";
-    __GLX_VENDOR_LIBRARY_NAME = "nvidia";
+  graphicsModule = {
+    amd.enable = false;
+    nvidia = {
+      enable = true;
+      hybrid = {
+        enable = false;
+        igpu = {
+          vendor = "amd";
+          port = "PCI:16@0:0:0";   # [AMD/ATI] Raael      | 10:00.0   pci@0000:10:00.0
+        };
+        dgpu.port = "PCI:1@0:0:0"; # GeForce RTX 3070 Ti  | 01:00.0   pci@0000:01:00.0
+      };
+    };
   };
 
-  # Kernel parameters for Nvidia and display handling
-  boot.kernelParams = [ 
-    "nvidia.NVreg_PreserveVideoMemoryAllocations=1"
-    "nvidia-drm.modeset=1"
-"module_blacklist=amdgpu" # big bad bad bad bad bad bad bad bad badbad badb adbadbad badb adb adbabd abdbadbadad
-      ];
-
-
-
-  programs.dconf.enable = true;
-  environment.sessionVariables = {
-    ADW_DISABLE_PORTAL = "1";
-  };
-  environment.etc."xdg/gtk-4.0/assets".source = "${pkgs.nordic}/share/themes/Nordic/gtk-4.0/assets";
-  environment.etc."xdg/gtk-4.0/gtk.css".source = "${pkgs.nordic}/share/themes/Nordic/gtk-4.0/gtk.css";
-  environment.etc."xdg/gtk-4.0/gtk-dark.css".source = "${pkgs.nordic}/share/themes/Nordic/gtk-4.0/gtk-dark.css";
-  environment.systemPackages = with pkgs; [
-    nordic
-    gtk4
-      hyprcursor
-      nwg-look
-      glib
-      flat-remix-gtk
-      bibata-cursors
-      adwaita-icon-theme
-  ];
-
-  networking.hostName = "desktop"; # Define your hostname.
+  networking.hostName = settings.hostName; # Define your hostname.
 
   networking.networkmanager.enable = true;
 

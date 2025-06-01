@@ -1,9 +1,5 @@
+{ pkgs,  config,lib, ...}:
 {
-  pkgs,
-  config,
-  lib,
-  ...
-}: {
   options = {
     graphicsModule = {
       nvidia = {
@@ -42,32 +38,44 @@
           "cuda-maintainers.cachix.org-1:0dq3bujKpuEPMCX6U4WylrUDZ9JyUG0VpVZa7CNfq5E="
         ];
       };
+
       services.xserver.videoDrivers = ["nvidia"];
-      environment.systemPackages = [pkgs.zenith-nvidia];
-      boot.kernelParams = [ "nvidia_drm.modeset=1" "nvidia_drm.fbdev=1" ];  # Enables DRM modesetting for better integration
+      environment.systemPackages = with pkgs; [
+        libva # hardware acceleration nvidia
+        mesa # mesa
+        libva-utils # hardware acceleration nvidia
+        libvdpau-va-gl # more libva~
+        libGL # GL
+        nvtopPackages.nvidia # to check usage of nvidia gpus
+      ];
+      boot.kernelParams = [ "nvidia_drm.modeset=1" "nvidia_drm.fbdev=1" ]; 
+      environment.variables = {
+        __GLX_VENDOR_LIBRARY_NAME = "nvidia";
+        LIBVA_DRIVER_NAME = "nvidia";
+        NVD_BACKEND = "nvidia";
+        GBM_BACKEND = "nvidia-drm";
+
+      };
+
+
       hardware.nvidia = {
-        # nvidiaPersistenced = true;  # Enables the NVIDIA Persistence Daemon
-        modesetting.enable = true;
-        # dynamicBoost.enable = false;
-
-        # powerManagement = {
-        #   enable = false; # cfg.hybrid.enable; # we all hate this!!!
-        #   finegrained = cfg.hybrid.enable;
-        # };
-
-        # Use the NVidia open source kernel module (not to be confused with the
-        # independent third-party "nouveau" open source driver).
+        # General stuff~
         open = true;
-
+        modesetting.enable = true;
         nvidiaSettings = true;
         package = config.boot.kernelPackages.nvidiaPackages.latest;
 
+        # Laptop stuff (dual gpu idk haven't tried it on my main one yet)
+        dynamicBoost.enable = cfg.hybrid.enable;
+        powerManagement = {
+          enable = cfg.hybrid.enable;
+          finegrained = cfg.hybrid.enable;
+        };
         prime = lib.mkIf cfg.hybrid.enable {
           offload = {
             enable = true;
             enableOffloadCmd = true;
           };
-
           amdgpuBusId = lib.mkIf (cfg.hybrid.igpu.vendor == "amd") cfg.hybrid.igpu.port;
           intelBusId = lib.mkIf (cfg.hybrid.igpu.vendor == "intel") cfg.hybrid.igpu.port;
           nvidiaBusId = cfg.hybrid.dgpu.port;

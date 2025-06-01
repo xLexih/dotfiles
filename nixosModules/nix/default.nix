@@ -1,6 +1,8 @@
-{ inputs, pkgs, settings, ... }: {
+{ lib, inputs, pkgs, settings, ... }: {
   nixpkgs.config = { allowUnfree = true; };
   environment.etc."nix/inputs/nixpkgs".source = "${inputs.nixpkgs}";
+  nixpkgs.hostPlatform = lib.mkDefault settings.system;
+
   nix = {
 
     settings = {

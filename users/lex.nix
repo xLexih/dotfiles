@@ -4,6 +4,12 @@ let
   description = "lex here";
   hostname = config.networking.hostName;
 in {
+  
+  imports = [
+    ../program/firefox
+  ];
+  firefox.username = username;
+
   users.users.${username} = {
     inherit description;
 
@@ -20,12 +26,18 @@ in {
         vscodium = pkgs.vscodium.overrideAttrs (oldAttrs:{
         postInstall = ''
             ${oldAttrs.postInstall or ""}
-            ls -l $out/lib/vscode/bin || true
             ln -sf $out/lib/vscode/bin/codium-tunnel $out/lib/vscode/bin/code-tunnel
           '';
         });
       })];
   };
+
+  # programs.dconf.enable = true;
+
+  # environment.etc."xdg/gtk-4.0/assets".source = "${pkgs.nordic}/share/themes/Nordic/gtk-4.0/assets";
+  # environment.etc."xdg/gtk-4.0/gtk.css".source = "${pkgs.nordic}/share/themes/Nordic/gtk-4.0/gtk.css";
+  # environment.etc."xdg/gtk-4.0/gtk-dark.css".source = "${pkgs.nordic}/share/themes/Nordic/gtk-4.0/gtk-dark.css";
+
   hjem.users.${username} = {
     enable = true;
     user = username;
@@ -41,6 +53,8 @@ in {
       (builtins.replaceStrings from to (builtins.readFile hypr_user_conf));
     in {
       ".config/hypr/hyprland.conf".text = builtins.readFile hypr_global_conf + hypr_user_conf_replaced.content;
+
+
     };
   };
 }
