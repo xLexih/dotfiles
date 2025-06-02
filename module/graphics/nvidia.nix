@@ -1,5 +1,9 @@
-{ pkgs,  config,lib, ...}:
 {
+  pkgs,
+  config,
+  lib,
+  ...
+}: {
   options = {
     graphicsModule = {
       nvidia = {
@@ -48,15 +52,13 @@
         libGL # GL
         nvtopPackages.nvidia # to check usage of nvidia gpus
       ];
-      boot.kernelParams = [ "nvidia_drm.modeset=1" "nvidia_drm.fbdev=1" ]; 
+      boot.kernelParams = ["nvidia_drm.modeset=1" "nvidia_drm.fbdev=1"];
       environment.variables = {
         __GLX_VENDOR_LIBRARY_NAME = "nvidia";
         LIBVA_DRIVER_NAME = "nvidia";
         NVD_BACKEND = "nvidia";
         GBM_BACKEND = "nvidia-drm";
-
       };
-
 
       hardware.nvidia = {
         # General stuff~
@@ -66,7 +68,7 @@
         package = config.boot.kernelPackages.nvidiaPackages.latest;
 
         # Laptop stuff (dual gpu idk haven't tried it on my main one yet)
-        dynamicBoost.enable = cfg.hybrid.enable;
+        dynamicBoost.enable = false; # cfg.hybrid.enable;
         powerManagement = {
           enable = cfg.hybrid.enable;
           finegrained = cfg.hybrid.enable;

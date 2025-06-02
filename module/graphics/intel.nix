@@ -1,4 +1,9 @@
-{ pkgs, lib, config, ... }: {
+{
+  pkgs,
+  lib,
+  config,
+  ...
+}: {
   options = {
     graphicsModule = {
       intel.enable = lib.mkEnableOption "Enable intel graphics card";

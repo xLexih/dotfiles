@@ -1,5 +1,5 @@
-{ lib, ... }: {
-  imports = [ ./bluetooth.nix ];
+{lib, ...}: {
+  imports = [./bluetooth.nix];
 
   networking = {
     useDHCP = lib.mkDefault true;
@@ -14,8 +14,8 @@
 
     firewall = {
       enable = true;
-      allowedTCPPortRanges = [ ];
-      allowedUDPPortRanges = [ ];
+      allowedTCPPortRanges = [];
+      allowedUDPPortRanges = [];
     };
   };
 }

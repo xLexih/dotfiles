@@ -1,12 +1,16 @@
-{ pkgs, config, inputs, lib, ... }:
-let
+{
+  pkgs,
+  config,
+  inputs,
+  lib,
+  ...
+}: let
   username = "lex";
   description = "lex here";
   hostname = config.networking.hostName;
 in {
-  
   imports = [
-    ../program/firefox
+    ../module/program/firefox
   ];
   firefox.username = username;
 
@@ -14,22 +18,23 @@ in {
     inherit description;
 
     isNormalUser = true;
-    extraGroups = [  "docker" "networkmanager" "wheel" "libvirtd" "i2c" "video" "plugdev"];
-    packages = with pkgs; [ 
-      btop 
+    extraGroups = ["docker" "networkmanager" "wheel" "libvirtd" "i2c" "video" "plugdev"];
+    packages = with pkgs; [
+      btop
       git
       vesktop
       alacritty
       ripgrep
       firefox
       (vscodium-fhs.overrideAttrs {
-        vscodium = pkgs.vscodium.overrideAttrs (oldAttrs:{
-        postInstall = ''
+        vscodium = pkgs.vscodium.overrideAttrs (oldAttrs: {
+          postInstall = ''
             ${oldAttrs.postInstall or ""}
             ln -sf $out/lib/vscode/bin/codium-tunnel $out/lib/vscode/bin/code-tunnel
           '';
         });
-      })];
+      })
+    ];
   };
 
   # programs.dconf.enable = true;
@@ -47,14 +52,13 @@ in {
       hypr_user_conf = ./${username}/config/hyprland/hyprland.conf;
       hypr_global_conf = ../.config/hypr/hyprland.conf;
       hypr_user_conf_replaced = let
-        from = [ "{{cursor_theme_name}}" ];
-        to = [ pkgs.adwaita-icon-theme.name ];
-      in lib.mkForce
-      (builtins.replaceStrings from to (builtins.readFile hypr_user_conf));
+        from = ["{{cursor_theme_name}}"];
+        to = [pkgs.adwaita-icon-theme.name];
+      in
+        lib.mkForce
+        (builtins.replaceStrings from to (builtins.readFile hypr_user_conf));
     in {
       ".config/hypr/hyprland.conf".text = builtins.readFile hypr_global_conf + hypr_user_conf_replaced.content;
-
-
     };
   };
 }

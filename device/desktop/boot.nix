@@ -1,8 +1,12 @@
-{ config, lib, pkgs, modulesPath, settings, ... }:
-
-
 {
-  imports = [ (modulesPath + "/installer/scan/not-detected.nix") ];
+  config,
+  lib,
+  pkgs,
+  modulesPath,
+  settings,
+  ...
+}: {
+  imports = [(modulesPath + "/installer/scan/not-detected.nix")];
 
   # File system
   fileSystems."/" = {
@@ -13,11 +17,10 @@
   fileSystems."/boot" = {
     device = "/dev/disk/by-uuid/CD0B-0C93";
     fsType = "vfat";
-    options = [ "fmask=0077" "dmask=0077" ];
+    options = ["fmask=0077" "dmask=0077"];
   };
 
-  swapDevices =
-    [{ device = "/dev/disk/by-uuid/73354cf4-f3b2-49b1-9c26-94c925f5c5fa"; }];
+  swapDevices = [{device = "/dev/disk/by-uuid/73354cf4-f3b2-49b1-9c26-94c925f5c5fa";}];
 
   boot.loader.efi.efiSysMountPoint = "/boot";
 

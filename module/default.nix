@@ -3,5 +3,6 @@
     ./nix
     ./system
     ./graphics
+    ./program
   ];
 }

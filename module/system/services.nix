@@ -1,7 +1,7 @@
-{ pkgs, ... }: {
+{pkgs, ...}: {
   # uncategorized
-  services.dbus.packages = [ pkgs.gcr ];
-  services.udev.packages = [ pkgs.gnome-settings-daemon ];
+  services.dbus.packages = [pkgs.gcr];
+  services.udev.packages = [pkgs.gnome-settings-daemon];
 
   # Configure keymap in X11
   services.xserver = {
@@ -14,5 +14,4 @@
   # extra firmware
   hardware.enableAllFirmware = true;
   hardware.steam-hardware.enable = true;
-
 }
