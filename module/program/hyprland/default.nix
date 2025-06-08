@@ -40,6 +40,10 @@
     bibata-cursors
     adwaita-icon-theme
     nordic
+
+    wev
+    light
+    brightnessctl
   ];
 
   environment.variables = {
@@ -57,11 +61,6 @@
     CLUTTER_BACKEND = "wayland";
     XDG_CURRENT_DESKTOP = "Hyprland";
     XDG_SESSION_DESKTOP = "Hyprland";
-
-    XCURSOR_THEME = "Bibata-Modern-Classic";
-    XCURSOR_SIZE = "16";
-    GTK_THEME = "Flat-Remix-GTK-Grey-Darkest";
-    GTK_ICON_THEME = "Adwaita";
     GDK_SCALE = "1";
   };
 }

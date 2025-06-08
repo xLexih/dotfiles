@@ -4,5 +4,6 @@
     ./system
     ./graphics
     ./program
+    ./theme/dark.nix
   ];
 }
