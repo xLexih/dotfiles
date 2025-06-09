@@ -23,7 +23,6 @@
         #sidebar-splitter {
           display: none !important;
         }
-
         /*  The whole nab bar including the right button */
         #nav-bar-customization-target,
         #PanelUI-button {
@@ -35,7 +34,7 @@
         #searchbar:focus-within {
           /* background-color: #110022aa !important; */
           background-color: rgba(17, 0, 34, 0.67) !important;
-          backdrop-filter: blur(10px);
+          backdrop-filter: blur(1.5px) !important;
         }
 
         /* Add rounding once the breakout is extended. */
@@ -69,11 +68,36 @@
     policies = {
       DisableTelemetry = true;
       Preferences = {
+        "browser.aboutConfig.showWarning" = false;
+        "widget.gtk.hide-pointer-while-typing.enabled" = false;
+        "findbar.highlightAll" = true;
+        "accessibility.force_disabled" = 1; # saves ram
+        "extensions.pocket.enabled" = false;
+        "browser.vpn_promo.enabled" = false;
+        "browser.newtabpage.activity-stream.feeds.recommendationprovider" = false;
+        "extensions.htmlaboutaddons.recommendations.enabled" = false;
+        "browser.tabs.closeWindowWithLastTab" = false;
+        "browser.shell.checkDefaultBrowser" = false;
+        "app.shield.optoutstudies.enabled" = false;
+        "app.normandy.enabled" = false;
+        "app.normandy.api_url" = "";
+
+        "signon.rememberSignons" = false; # Disable Ask to save logins and passwords for websites"
+        "signon.autofillForms" = false; # Disable "Autofill logins and passwords"
+        "browser.formfill.enable" = false; # Disable "Remember search and form history"
         "toolkit.legacyUserProfileCustomizations.stylesheets" = true;
         "browser.tabs.min_inactive_duration_before_unload" = 150000; # 2.5min (its ms)
+        "browser.cache.memory.enable" = true;
+        "browser.cache.memory.capacity" = 1048576;
+        "browser.cache.memory.max_entry_size" = -1;
+        "browser.cache.disk.enable" = false;
+        "browser.cache.disk.smart_size.enabled" = false;
+
         "sidebar.revamp" = false;
         "browser.urlbar.placeholderName" = "me";
 
+        "keyword.enabled" = true;
+        # "browser.search.suggest.enabled" = false;
         "browser.urlbar.suggest.history" = false;
         "browser.urlbar.suggest.bookmark" = false;
         "browser.urlbar.suggest.recentsearches" = false;
@@ -89,6 +113,9 @@
         "services.sync.prefs.sync.browser.urlbar.suggest.topsites" = false;
         "services.sync.prefs.sync.browser.urlbar.suggest.searches" = false;
         "services.sync.prefs.sync.browser.urlbar.suggest.openpages" = false;
+
+        "browser.urlbar.trimURLs" = false;
+        # "browser.fixup.alternate.enabled" = false;
       };
       #  https://addons.mozilla.org/api/v5/addons/search/?q=<extension-name> // Look for GUID
       ExtensionSettings = {
