@@ -20,6 +20,7 @@
   If it says http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul
   it's usually a good bet code for that element belongs in userChrome.css,
   while http://www.w3.org/1999/xhtml suggests userContent.css is where it should go.
+  https://www.reddit.com/r/FirefoxCSS/comments/7dtd91/comment/dqalebo/
   */
   config.hjem.users = lib.attrsets.genAttrs settings.users (username: {
     files = {
@@ -52,23 +53,28 @@
           --toolbarbutton-icon-fill-attention: color-mix(in oklab, var(--color-accent-primary), transparent 20%) !important;
           --urlbarView-action-color: color-mix(in oklab, var(--color-accent-primary), transparent 20%) !important;
 
-          --s-frame-bg: rgb(42, 17, 68) !important;
-          --s-border: rgb(42, 17, 68) !important;
-          --s-notification-bg: rgb(42, 17, 68) !important;
-          --s-ctx-menu-bg: rgb(42, 17, 68) !important;
-          --s-ctx-menu-separator: rgb(42, 17, 68) !important;
-          --s-popup-bg: rgb(42, 17, 68) !important;
-          --s-tabs-activated-bg: color-mix(in oklab, #dbb0ffee, transparent 75%) !important;
-          --s-toolbar-bg: rgb(42, 17, 68) !important;
-          --chrome-content-separator-color: color-mix(in oklab, #dbb0ffee, transparent 75%) !important;
+          --s-frame-bg: var(--toolbar-bgcolor) !important;
+          --s-border: var(--s-frame-bg) !important;
+          --s-notification-bg: var(--s-frame-bg) !important;
+          --s-ctx-menu-bg: var(--s-frame-bg) !important;
+          --s-ctx-menu-separator: var(--s-frame-bg) !important;
+          --s-popup-bg: var(--s-frame-bg) !important;
+          --s-tabs-activated-bg: color-mix(in oklab, var(--color-accent-primary), transparent 75%) !important;
+          --s-toolbar-bg: var(--s-frame-bg) !important;
+          --chrome-content-separator-color: color-mix(in oklab, var(--color-accent-primary), transparent 75%) !important;
         }
 
         /* Does the special rounding once the URL bar is opened. */
         #urlbar:is([focused], [open])[breakout-extend] > #urlbar-background {
           border-radius: var(--toolbarbutton-special-border-radius) !important;
         }
+        /* Fixes the URL shown in the bottom left corner. */
 
-        /* hides the tabs and the left useless part */
+        #statuspanel-label {
+          background-color: var(--s-tabs-activated-bg) !important;
+        }
+
+        /* hides the tabs and the left useless part. */
         #TabsToolbar,
         #sidebar-header,
         #sidebar-splitter {
@@ -80,7 +86,7 @@
 
   config.programs.firefox = {
     enable = true;
-    package = inputs.firefox.packages.${pkgs.system}.firefox-nightly-bin; # The official firefox binary. did it to add blur()
+    package = inputs.firefox.packages.${pkgs.system}.firefox-nightly-bin;
     policies = {
       DisableTelemetry = true;
       Preferences = {
@@ -94,9 +100,8 @@
         "extensions.htmlaboutaddons.recommendations.enabled" = false;
         "browser.tabs.closeWindowWithLastTab" = false;
         "browser.shell.checkDefaultBrowser" = false;
-        "app.shield.optoutstudies.enabled" = false;
-        "app.normandy.enabled" = false;
-        "app.normandy.api_url" = "";
+        # "app.shield.optoutstudies.enabled" = false;
+        # "app.normandy.enabled" = false;
 
         "signon.rememberSignons" = false; # Disable Ask to save logins and passwords for websites"
         "signon.autofillForms" = false; # Disable "Autofill logins and passwords"
@@ -109,7 +114,7 @@
         "browser.cache.disk.enable" = false;
         "browser.cache.disk.smart_size.enabled" = false;
 
-        "sidebar.revamp" = false;
+        # "sidebar.revamp" = false;
         "browser.urlbar.placeholderName" = "me";
 
         "keyword.enabled" = true;
@@ -124,11 +129,11 @@
         "browser.urlbar.suggest.yelp" = false;
         "browser.urlbar.suggest.addons" = false;
 
-        "services.sync.prefs.sync.browser.urlbar.suggest.bookmark" = false;
-        "services.sync.prefs.sync.browser.urlbar.suggest.history" = false;
-        "services.sync.prefs.sync.browser.urlbar.suggest.topsites" = false;
-        "services.sync.prefs.sync.browser.urlbar.suggest.searches" = false;
-        "services.sync.prefs.sync.browser.urlbar.suggest.openpages" = false;
+        # "services.sync.prefs.sync.browser.urlbar.suggest.bookmark" = false;
+        # "services.sync.prefs.sync.browser.urlbar.suggest.history" = false;
+        # "services.sync.prefs.sync.browser.urlbar.suggest.topsites" = false;
+        # "services.sync.prefs.sync.browser.urlbar.suggest.searches" = false;
+        # "services.sync.prefs.sync.browser.urlbar.suggest.openpages" = false;
 
         "browser.urlbar.trimURLs" = false;
         # "browser.fixup.alternate.enabled" = false;
