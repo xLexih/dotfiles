@@ -13,50 +13,66 @@
     default = "lex";
   };
   # ~/.mozilla/firefox/<profile-folder>/chrome/userChrome.css
-
+  /*
+  Once you've set up the Browser Toolbox, you can use its Inspector tool to examine an UI element.
+  After doing so, in the source code pane of the Inspector tab, right-click that element and choose Show DOM Properties.
+  Then in the bottom right corner, look for the namespaceURI property.
+  If it says http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul
+  it's usually a good bet code for that element belongs in userChrome.css,
+  while http://www.w3.org/1999/xhtml suggests userContent.css is where it should go.
+  */
   config.hjem.users = lib.attrsets.genAttrs settings.users (username: {
     files = {
+      ".mozilla/firefox/default/chrome/userContent.css".text = ''
+        #root.root {
+          --frame-bg: rgb(42, 17, 68) !important;
+          --border: rgb(42, 17, 68) !important;
+          --notification-bg: rgb(42, 17, 68) !important;
+          --ctx-menu-bg: rgb(42, 17, 68) !important;
+          --ctx-menu-separator: rgb(42, 17, 68) !important;
+          --popup-bg: rgb(42, 17, 68) !important;
+          --tabs-activated-bg: color-mix(in oklab, #dbb0ffee, transparent 75%) !important;
+          --toolbar-bg: rgb(42, 17, 68) !important;
+        }
+        body {
+          --newtab-background-color: rgb(42, 17, 68) !important;
+          --newtab-background-color-secondary: color-mix(in oklab, var(--newtab-background-color), black 20%) !important;
+          --newtab-background-card: var(--newtab-background-color-secondary) !important;
+        }
+
+      '';
       ".mozilla/firefox/default/chrome/userChrome.css".text = ''
+        :root{
+          --toolbar-bgcolor:rgb(42, 17, 68) !important;
+          --color-accent-primary: #dbb0ffee !important;
+          --toolbar-field-background-color: color-mix(in oklab, var(--toolbar-bgcolor), black 20%) !important;
+          --toolbar-field-focus-background-color: color-mix(in oklab, var(--toolbar-bgcolor), black 20%) !important;
+          --toolbarbutton-special-border-radius: 0px 0px 15px 15px / 15px !important;
+          --urlbarView-highlight-background: color-mix(in oklab, var(--color-accent-primary), transparent 50%) !important;
+          --toolbarbutton-icon-fill-attention: color-mix(in oklab, var(--color-accent-primary), transparent 20%) !important;
+          --urlbarView-action-color: color-mix(in oklab, var(--color-accent-primary), transparent 20%) !important;
+
+          --s-frame-bg: rgb(42, 17, 68) !important;
+          --s-border: rgb(42, 17, 68) !important;
+          --s-notification-bg: rgb(42, 17, 68) !important;
+          --s-ctx-menu-bg: rgb(42, 17, 68) !important;
+          --s-ctx-menu-separator: rgb(42, 17, 68) !important;
+          --s-popup-bg: rgb(42, 17, 68) !important;
+          --s-tabs-activated-bg: color-mix(in oklab, #dbb0ffee, transparent 75%) !important;
+          --s-toolbar-bg: rgb(42, 17, 68) !important;
+          --chrome-content-separator-color: color-mix(in oklab, #dbb0ffee, transparent 75%) !important;
+        }
+
+        /* Does the special rounding once the URL bar is opened. */
+        #urlbar:is([focused], [open])[breakout-extend] > #urlbar-background {
+          border-radius: var(--toolbarbutton-special-border-radius) !important;
+        }
+
         /* hides the tabs and the left useless part */
         #TabsToolbar,
         #sidebar-header,
         #sidebar-splitter {
           display: none !important;
-        }
-        /*  The whole nab bar including the right button */
-        #nav-bar-customization-target,
-        #PanelUI-button {
-          background-color: #2a1144dd !important;
-        }
-
-        /*  The extended section of the search bar */
-        #urlbar:is([focused], [open]) > #urlbar-background,
-        #searchbar:focus-within {
-          /* background-color: #110022aa !important; */
-          background-color: rgba(17, 0, 34, 0.67) !important;
-          backdrop-filter: blur(1.5px) !important;
-        }
-
-        /* Add rounding once the breakout is extended. */
-        #urlbar:is([focused], [open])[breakout-extend] > #urlbar-background {
-          border-radius: 0px 0px 15px 15px / 15px !important; /* Bottom rounding */
-        }
-
-        /*  Targets the selection in search bar   */
-        #urlbar[focused]:not([suppress-focus-border]) > #urlbar-background,
-        #searchbar:focus-within,
-        .searchbar-engine-one-off-item[selected]
-        {
-          outline-color: #dbb0ffee !important;
-        }
-
-        .searchbar-engine-one-off-item[selected] {
-          background-color: #dbb0ffaa !important;
-        }
-        .urlbarView-row {
-          &[selected] {
-            background-color: #dbb0ff60 !important;
-          }
         }
       '';
     };
