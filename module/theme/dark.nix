@@ -1,14 +1,6 @@
-{
-  config,
-  pkgs,
-  ...
-}: {
+{pkgs, ...}: {
   # Enable DConf for Gnome/GTK settings management
   programs.dconf.enable = true;
-  xdg.portal = {
-    enable = true;
-    extraPortals = with pkgs; [xdg-desktop-portal-gtk];
-  };
   # System-wide dark theme settings using gsettings
   systemd.user.targets.gsettings = {
     description = "Update gsettings";

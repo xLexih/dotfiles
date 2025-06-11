@@ -1,7 +1,6 @@
 # https://github.com/NixOS/nixpkgs/blob/master/nixos/modules/programs/firefox.nix
 # https://gitlab.com/scientiac/tesseract.home.manager/-/blob/main/apps/graphical/firefox/default.nix#L9
 {
-  config,
   pkgs,
   settings,
   inputs,
@@ -100,8 +99,6 @@
         "extensions.htmlaboutaddons.recommendations.enabled" = false;
         "browser.tabs.closeWindowWithLastTab" = false;
         "browser.shell.checkDefaultBrowser" = false;
-        # "app.shield.optoutstudies.enabled" = false;
-        # "app.normandy.enabled" = false;
 
         "signon.rememberSignons" = false; # Disable Ask to save logins and passwords for websites"
         "signon.autofillForms" = false; # Disable "Autofill logins and passwords"
@@ -128,12 +125,6 @@
         "browser.urlbar.suggest.openpage" = false;
         "browser.urlbar.suggest.yelp" = false;
         "browser.urlbar.suggest.addons" = false;
-
-        # "services.sync.prefs.sync.browser.urlbar.suggest.bookmark" = false;
-        # "services.sync.prefs.sync.browser.urlbar.suggest.history" = false;
-        # "services.sync.prefs.sync.browser.urlbar.suggest.topsites" = false;
-        # "services.sync.prefs.sync.browser.urlbar.suggest.searches" = false;
-        # "services.sync.prefs.sync.browser.urlbar.suggest.openpages" = false;
 
         "browser.urlbar.trimURLs" = false;
         # "browser.fixup.alternate.enabled" = false;

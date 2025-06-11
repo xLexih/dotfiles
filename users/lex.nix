@@ -1,17 +1,17 @@
 {
   pkgs,
   config,
-  inputs,
   lib,
   ...
 }: let
   username = "lex";
   description = "lex here";
-  hostname = config.networking.hostName;
 in {
   imports = [
     ../module/program/firefox
+    ../module/program/ollama
   ];
+  ollama.user = username;
   firefox.username = username;
 
   users.users.${username} = {
@@ -26,14 +26,19 @@ in {
       alacritty
       ripgrep
       firefox
-      (vscodium-fhs.overrideAttrs {
+      (pkgs.vscodium.overrideAttrs (v_oldAttrs: {
         vscodium = pkgs.vscodium.overrideAttrs (oldAttrs: {
           postInstall = ''
             ${oldAttrs.postInstall or ""}
             ln -sf $out/lib/vscode/bin/codium-tunnel $out/lib/vscode/bin/code-tunnel
           '';
         });
-      })
+        buildInputs = v_oldAttrs.buildInputs or [] ++ [pkgs.makeWrapper];
+        postInstall = ''
+          ${v_oldAttrs.postInstall or ""}
+          wrapProgram $out/bin/codium --add-flags '--ozone-platform=x11'
+        '';
+      }))
     ];
   };
 

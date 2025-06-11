@@ -1,26 +1,20 @@
-{
-  config,
-  lib,
-  options,
-  pkgs,
-  settings,
-  ...
-}: {
+{pkgs, ...}: {
   boot.kernelParams = [
     "nvidia.NVreg_PreserveVideoMemoryAllocations=1"
   ];
   programs.xwayland.enable = true;
+
   programs.hyprland = {
     enable = true;
     xwayland.enable = true;
-    package = pkgs.hyprland;
-    portalPackage = pkgs.xdg-desktop-portal-hyprland;
+    # package = pkgs.hyprland;
+    # portalPackage = pkgs.xdg-desktop-portal-hyprland;
   };
 
-  xdg.portal = {
-    enable = true;
-    extraPortals = with pkgs; [xdg-desktop-portal-hyprland];
-  };
+  # xdg.portal = {
+  #   enable = true;
+  #   extraPortals = with pkgs; [xdg-desktop-portal-hyprland];
+  # };
 
   environment.systemPackages = with pkgs; [
     egl-wayland # more compatibility stuff
@@ -49,13 +43,13 @@
   environment.variables = {
     ELECTRON_OZONE_PLATFORM_HINT = "auto"; # idk i just want it to be safe will test later
     GTK_USE_PORTAL = "1";
-    NIXOS_XDG_OPEN_USE_PORTAL = "1";
+    # NIXOS_XDG_OPEN_USE_PORTAL = "1"; # bad bad variable~
     NIXOS_OZONE_WL = "1";
 
     __GL_GSYNC_ALLOWED = "0";
     __GL_VRR_ALLOWED = "0";
     MOZ_ENABLE_WAYLAND = "1";
-    #    GDK_BACKEND = "wayland";
+    GDK_BACKEND = "wayland";
     QT_QPA_PLATFORM = "wayland";
     SDL_VIDEODRIVER = "wayland";
     CLUTTER_BACKEND = "wayland";

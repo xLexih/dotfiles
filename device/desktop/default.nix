@@ -1,12 +1,7 @@
 # Edit this configuration file to define what should be installed on
 # your system.  Help is available in the configuration.nix(5) man page
 # and in the NixOS manual (accessible by running ‘nixos-help’).
-{
-  config,
-  pkgs,
-  settings,
-  ...
-}: {
+{settings, ...}: {
   imports = [
     ./boot.nix
     ../../module/program/hyprland # Set's up hyprland
@@ -14,11 +9,11 @@
   boot.kernelModules = ["kvm-amd" "nvidia"];
 
   graphicsModule = {
-    amd.enable = true;
+    amd.enable = false;
     nvidia = {
       enable = true;
       hybrid = {
-        enable = true;
+        enable = false;
         igpu = {
           vendor = "amd";
           port = "PCI:16@0:0:0"; # [AMD/ATI] Raael      | 10:00.0   pci@0000:10:00.0

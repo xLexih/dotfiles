@@ -27,6 +27,7 @@
         }));
   in {
     formatter = forAllSystems (pkgs: [pkgs.alejandra]);
+    # formatter = forAllSystems (pkgs: [pkgs.treefmtEval]);
     nixosConfigurations = {
       desktop = let
         settings = {
