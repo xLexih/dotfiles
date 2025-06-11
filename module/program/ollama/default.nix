@@ -17,7 +17,6 @@
 
   config.hjem.users.${config.ollama.user} = {
     # https://github.com/di-sukharev/opencommit?tab=readme-ov-file#local-per-repo-configuration
-    #tavernari/git-commit-message:cod
     files = {
       ".opencommit".text = ''
         OCO_API_URL=http://127.0.0.1:11434/api/chat
@@ -47,18 +46,13 @@
     after = ["network.target"];
     wantedBy = ["multi-user.target"];
     serviceConfig = {
-      # OCO_API_URL = 'http://127.0.0.1:11434/api/chat'
-      # OCO_AI_PROVIDER='ollama'
-      # OCO_MODEL='mistral'
-      Type = "simple"; # or "notify" if Ollama supports systemd notifications
+      Type = "simple";
       ExecStart = ''
         ${pkgs.ollama}/bin/ollama serve
-      ''; # Adjust path if needed
+      '';
       Restart = "always";
       RestartSec = 3;
-      User = config.ollama.user; # or another user if preferred
-      # Add Environment if needed, e.g.:
-      # Environment = "OLLAMA_HOST=0.0.0.0";
+      User = config.ollama.user;
     };
     enable = true;
   };
