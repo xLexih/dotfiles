@@ -10,6 +10,8 @@ in {
   imports = [
     ../module/program/firefox
     ../module/program/ollama
+    ../module/program/minecraft
+    ../module/program/onlyoffice
   ];
   ollama.user = username;
   firefox.username = username;

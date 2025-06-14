@@ -3,7 +3,6 @@
 {
   pkgs,
   settings,
-  inputs,
   lib,
   ...
 }: {
@@ -85,7 +84,8 @@
 
   config.programs.firefox = {
     enable = true;
-    package = inputs.firefox.packages.${pkgs.system}.firefox-nightly-bin;
+    # package = inputs.firefox.packages.${pkgs.system}.firefox-nightly-bin;
+    package = pkgs.firefox;
     policies = {
       DisableTelemetry = true;
       Preferences = {

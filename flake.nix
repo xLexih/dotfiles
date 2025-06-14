@@ -6,8 +6,8 @@
     hjem.url = "github:feel-co/hjem";
     hjem.inputs.nixpkgs.follows = "nixpkgs";
 
-    firefox.url = "github:nix-community/flake-firefox-nightly";
-    firefox.inputs.nixpkgs.follows = "nixpkgs";
+    # firefox.url = "github:nix-community/flake-firefox-nightly";
+    # firefox.inputs.nixpkgs.follows = "nixpkgs";
     # hypr-dynamic-cursors.url = "github:VirtCode/hypr-dynamic-cursors";
     # hypr-dynamic-cursors.inputs.nixpkgs.follows = "hyprland";
   };
