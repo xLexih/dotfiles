@@ -1,0 +1,30 @@
+{
+  "nix.enableLanguageServer": true,
+  "nix.serverPath": "nixd",
+  "nix.serverSettings": {
+    "nixd": {
+      "nixpkgs": {
+        "expr": "import (builtins.getFlake(toString ./.)).inputs.nixpkgs { }"
+      },
+      "formatting": {
+        "command": ["alejandra"]
+      },
+      "options": {
+        "nixos": {
+          "expr": "let flake = builtins.getFlake(toString ./.); in flake.nixosConfigurations.laptop.options"
+        }
+      }
+    }
+  },
+  "nixEnvSelector.suggestion": false,
+  "nixEnvSelector.nixFile": "${workspaceFolder}/flake.nix",
+  "cSpell.words": [
+    "Gerg",
+    "notashelf",
+    "ollama"
+  ],
+  "[nix]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "jnoortheen.nix-ide"
+  }
+}

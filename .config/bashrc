@@ -1,0 +1,10 @@
+export PS1="\n\[\033[$PROMPT_COLOR\][\u@\h:\w]\\$\[\033[0m\] "
+alias battery-info="upower -i /org/freedesktop/UPower/devices/battery_BAT0"
+alias battery="upower -i /org/freedesktop/UPower/devices/battery_BAT0" # | rg 'time to|perce' | rg '(.+):\s*(.*)' -o -r '$2'"
+alias publicip="dig +short myip.opendns.com @resolver1.opendns.com"
+gpu () {
+    __NV_PRIME_RENDER_OFFLOAD=1 \
+    __GLX_VENDOR_LIBRARY_NAME=nvidia \
+    "$@"
+}
+eval "$(direnv hook bash)"

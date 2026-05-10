@@ -1,0 +1,3 @@
+configuration.nix
+module/program/custom/hid-send/hid-send
+out/
