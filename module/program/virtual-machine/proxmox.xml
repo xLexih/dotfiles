@@ -1,0 +1,22 @@
+<!--
+  
+  sudo virsh net-define proxmox.xml
+  sudo virsh net-start proxmox
+    sudo virsh net-autostart proxmox
+-->
+<network>
+  <name>proxmox</name>
+  <uuid>a261a64d-d9b0-4da8-a7df-19b4fb60d720</uuid>
+  <forward mode='nat' firewall='no'>
+    <nat>
+      <port start='1024' end='65535'/>
+    </nat>
+  </forward>
+  <bridge name='proxmoxbr0' stp='on' delay='0' hairpinMode='yes'/>
+  <mac address='aa:49:80:1f:72:db'/>
+  <ip address='192.168.123.1' netmask='255.255.255.0'>
+    <dhcp>
+      <range start='192.168.123.2' end='192.168.123.254'/>
+    </dhcp>
+  </ip>
+</network>
