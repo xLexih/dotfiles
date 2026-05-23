@@ -1,0 +1,2 @@
+[alias]
+    log2 = "!git log --color=always --pretty=format:\"%C(#b4befe)%h %C(#5a3d80)│ %C(#e0d0f0)%<(50,trunc)%s %C(#5a3d80)│ %C(#a6e3a1)%<|(77)%cr %C(#5a3d80)│ %C(#dbb0ff)%<(15)%an%Creset\" | awk '{printf \"%s%s\\033[0m\\n\", (NR%2?\"\\033[48;2;42;26;58m\":\"\\033[48;2;52;31;74m\"), $0}'"

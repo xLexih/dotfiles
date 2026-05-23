@@ -1,0 +1,22 @@
+{
+  "name": "bestagon-purple",
+  "displayName": "Bestagon Purple",
+  "description": "Dark purple theme",
+  "version": "1.0.0",
+  "publisher": "lexih",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Themes"
+  ],
+  "contributes": {
+    "themes": [
+      {
+        "label": "Bestagon Purple",
+        "uiTheme": "vs-dark",
+        "path": "./themes/bestagon-purple.json"
+      }
+    ]
+  }
+}

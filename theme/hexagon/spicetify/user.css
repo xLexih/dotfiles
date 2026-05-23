@@ -1,0 +1,193 @@
+:root {
+  --hexagon-panel: linear-gradient(180deg, var(--spice-main-elevated), var(--spice-main));
+  --hexagon-accent: linear-gradient(135deg, var(--spice-accent), var(--spice-accentbright));
+  --hexagon-outline: color-mix(in srgb, var(--spice-surface2) 60%, transparent);
+}
+
+:root body,
+:root .Root,
+:root .Root__top-container,
+:root .Root__main-view,
+:root .Root__nav-bar,
+:root .Root__right-sidebar,
+:root .Root__now-playing-bar {
+  background:
+    radial-gradient(circle at top right, rgba(196, 160, 255, 0.06), transparent 28%),
+    radial-gradient(circle at top left, rgba(168, 142, 224, 0.05), transparent 24%),
+    var(--spice-player) !important;
+  color: var(--spice-text);
+}
+
+:root .Root__main-view,
+:root .Root__nav-bar,
+:root .Root__right-sidebar,
+:root .main-yourLibraryX-libraryContainer,
+:root .main-home-homeHeader,
+:root .main-entityHeader-backgroundColor,
+:root .main-trackCreditsModal-container,
+:root .main-contextMenu-menu,
+:root .main-connectBar-connectBar,
+:root .main-nowPlayingView-section,
+:root .GenericModal__overlay .GenericModal {
+  background: var(--hexagon-panel) !important;
+  border: 1px solid var(--hexagon-outline);
+  box-shadow: 0 12px 32px rgba(10, 6, 16, 0.4);
+}
+
+:root .Root__nav-bar,
+:root .Root__right-sidebar,
+:root .main-yourLibraryX-libraryContainer {
+  border-radius: 18px;
+}
+
+:root .Root__main-view {
+  border-radius: 22px;
+}
+
+:root .main-topBar-background,
+:root .main-home-homeHeader,
+:root .main-actionBarBackground-background {
+  background: linear-gradient(180deg, rgba(45, 29, 62, 0.28), transparent 82%) !important;
+}
+
+:root .main-card-card,
+:root .main-trackList-trackListRow,
+:root .main-entityHeader-container,
+:root .main-contextMenu-menu,
+:root .main-rootlist-rootlistItem,
+:root .search-searchCategory-card,
+:root .x-searchBrowse-SearchBrowseCategory,
+:root .main-shelf-shelf {
+  border-radius: 14px !important;
+}
+
+:root .main-card-card,
+:root .search-searchCategory-card,
+:root .x-searchBrowse-SearchBrowseCategory,
+:root .main-trackList-trackListRow:hover,
+:root .main-trackList-trackListRow[aria-selected="true"] {
+  background-color: color-mix(in srgb, var(--spice-surface0) 80%, transparent) !important;
+  border: 1px solid color-mix(in srgb, var(--spice-surface2) 50%, transparent);
+}
+
+:root .main-trackList-trackListRow:hover {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--spice-accent) 16%, transparent);
+}
+
+:root .main-trackList-trackListRow[aria-selected="true"] {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--spice-accent) 10%, transparent), transparent 60%),
+    color-mix(in srgb, var(--spice-surface1) 85%, transparent) !important;
+}
+
+:root :is(
+  .main-trackList-rowSectionStart button,
+  .main-trackList-rowMainContent button,
+  .main-trackList-trackListRow button
+):is([aria-label="Play"], [aria-label^="Play "], [title="Play"]) {
+  background: transparent !important;
+  box-shadow: none !important;
+  border-color: transparent !important;
+}
+
+:root button[data-encore-id="buttonPrimary"]:not([aria-label="Play"]):not([aria-label="Pause"]):not([aria-label^="Play "]):not([aria-label^="Pause "]):not([aria-label*="Resume"]):not([title="Play"]):not([title="Pause"]) {
+  background: color-mix(in srgb, var(--spice-accent) 12%, var(--spice-surface1)) !important;
+  color: var(--spice-text) !important;
+  border: 1px solid color-mix(in srgb, var(--spice-accent) 28%, transparent) !important;
+  border-radius: 999px !important;
+  box-shadow: 0 4px 16px rgba(10, 6, 16, 0.25);
+}
+
+:root button[data-encore-id="buttonPrimary"]:not([aria-label="Play"]):not([aria-label="Pause"]):not([aria-label^="Play "]):not([aria-label^="Pause "]):not([aria-label*="Resume"]):not([title="Play"]):not([title="Pause"]):hover {
+  background: color-mix(in srgb, var(--spice-accent) 20%, var(--spice-surface1)) !important;
+  border-color: color-mix(in srgb, var(--spice-accent) 44%, transparent) !important;
+}
+
+:root .main-button-secondary,
+:root .main-topBar-button,
+:root .x-searchInput-searchInputInput,
+:root .main-dropDown-dropDown,
+:root .x-filterBox-filterInput {
+  background: color-mix(in srgb, var(--spice-surface0) 85%, transparent) !important;
+  color: var(--spice-text) !important;
+  border: 1px solid color-mix(in srgb, var(--spice-surface2) 50%, transparent);
+}
+
+:root .main-topBar-button:hover,
+:root .main-button-secondary:hover,
+:root .main-dropDown-dropDown:hover,
+:root .x-filterBox-filterInput:focus,
+:root .x-searchInput-searchInputInput:focus {
+  border-color: var(--spice-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--spice-accent) 12%, transparent);
+}
+
+:root .main-navBar-navBarLinkActive,
+:root .main-yourLibraryX-navLinkActive,
+:root .main-yourLibraryX-listItem:hover,
+:root .main-rootlist-rootlistItemLink:hover {
+  background: color-mix(in srgb, var(--spice-surface1) 88%, transparent) !important;
+  color: var(--spice-text) !important;
+}
+
+:root .main-navBar-navBarLinkActive::before {
+  background: var(--spice-accent) !important;
+  border-radius: 99px;
+}
+
+:root .main-home-filterChipsSection-chip,
+:root .main-tag-tag,
+:root .encore-inverted-light-set {
+  background: color-mix(in srgb, var(--spice-surface0) 88%, transparent) !important;
+  color: var(--spice-subtext) !important;
+}
+
+:root .main-home-filterChipsSection-chip[aria-checked="true"],
+:root .main-tag-active {
+  background: color-mix(in srgb, var(--spice-accent) 14%, var(--spice-surface1)) !important;
+  color: var(--spice-text) !important;
+}
+
+:root .playback-bar,
+:root .main-nowPlayingBar-container {
+  background: transparent !important;
+  border-top: 1px solid color-mix(in srgb, var(--spice-surface2) 50%, transparent);
+  box-shadow: none !important;
+}
+
+:root .progress-bar__fg,
+:root .volume-bar__fg,
+:root .x-progressBar-progressBarBg > div > div {
+  background: var(--spice-accent) !important;
+}
+
+:root .progress-bar,
+:root .volume-bar__bg,
+:root .x-progressBar-progressBarBg {
+  background: color-mix(in srgb, var(--spice-surface1) 70%, transparent) !important;
+}
+
+:root .main-contextMenu-menu,
+:root .main-trackCreditsModal-container,
+:root .GenericModal__overlay .GenericModal {
+  backdrop-filter: blur(16px);
+}
+
+:root .main-contextMenu-menuItemButton:hover,
+:root .main-contextMenu-menuItemButton[aria-checked="true"],
+:root .main-trackList-trackListRow.main-trackList-selected {
+  background: color-mix(in srgb, var(--spice-accent) 12%, var(--spice-surface1)) !important;
+  color: var(--spice-text) !important;
+}
+
+:root .main-buddyFeed-activityMetadata,
+:root .TypeElement-mesto-type,
+:root .main-type-mesto {
+  color: var(--spice-subtext) !important;
+}
+
+:root .main-type-balladBold,
+:root .main-type-canon,
+:root .main-trackList-rowTitle {
+  color: var(--spice-text) !important;
+}
