@@ -33,6 +33,12 @@ in {
           gyre-fonts
           liberation_ttf
           unifont
+          nerd-fonts.jetbrains-mono
+          nerd-fonts.fira-code
+          nerd-fonts.hack
+          nerd-fonts.meslo-lg
+          nerd-fonts.cascadia-code
+          nerd-fonts.iosevka
         ];
 
     defaultFonts = {
