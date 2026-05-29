@@ -11,11 +11,16 @@ in {
   };
 
   config = lib.mkIf (cfg.enable && cfg.intel.enable) {
+    boot.kernelParams = [
+      "i915.enable_fbc=1"
+      "i915.enable_psr=1"
+    ];
+
     hardware.graphics.extraPackages = with pkgs; [
-      intel-media-driver # iHD driver
-      vpl-gpu-rt # video processing
-      intel-vaapi-driver # i965 fallback
-      libvdpau-va-gl # VDPAU via VA-API
+      intel-media-driver
+      vpl-gpu-rt
+      intel-vaapi-driver
+      libvdpau-va-gl
     ];
     environment.variables.LIBVA_DRIVER_NAME = "iHD";
   };

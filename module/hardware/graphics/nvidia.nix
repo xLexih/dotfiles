@@ -25,6 +25,11 @@ in {
         default = "";
         description = "PCI bus ID of the NVIDIA dGPU (e.g. PCI:1:0:0)";
       };
+      blacklistHdmiAudio = lib.mkOption {
+        type = lib.types.bool;
+        default = cfg.nvidia.hybrid.enable;
+        description = "Blacklist NVIDIA HDMI audio to allow full GPU power-down.";
+      };
     };
   };
 
@@ -69,21 +74,20 @@ in {
       "nvidia.NVreg_PreserveVideoMemoryAllocations=1"
     ];
 
-    boot.kernelModules = ["nvidia" "nvidia_drm" "nvidia_uvm" "nvidia_modeset"];
+    boot.blacklistedKernelModules = lib.mkIf cfg.nvidia.hybrid.blacklistHdmiAudio [
+      "snd_hda_codec_nvhdmi"
+    ];
 
     environment.variables = {
-      GBM_BACKEND = "nvidia-drm";
-      __GLX_VENDOR_LIBRARY_NAME = "nvidia";
-      LIBVA_DRIVER_NAME = lib.mkForce "nvidia";
       WLR_NO_HARDWARE_CURSORS = "1";
       __GL_THREADED_OPTIMIZATION = "1";
       __GL_SHADER_CACHE = "1";
     };
 
     environment.systemPackages = with pkgs; [
-      libva # hardware video acceleration
-      libva-utils # vainfo diagnostic tool
-      nvtopPackages.nvidia # GPU usage monitor
+      libva
+      libva-utils
+      nvtopPackages.nvidia
     ];
   };
 }

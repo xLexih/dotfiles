@@ -37,7 +37,6 @@ in {
           nerd-fonts.fira-code
           nerd-fonts.hack
           nerd-fonts.meslo-lg
-          nerd-fonts.cascadia-code
           nerd-fonts.iosevka
         ];
 
