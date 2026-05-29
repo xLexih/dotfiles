@@ -1,4 +1,5 @@
 <div align="center"> 
+
 # Dotfiles
 
 **Declarative NixOS flake with layered dotfile management and per-host configuration**
@@ -49,50 +50,36 @@ Software lives in one of three places depending on what it needs:
 
 Themes are discovered from `theme/<name>/default.nix`. Enabling exactly one `modules.theme.<name>` option generates the GTK, Qt, Firefox, Kitty, and palette files for each configured user.
 
-## Repository Structure
+## Rough Repository Structure
 
 ```
 .
-├── flake.nix                    # Entry point
-├── .config/                     # Global dotfiles (layer 1)
-│   ├── hypr/
-│   ├── kitty/
-│   ├── quickshell/
-├── host/                        # Per-machine configuration
-│   ├── desktop/
-│   │   ├── .config/hypr/        # Host dotfiles (layer 2)
-│   │   ├── boot/
-│   │   ├── hardware/
-│   │   └── storage/
-│   └── laptop/
-│       ├── .config/hypr/
-│       ├── boot/
-│       ├── hardware/
-│       └── storage/
-├── user/lex/                    # User packages and dotfiles (layer 3)
-│   ├── default.nix
-│   └── .config/
-├── module/                      # Reusable NixOS modules
-│   ├── base/
-│   ├── hardware/
-│   ├── network/
-│   ├── nix/
-│   ├── performance/
-│   ├── session/
-│   └── software/               # System-level software modules
-│       ├── docker/
-│       ├── obs/
-│       ├── sunshine/
-│       ├── virtual-machine/
-│       └── waydroid/
-├── overlay/                     # Package overrides and custom builds
-├── theme/                       # Theme registry, helpers, and generated toolkit files
-└── lib/                         # Nix helpers (mkSystem, dotfile layering)
+├── .config/               # Global dotfiles shared across all hosts/users
+├── host/<device_name>     # Per-machine configuration
+│   ├── .config/           # Host-specific dotfile overrides
+│   ├── boot/              # Bootloader and initrd
+│   ├── hardware/          # Machine-specific hardware (disks, peripherals)
+│   └── storage/           # Filesystem mounts and swap
+├── lib/                   # Nix helpers (mkSystem, dotfile layering logic)
+├── module/                # Reusable NixOS modules
+│   ├── base/              # Core system defaults
+│   ├── hardware/          # CPU, GPU, audio, kernel, power
+│   ├── network/           # Networking and firewall
+│   ├── nix/               # Nix daemon and store settings
+│   ├── performance/       # Schedulers, memory, tuning
+│   ├── session/           # Display manager and window manager
+│   └── software/          # System-level services (docker, VMs, etc.)
+├── overlay/               # Custom package builds and patches
+├── theme/<theme_name>     # Theme definitions, palette generation, toolkit outputs
+├── user/<user_name>/      # User packages and personal dotfiles
+│   ├── .config/           # User-specific dotfile overrides
+└── flake.nix              # Entry point — hosts, inputs, checks
 ```
 
 ## Validation
 
 ```bash
-nix eval path:.#nixosConfigurations.laptop.config.system.build.toplevel.drvPath --raw
-nix eval path:.#nixosConfigurations.desktop.config.system.build.toplevel.drvPath --raw
+nix flake check path:.
 ```
+
+This runs all checks defined in the flake: evaluation of each host configuration, contract assertions (hostName, stateVersion, CPU vendor, theme), formatting with Alejandra, and import-tree hygiene (ensuring non-default Nix files are either prefixed with `_` or referenced somewhere).
