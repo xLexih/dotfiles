@@ -25,6 +25,7 @@ in
             overlays =
               [
                 inputs.nix-index-database.overlays.nix-index
+                inputs.nix-cachyos-kernel.overlays.default
               ]
               ++ (import (inputs.self + "/overlay"))
               ++ [

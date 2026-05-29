@@ -18,16 +18,26 @@ in {
       }
     ];
 
-    services.power-profiles-daemon.enable = false; # conflicts with tlp
+    services.power-profiles-daemon.enable = false;
     services.upower.enable = true;
+    services.thermald.enable = cpuVendor == "intel";
 
     boot.kernelParams =
       [
-        "pcie_aspm=powersupersave" # aggressive pcie link power saving
+        "pcie_aspm=powersupersave"
+        "mem_sleep_default=deep"
+        "nvme_core.default_ps_max_latency_us=5500"
       ]
       ++ lib.optionals (cpuVendor == "intel") [
-        "intel_pstate=active" # Intel hardware p-state driver
+        "intel_pstate=active"
       ];
+
+    services.logind.settings.Login = {
+      HandleLidSwitch = "suspend";
+      HandleLidSwitchExternalPower = "lock";
+    };
+
+    networking.networkmanager.wifi.powersave = lib.mkForce true;
 
     services.tlp = {
       enable = true;
