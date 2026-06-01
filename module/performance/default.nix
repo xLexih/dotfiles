@@ -17,9 +17,9 @@ in {
     boot.initrd.compressor = "zstd";
 
     boot.kernel.sysctl = {
-      "vm.swappiness" = 10; # prefer RAM over swap
-      "kernel.nmi_watchdog" = 0; # save some overhead
-      "net.core.default_qdisc" = "fq_codel"; # low-latency packet scheduling
+      "vm.swappiness" = 10;
+      "kernel.nmi_watchdog" = 0;
+      "net.core.default_qdisc" = "fq_codel";
       "net.ipv4.tcp_congestion_control" = "bbr";
     };
 
@@ -34,5 +34,21 @@ in {
     };
 
     services.syslogd.enable = false;
+
+    # Redundant/on-demand services
+    services.avahi.enable = lib.mkForce false;
+    services.openssh.enable = lib.mkForce false;
+    systemd.services.nscd.wantedBy = lib.mkForce [];
+    systemd.services.wpa_supplicant.wantedBy = lib.mkForce [];
+    systemd.services.fwupd.wantedBy = lib.mkForce [];
+    systemd.sockets.fwupd.wantedBy = lib.mkForce [];
+
+    # Socket-activated / manual-start only
+    systemd.services.libvirtd.wantedBy =
+      lib.mkIf config.modules.software.virtual-machine.enable (lib.mkForce []);
+    systemd.services.waydroid-container.wantedBy =
+      lib.mkIf config.modules.software.waydroid.enable (lib.mkForce []);
+    systemd.services.spice-vdagentd.wantedBy =
+      lib.mkIf config.modules.software.virtual-machine.enable (lib.mkForce []);
   };
 }

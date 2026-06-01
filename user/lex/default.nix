@@ -76,12 +76,13 @@ in {
         mirrord
         devspace
 
-        # networking
+        # networking & diagnostics
         nettools
         tcpdump
         traceroute
         mtr
         dig
+        powertop
 
         # gaming
         prismlauncher
@@ -166,6 +167,9 @@ in {
           "layout.css.color-mix-multi-color.enabled" = true;
           "widget.wayland.fractional-scale.enabled" = false;
           "dom.ipc.processCount" = 4;
+          "media.ffmpeg.vaapi.enabled" = true;
+          "media.hardware-video-decoding.force-enabled" = true;
+          "widget.dmabuf.force-enabled" = true;
           "ui.systemUsesDarkTheme" = true;
           "ui.highlight" = activeTheme.ui.accent;
           "ui.highlighttext" = activeTheme.ui.bg;
