@@ -1,0 +1,3 @@
+[submodule "host/homelab"]
+	path = host/homelab
+	url = git@github.com:xLexih/homelab
