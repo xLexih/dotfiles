@@ -6,7 +6,7 @@
   ];
 
   networking.hostName = "desktop";
-  system.stateVersion = "25.11";
+  system.stateVersion = "26.05";
 
   modules.hardware.cpu.vendor = "amd";
   modules.hardware.kernel.package = "xanmod_latest";

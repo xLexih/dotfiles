@@ -1,6 +1,10 @@
 {inputs, ...}: {
   environment.etc."nix/inputs/nixpkgs".source = inputs.nixpkgs;
 
+  nixpkgs.config.permittedInsecurePackages = [
+    "pnpm-10.29.2"
+  ];
+
   nix = {
     settings = {
       auto-optimise-store = true;

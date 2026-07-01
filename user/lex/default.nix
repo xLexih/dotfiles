@@ -34,8 +34,14 @@ in {
         alacritty
         nautilus
         alejandra
+        atuin
+        delta
         direnv
         fzf
+        lazygit
+        nh
+        nix-direnv
+        quickshell
         hid-send
         nix-tree
         nil
@@ -89,7 +95,7 @@ in {
         lutris-custom
 
         # remote
-        rustdesk
+        # rustdesk
 
         # C/C++
         gcc
@@ -102,6 +108,7 @@ in {
         mold
         pkg-config
         qt6.qtbase
+        qt6.qtdeclarative
 
         # Go
         go
@@ -111,13 +118,15 @@ in {
 
         # Java
         jdk
+        jetbrains.jdk
+        jetbrains.jdk-21
+        jetbrains.idea
         maven
         gradle
 
         # JavaScript / TypeScript
         nodejs
         yarn
-        pnpm
 
         # Python
         python3
@@ -135,6 +144,8 @@ in {
       enable = true;
       nvidia.enable = true;
     };
+    modules.software.gaming.enable = true;
+    modules.software.kdeconnect.enable = true;
     modules.software.netclient.enable = false;
     modules.software.obs.enable = true;
     modules.software.sunshine.enable = true;
@@ -149,6 +160,12 @@ in {
         init.defaultBranch = "main";
         pull.rebase = true;
         push.autoSetupRemote = true;
+        core.pager = "delta";
+        interactive.diffFilter = "delta --color-only";
+        delta.navigate = true;
+        delta.side-by-side = true;
+        merge.conflictstyle = "zdiff3";
+        diff.colorMoved = "default";
       };
     };
 

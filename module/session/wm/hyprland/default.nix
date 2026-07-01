@@ -64,7 +64,7 @@ in {
       MOZ_ENABLE_WAYLAND = "1";
       GDK_BACKEND = "wayland";
       QT_QPA_PLATFORM = "wayland;xcb";
-      SDL_VIDEODRIVER = "wayland";
+      #SDL_VIDEODRIVER = "wayland";
       CLUTTER_BACKEND = "wayland";
       XDG_CURRENT_DESKTOP = "Hyprland";
       XDG_SESSION_DESKTOP = "Hyprland";

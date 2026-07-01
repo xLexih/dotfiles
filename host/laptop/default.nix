@@ -9,7 +9,7 @@
   ];
 
   networking.hostName = "laptop";
-  system.stateVersion = "25.11";
+  system.stateVersion = "26.05";
 
   modules.hardware.cpu.vendor = "intel";
   modules.hardware.kernel.kernelPackages = pkgs.cachyosKernels.linuxPackages-cachyos-bore-x86_64-v3;

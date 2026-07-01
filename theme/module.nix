@@ -59,7 +59,10 @@
     '';
   mkThemedHjemUser = userName: let
     layeredDotfiles = dotfilesLib.mkHjemDotfiles {
-      commonSubstitutions = themeDotfileSubstitutions;
+      commonSubstitutions = themeDotfileSubstitutions // {
+        "{{bash-preexec}}" = "${pkgs.bash-preexec}";
+        "{{nix-direnv}}" = "${pkgs.nix-direnv}";
+      };
       hostName = config.networking.hostName;
       inherit userName;
     };
