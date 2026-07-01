@@ -822,6 +822,7 @@
     userJs = ''
       user_pref("toolkit.legacyUserProfileCustomizations.stylesheets", true);
       user_pref("svg.context-properties.content.enabled", true);
+      user_pref("widget.gtk.native-context-menus", false);
       user_pref("ui.highlight", "${t.accent}");
       user_pref("ui.highlighttext", "${t.bg}");
     '';
@@ -849,21 +850,40 @@
         }
       }
 
-      #root.root {
+      #root {
         --color-accent-primary: ${firefoxAccent} !important;
         --frame-bg: ${t.bg} !important;
         --frame-fg: var(--color-accent-primary) !important;
         --toolbar-fg: var(--frame-fg) !important;
+        --toolbar-fg-active: var(--color-accent-primary) !important;
         --border: ${t.bg} !important;
         --notification-bg: ${t.bg} !important;
+        --notification-fg: ${t.fg} !important;
         --ctx-menu-bg: ${t.bg} !important;
-        --ctx-menu-fg: var(--color-accent-primary);
+        --ctx-menu-fg: var(--color-accent-primary) !important;
         --ctx-menu-separator: ${t.overlay} !important;
         --popup-bg: ${t.bg} !important;
+        --popup-fg: ${t.fg} !important;
         --tabs-normal-fg: color-mix(in oklab, ${firefoxAccent}, transparent 35%) !important;
+        --tabs-normal-bg: transparent !important;
         --tabs-activated-fg: var(--color-accent-primary) !important;
         --tabs-activated-bg: color-mix(in oklab, ${firefoxAccent}, transparent 75%) !important;
+        --tabs-progress-bg: var(--color-accent-primary) !important;
         --toolbar-bg: ${t.bg} !important;
+        --nav-btn-accent: var(--color-accent-primary) !important;
+
+        --s-accent: var(--color-accent-primary) !important;
+        --s-frame-bg: ${t.bg} !important;
+        --s-frame-fg: var(--color-accent-primary) !important;
+        --s-toolbar-bg: ${t.bg} !important;
+        --s-toolbar-fg: var(--color-accent-primary) !important;
+        --s-toolbar-border: ${t.bg} !important;
+        --s-popup-bg: ${t.bg} !important;
+        --s-popup-fg: ${t.fg} !important;
+        --s-popup-border: ${t.overlay} !important;
+        --s-act-el-bg: color-mix(in oklab, ${firefoxAccent}, transparent 75%) !important;
+        --s-act-el-fg: var(--color-accent-primary) !important;
+        --s-act-el-border: var(--color-accent-primary) !important;
       }
     '';
 
@@ -876,19 +896,84 @@
         --lwt-text-color: ${t.fg} !important;
         --lwt-toolbar-field-background-color: ${firefoxDarkBg} !important;
         --lwt-toolbar-field-color: ${firefoxAccent} !important;
+        --lwt-toolbar-field-focus-color: ${firefoxAccent} !important;
+        --lwt-toolbar-field-border-color: ${t.bg} !important;
+        --lwt-toolbar-field-highlight: ${t.accent} !important;
+        --lwt-toolbar-field-highlight-text: ${t.bg} !important;
         --color-accent-primary: ${firefoxAccent} !important;
+        --color-accent-primary-hover: ${firefoxAccent} !important;
+        --color-accent-primary-active: ${firefoxAccent} !important;
+        --focus-outline-color: var(--color-accent-primary) !important;
+        --border-color-selected: var(--color-accent-primary) !important;
         --toolbar-color: var(--color-accent-primary) !important;
+        --toolbar-background-color: ${t.bg} !important;
+        --toolbox-background-color: ${t.bg} !important;
+        --toolbox-text-color: var(--color-accent-primary) !important;
+        --toolbox-text-color-inactive: color-mix(in oklab, var(--color-accent-primary), transparent 35%) !important;
         --toolbarbutton-icon-fill: var(--color-accent-primary) !important;
         --toolbarbutton-icon-fill-attention: var(--color-accent-primary) !important;
+        --toolbarbutton-background-color-hover: color-mix(in oklab, var(--color-accent-primary), transparent 88%) !important;
+        --toolbarbutton-background-color-active: color-mix(in oklab, var(--color-accent-primary), transparent 75%) !important;
+        --toolbarbutton-outline-color-hover: color-mix(in oklab, var(--color-accent-primary), transparent 45%) !important;
+        --toolbarbutton-outline-color-active: var(--color-accent-primary) !important;
+        --toolbarbutton-outline-color-selected: var(--color-accent-primary) !important;
         --toolbar-field-background-color: ${firefoxDarkBg} !important;
         --toolbar-field-focus-background-color: ${firefoxDarkBg} !important;
+        --toolbar-field-border-color: ${t.bg} !important;
+        --toolbar-field-border-color-focus: var(--color-accent-primary) !important;
         --toolbar-field-color: var(--color-accent-primary) !important;
         --toolbar-field-focus-color: var(--color-accent-primary) !important;
+        --toolbar-field-text-color: var(--color-accent-primary) !important;
+        --toolbar-field-text-color-focus: var(--color-accent-primary) !important;
+        --urlbar-box-background-color: ${firefoxDarkBg} !important;
+        --urlbar-box-background-color-focus: ${firefoxDarkBg} !important;
+        --urlbar-box-background-color-hover: ${t.surface} !important;
+        --urlbar-box-background-color-active: ${t.overlay} !important;
+        --urlbar-box-text-color: var(--color-accent-primary) !important;
+        --urlbar-box-text-color-hover: ${t.fg} !important;
         --urlbar-box-bgcolor: ${firefoxDarkBg} !important;
+        --urlbarview-background-color-hover: color-mix(in oklab, var(--color-accent-primary), transparent 80%) !important;
+        --urlbarview-background-color-selected: color-mix(in oklab, var(--color-accent-primary), transparent 50%) !important;
+        --urlbarview-text-color-selected: ${t.fg} !important;
+        --urlbarview-text-color-action: var(--color-accent-primary) !important;
         --urlbarView-highlight-background: color-mix(in oklab, var(--color-accent-primary), transparent 50%) !important;
         --urlbarView-action-color: var(--color-accent-primary) !important;
+        --urlbarView-secondary-text-color: color-mix(in oklab, var(--color-accent-primary), transparent 35%) !important;
+        --link-color: ${t.accentAlt} !important;
         --chrome-content-separator-color: var(--color-accent-primary) !important;
         --arrowpanel-border-color: var(--color-accent-primary) !important;
+        --arrowpanel-background: ${t.bg} !important;
+        --arrowpanel-color: ${t.fg} !important;
+        --arrowpanel-dimmed: ${t.surface} !important;
+        --arrowpanel-dimmed-further: ${t.overlay} !important;
+        --panel-background: ${t.bg} !important;
+        --panel-background-color: ${t.bg} !important;
+        --panel-color: ${t.fg} !important;
+        --panel-text-color: ${t.fg} !important;
+        --panel-border-color: ${t.overlay} !important;
+        --panel-separator-color: ${t.overlay} !important;
+        --panel-description-color: color-mix(in oklab, ${t.fg}, transparent 30%) !important;
+        --panel-item-hover-bgcolor: ${t.surface} !important;
+        --panel-item-active-bgcolor: ${t.overlay} !important;
+        --panel-item-hover-color: ${t.fg} !important;
+        --panel-item-active-color: ${t.fg} !important;
+        --menu-background-color: ${t.bg} !important;
+        --menu-color: ${t.fg} !important;
+        --menuitem-hover-background-color: ${t.surface} !important;
+        --menuitem-disabled-hover-background-color: transparent !important;
+        --menuitem-icon-fill: var(--color-accent-primary) !important;
+        --text-color-disabled: color-mix(in oklab, ${t.fg}, transparent 55%) !important;
+        --button-background-color: ${t.surface} !important;
+        --button-background-color-hover: ${t.overlay} !important;
+        --button-background-color-active: color-mix(in oklab, var(--color-accent-primary), transparent 70%) !important;
+        --button-text-color: ${t.fg} !important;
+        --button-text-color-primary: ${t.bg} !important;
+        --input-bgcolor: ${firefoxDarkBg} !important;
+        --input-color: var(--color-accent-primary) !important;
+        --input-border-color: ${t.overlay} !important;
+        --sidebar-background-color: ${t.bg} !important;
+        --sidebar-text-color: ${t.fg} !important;
+        --sidebar-border-color: ${t.bg} !important;
         --toolbarbutton-special-border-radius: 0px 0px 15px 15px / 15px !important;
 
         --s-frame-bg: ${t.bg} !important;
@@ -912,6 +997,22 @@
         color: var(--color-accent-primary) !important;
       }
 
+      .urlbar-background,
+      #urlbar:is([focused], [open]) > .urlbar-background,
+      #searchbar,
+      #searchbar:focus-within,
+      #searchbar-new > .urlbar-background {
+        background-color: ${firefoxDarkBg} !important;
+        border-color: var(--toolbar-field-border-color-focus) !important;
+        box-shadow: none !important;
+      }
+
+      #urlbar:is([focused], [open]) > .urlbar-input-container,
+      #searchbar:focus-within,
+      #searchbar-new:is([focused], [open]) > .urlbar-input-container {
+        color: var(--color-accent-primary) !important;
+      }
+
       .urlbarView-row:is([selected], [row-selectable]:hover) {
         background-color: color-mix(in oklab, ${t.accent}, transparent 50%) !important;
       }
@@ -920,7 +1021,7 @@
         color: ${t.fg} !important;
       }
 
-      #urlbar:is([focused], [open])[breakout-extend] > #urlbar-background {
+      #urlbar:is([focused], [open])[breakout-extend] > .urlbar-background {
         border-radius: var(--toolbarbutton-special-border-radius) !important;
       }
 
@@ -930,36 +1031,72 @@
       }
 
       #TabsToolbar,
+      #sidebar-main,
       #sidebar-header,
-      #sidebar-splitter-disabled {
+      #sidebar-launcher-splitter {
         display: none !important;
       }
 
       menupopup,
       panel {
         --panel-background: ${t.bg} !important;
+        --panel-background-color: ${t.bg} !important;
         --panel-color: ${t.fg} !important;
+        --panel-text-color: ${t.fg} !important;
         --panel-border-color: ${t.overlay} !important;
+        --panel-separator-color: ${t.overlay} !important;
+        --panel-box-shadow: 0 4px 14px ${t.shadow} !important;
+        --menuitem-icon-fill: var(--color-accent-primary) !important;
+        --menuitem-border-radius: 4px !important;
+        --menuitem-padding: 0.45em 0.85em !important;
       }
 
       menupopup {
+        --background-color-canvas: ${t.bg} !important;
+        appearance: none !important;
+        background: ${t.bg} !important;
         background-color: ${t.bg} !important;
         color: ${t.fg} !important;
-        border: none !important;
+        border: 1px solid ${t.overlay} !important;
         box-shadow: 0 4px 12px ${t.shadow} !important;
       }
 
+      menupopup::part(content),
+      panel::part(content) {
+        background: ${t.bg} !important;
+        color: ${t.fg} !important;
+        border-color: ${t.overlay} !important;
+        box-shadow: 0 4px 14px ${t.shadow} !important;
+      }
+
       menuitem,
-      menu {
+      menu,
+      menucaption {
+        color: ${t.fg} !important;
+        fill: var(--color-accent-primary) !important;
+      }
+
+      :is(menuitem, menu):is(:hover, [_moz-menuactive="true"], [selected="true"]):not([disabled="true"]) {
+        appearance: none !important;
+        background-color: ${t.surface} !important;
         color: ${t.fg} !important;
       }
 
-      :is(menuitem, menu):is(:hover, [_moz-menuactive="true"]) {
-        background-color: ${t.overlay} !important;
-        color: ${t.fg} !important;
+      :is(menuitem, menu)[disabled="true"],
+      :is(menuitem, menu)[disabled="true"] > :is(.menu-text, .menu-accel) {
+        color: color-mix(in oklab, ${t.fg}, transparent 55%) !important;
       }
 
-      menuseparator {
+      .menu-icon,
+      .menu-right,
+      .menu-accel,
+      menupopup > menu::after {
+        fill: var(--color-accent-primary) !important;
+        color: var(--color-accent-primary) !important;
+      }
+
+      menuseparator,
+      toolbarseparator {
         border-color: ${t.overlay} !important;
       }
     '';

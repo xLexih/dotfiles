@@ -183,6 +183,7 @@ in {
           "svg.context-properties.content.enabled" = true;
           "layout.css.color-mix-multi-color.enabled" = true;
           "widget.wayland.fractional-scale.enabled" = false;
+          "widget.gtk.native-context-menus" = false;
           "dom.ipc.processCount" = 4;
           "media.ffmpeg.vaapi.enabled" = true;
           "media.hardware-video-decoding.force-enabled" = true;
