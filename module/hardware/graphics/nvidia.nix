@@ -40,7 +40,7 @@ in {
       open = true;
       modesetting.enable = true;
       nvidiaSettings = true;
-      package = config.boot.kernelPackages.nvidiaPackages.beta;
+      package = config.boot.kernelPackages.nvidiaPackages.production;
       dynamicBoost.enable = cfg.nvidia.hybrid.enable && !config.modules.hardware.power.enable;
       powerManagement = {
         enable = cfg.nvidia.hybrid.enable;

@@ -101,7 +101,7 @@
         inactiveFg = ui.fgMuted;
       };
       normal = {
-        black = ui.bg;
+        black = ui.overlay;
         red = ui.red;
         green = ui.green;
         yellow = ui.yellow;
@@ -111,7 +111,7 @@
         white = ui.fg;
       };
       bright = {
-        black = ui.overlay;
+        black = ui.fgMuted;
         red = ui.red;
         green = ui.green;
         yellow = ui.yellow;

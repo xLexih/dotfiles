@@ -45,9 +45,9 @@ alias battery="upower -i /org/freedesktop/UPower/devices/battery_BAT0" # | rg 't
 
 alias publicip="dig +short myip.opendns.com @resolver1.opendns.com"
 
-alias ls="eza --icons --git"
-alias l="eza -la --icons --git"
-alias tree="eza --tree --icons --git"
+alias ls="eza --icons --git --group-directories-first"
+alias l="eza -la --icons --git --group-directories-first"
+alias tree="eza --tree --icons --git --group-directories-first"
 
 wifi_full_restart () {
     sudo ip link set wlo1 down

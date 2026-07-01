@@ -90,7 +90,8 @@
 
       pkief.material-icon-theme
       moonbloom.moonbloom-theme
-      wayou.vscode-todo-highlight
+#      jgclark.vscode-todo-highlight
+
       adpyke.codesnap
 
       supermaven.supermaven
@@ -103,6 +104,10 @@
     ])
     ++ [uni.vadimcn.vscode-lldb]
     ++ final.lib.optional (themedExtension != null) themedExtension
+    ++ (with uni; [
+      jgclark.vscode-todo-highlight
+      biomejs.biome
+    ])
     ++ (with osx; [
       webfreak.code-d
     ]);

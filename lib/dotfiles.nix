@@ -3,7 +3,44 @@
   self ? ../.,
 }: let
   repoRoot = self;
-  warningLine = "# Changes to this file are temporary, they get lost upon a nixos rebuild\n";
+  warningText = "Changes to this file are temporary, they get lost upon a nixos rebuild";
+
+  commentStyleFor = relPath:
+    if lib.any (suffix: lib.hasSuffix suffix relPath) [
+      ".json"
+      ".jsonc"
+      ".js"
+      ".ts"
+      ".css"
+      ".scss"
+      ".qss"
+    ]
+    then "slashes"
+    else if
+      relPath == "bashrc"
+      || relPath == "git/config"
+      || lib.any (suffix: lib.hasSuffix suffix relPath) [
+        ".conf"
+        ".ini"
+        ".toml"
+        ".yaml"
+        ".yml"
+        ".sh"
+        ".bash"
+        ".zsh"
+        ".nix"
+      ]
+    then "hash"
+    else null;
+
+  warningLineFor = relPath: let
+    style = commentStyleFor relPath;
+  in
+    if style == "hash"
+    then "# ${warningText}\n"
+    else if style == "slashes"
+    then "// ${warningText}\n"
+    else "";
 
   last = list: builtins.elemAt list (builtins.length list - 1);
 
@@ -59,20 +96,7 @@
     then "override"
     else "merge";
 
-  supportsHashComment = relPath:
-    relPath
-    == "bashrc"
-    || relPath == "git/config"
-    || lib.any (suffix: lib.hasSuffix suffix relPath) [
-      ".conf"
-      ".ini"
-      ".toml"
-      ".yaml"
-      ".yml"
-      ".sh"
-      ".bash"
-      ".zsh"
-    ];
+  supportsComment = relPath: (commentStyleFor relPath) != null;
 
   ensureTrailingNewline = text:
     if lib.hasSuffix "\n" text
@@ -93,10 +117,7 @@
         (builtins.attrValues substitutions)
         text;
     renderedLayers = map (layer: applySubstitutions (builtins.readFile layer)) layers;
-    prefix =
-      if supportsHashComment relPath
-      then warningLine
-      else "";
+    prefix = warningLineFor relPath;
   in
     if modeFor relPath == "override"
     then prefix + (last renderedLayers)
@@ -115,7 +136,7 @@
   in
     if layers == []
     then throw "No layered dotfile layers found for ${relPath}"
-    else if modeFor relPath == "override" && substitutions == {} && !supportsHashComment relPath
+    else if modeFor relPath == "override" && substitutions == {} && !supportsComment relPath
     then {source = last layers;}
     else {
       type = "copy";

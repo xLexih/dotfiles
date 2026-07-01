@@ -1,0 +1,152 @@
+{
+  "workbench.view.showQuietly": {
+    "workbench.panel.output": true
+  },
+  "redhat.telemetry.enabled": false,
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[html]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "qt-core.additionalQtPaths": [
+    {
+      "name": "Qt-6.10.0-linux-g++_from_PATH",
+      "path": "/etc/profiles/per-user/${env:USER}/bin/qtpaths"
+    }
+  ],
+  "clangd.arguments": [
+    "--compile-commands-dir=${workspaceFolder}/build",
+    "--query-driver=/nix/store/*clang*/bin/clang,/nix/store/*clang*/bin/clang++,/etc/profiles/per-user/${env:USER}/bin/clang,/etc/profiles/per-user/${env:USER}/bin/clang++",
+    "--background-index",
+    "--clang-tidy"
+  ],
+  "cmake.configureArgs": [],
+  "[cpp]": {
+    "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
+  },
+  "nix.enableLanguageServer": true,
+  "nix.hiddenLanguageServerErrors": ["textDocument/definition"],
+  "nix.serverPath": "nixd",
+  "nix.formatterPath": "alejandra",
+  "nix.serverSettings": {
+    "nixd": {
+      "nixpkgs": {
+        "expr": "import (builtins.getFlake \"/home/lex/dotfiles\").inputs.nixpkgs { }"
+      },
+      "formatting": {
+        "command": ["alejandra"]
+      },
+      "options": {
+        "nixos": {},
+        "hjem": {}
+      }
+    }
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "qt-qml.doNotAskForQmllsDownload": true,
+  "qt-qml.qmlls.customExePath": "/etc/profiles/per-user/${env:USER}/bin/qmlls",
+  "editor.gotoLocation.multipleDefinitions": "goto",
+  "nuxtr.vueFiles.style.alwaysScoped": true,
+  "prettier.vueIndentScriptAndStyle": true,
+  "prettier.printWidth": 120,
+  "prettier.singleQuote": false,
+  "prettier.semi": true,
+  "vue.autoInsert.dotValue": true,
+  "vue.format.style.initialIndent": true,
+  "vue.format.script.initialIndent": false,
+  "vue.format.template.initialIndent": false,
+  "vue.inlayHints.inlineHandlerLeading": true,
+  "vue.inlayHints.destructuredProps": true,
+  "vue.inlayHints.missingProps": true,
+  "vue.inlayHints.optionsWrapper": true,
+  "vue.inlayHints.vBindShorthand": true,
+  "vue.trace.server": "verbose",
+  "[vue]": {
+    "editor.defaultFormatter": "Vue.volar"
+  },
+  "nuxtr.defaultPackageManager": "pnpm",
+  "nuxtr.openItemsAfterCreation": true,
+  "js/ts.inlayHints.functionLikeReturnTypes.enabled": true,
+  "js/ts.inlayHints.propertyDeclarationTypes.enabled": true,
+  "js/ts.inlayHints.variableTypes.enabled": true,
+  "python.languageServer": "Pylance",
+  "python.venvFolders": ["~/.cache/pypoetry/virtualenvs"],
+  "debugpy.showPythonInlineValues": true,
+  "[nix]": {
+    "editor.defaultFormatter": "jnoortheen.nix-ide"
+  },
+  "[go]": {
+    "editor.defaultFormatter": "golang.go"
+  },
+  "editor.tabSize": 2,
+  "editor.inlineSuggest.enabled": true,
+  "editor.suggest.showInlineDetails": true,
+  "editor.suggest.preview": true,
+  "terminal.integrated.stickyScroll.enabled": false,
+  "cmake.cmakePath": "/etc/profiles/per-user/${env:USER}/bin/cmake",
+  "js/ts.preferGoToSourceDefinition": true,
+  "editor.gotoLocation.multipleReferences": "goto",
+  "editor.gotoLocation.multipleTypeDefinitions": "goto",
+  "editor.gotoLocation.multipleImplementations": "goto",
+  "php.validate.executablePath": "/etc/profiles/per-user/${env:USER}/bin/php",
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  "files.autoSave": "afterDelay",
+  "terminal.integrated.profiles.linux": {
+    "bash": {
+      "path": "/etc/profiles/per-user/${env:USER}/bin/bash",
+      "args": ["-l"]
+    }
+  },
+  "terminal.integrated.defaultProfile.linux": "bash",
+  "terminal.integrated.copyOnSelection": true,
+  "cSpell.enabled": false,
+  "[snippets]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  },
+  "errorLens.enableOnDiffView": true,
+  "errorLens.gutterIconsEnabled": true,
+  "errorLens.statusBarMessageEnabled": true,
+  "errorLens.statusBarColorsEnabled": true,
+  "errorLens.messageBackgroundMode": "none",
+  "errorLens.messageEnabled": false,
+  "errorLens.statusBarIconsEnabled": true,
+  "errorLens.statusBarIconsPriority": 800,
+  "errorLens.statusBarMessageType": "activeCursor",
+  "errorLens.editorHoverPartsEnabled": {
+    "sourceCodeEnabled": true,
+    "messageEnabled": true,
+    "buttonsEnabled": true
+  },
+  "errorLens.codeLensEnabled": true,
+  "debug.breakpointsView.presentation": "tree",
+  "editor.inlayHints.enabled": "off",
+  "editor.mouseWheelZoom": true,
+  "terminal.integrated.mouseWheelZoom": true,
+  "window.zoomPerWindow": true,
+  "window.commandCenter": false,
+  "workbench.layoutControl.enabled": false,
+  "window.menuStyle": "custom",
+  "window.menuBarVisibility": "compact",
+  "window.titleBarStyle": "native",
+  "window.customTitleBarVisibility": "never",
+  "supermaven.enable": {
+    "*": true
+  },
+  "workbench.colorTheme": "Bestagon Purple",
+  "[qml]": {
+    "editor.defaultFormatter": "theqtcompany.qt-qml"
+  },
+  "qt-qml.qmlls.useQmlImportPathEnvVar": true,
+  "todohighlight.isEnable": true,
+  "editor.renderWhitespace": "trailing",
+  "terminal.integrated.fontSize": 16,
+  "git.openRepositoryInParentFolders": "never",
+  "cmake.showConfigureWithDebuggerNotification": false,
+  "telemetry.feedback.enabled": false,
+  "database-client.telemetry.usesOnlineServices": false,
+  "gitlens.telemetry.enabled": false
+}
