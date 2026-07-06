@@ -90,7 +90,7 @@
 
       pkief.material-icon-theme
       moonbloom.moonbloom-theme
-#      jgclark.vscode-todo-highlight
+      #      jgclark.vscode-todo-highlight
 
       adpyke.codesnap
 
