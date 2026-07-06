@@ -51,7 +51,7 @@
     yellow = "YELLOW";
   };
 
-  lowerTokenName = name: lib.toLower (builtins.replaceStrings ["_"] ["_"] uiTokenNames.${name});
+  lowerTokenName = name: lib.toLower uiTokenNames.${name};
 
   mkThemeTokens = {
     qt,
