@@ -9,14 +9,24 @@
       inherit lib pkgs sharePickerBinary theme;
     };
 
-  programs = {
-    firefox = callProgram ./firefox.nix;
-    gtk = callProgram ./gtk.nix;
-    hyprland = callProgram ./hyprland.nix;
-    kitty = callProgram ./kitty.nix;
-    palette = callProgram ./palette.nix;
-    qt = callProgram ./qt.nix;
-  };
+  programFiles =
+    lib.filterAttrs (
+      name: type:
+        type
+        == "regular"
+        && name != "default.nix"
+        && lib.hasSuffix ".nix" name
+    )
+    (builtins.readDir ./.);
+
+  programs =
+    lib.mapAttrs' (
+      name: _:
+        lib.nameValuePair
+        (lib.removeSuffix ".nix" name)
+        (callProgram (./. + "/${name}"))
+    )
+    programFiles;
 
   mergeProgramAttr = attr:
     lib.foldl'
