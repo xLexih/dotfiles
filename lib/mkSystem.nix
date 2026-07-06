@@ -27,7 +27,7 @@ in
                 inputs.nix-index-database.overlays.nix-index
                 inputs.nix-cachyos-kernel.overlays.default
               ]
-              ++ (import (inputs.self + "/overlay"))
+              ++ (import (inputs.self + "/overlay") {inherit (inputs.nixpkgs) lib;})
               ++ [
                 inputs.nix4vscode.overlays.default
                 inputs.nix-vscode-extensions.overlays.default

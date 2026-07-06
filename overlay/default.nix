@@ -1,9 +1,20 @@
-[
-  (import ./hid-send.nix)
-  (import ./jedi-language-server.nix)
-  (import ./krita.nix)
-  (import ./kilo.nix)
-  (import ./lutris.nix)
-  (import ./office.nix)
-  (import ./rustdesk.nix)
-]
+{lib}: let
+  ignoredFiles = [
+    "default.nix"
+    "codium.nix"
+  ];
+
+  overlayFiles = lib.sort builtins.lessThan (
+    builtins.attrNames (
+      lib.filterAttrs (
+        name: type:
+          type
+          == "regular"
+          && lib.hasSuffix ".nix" name
+          && !(builtins.elem name ignoredFiles)
+      )
+      (builtins.readDir ./.)
+    )
+  );
+in
+  map (name: import (./. + "/${name}")) overlayFiles

@@ -45,7 +45,7 @@ Software lives in one of three places depending on what it needs:
 | Custom build or patch | `overlay/` | Codium with extensions, Krita plugins |
 | System services or NixOS options | `module/software/` | Docker, Sunshine, libvirt |
 
-**Overlays** override or wrap upstream packages — theme patches, bundled extensions, version pins, build fixes. The modified package is then installed from the user config like any other package.
+**Overlays** override or wrap upstream packages — theme patches, bundled extensions, version pins, build fixes. Plain `overlay/*.nix` files are auto-discovered, while parameterized overlays stay explicit. The modified package is then installed from the user config like any other package.
 
 **module/software/** is reserved for software that genuinely requires system-level integration: services, firewall rules, kernel modules, or virtualization. If it can run as a plain user package, it belongs in the user config or an overlay instead.
 
