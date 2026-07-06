@@ -42,7 +42,6 @@ in {
     };
     modules.software.gaming.enable = true;
     modules.software.kdeconnect.enable = true;
-    modules.software.netclient.enable = false;
     modules.software.obs.enable = true;
     modules.software.sunshine.enable = true;
     modules.software.virtual-machine.enable = true;
