@@ -16,7 +16,4 @@
     fsType = "btrfs";
     options = ["noauto" "comment=systemd.automount" "x-systemd.automount"];
   };
-
-  zramSwap.enable = true;
-  zramSwap.algorithm = "lz4";
 }
