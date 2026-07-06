@@ -6,18 +6,20 @@
   warningText = "Changes to this file are temporary, they get lost upon a nixos rebuild";
 
   commentStyleFor = relPath:
-    if lib.any (suffix: lib.hasSuffix suffix relPath) [
-      ".json"
-      ".jsonc"
-      ".js"
-      ".ts"
-      ".css"
-      ".scss"
-      ".qss"
-    ]
+    if
+      lib.any (suffix: lib.hasSuffix suffix relPath) [
+        ".json"
+        ".jsonc"
+        ".js"
+        ".ts"
+        ".css"
+        ".scss"
+        ".qss"
+      ]
     then "slashes"
     else if
-      relPath == "bashrc"
+      relPath
+      == "bashrc"
       || relPath == "git/config"
       || lib.any (suffix: lib.hasSuffix suffix relPath) [
         ".conf"
@@ -63,14 +65,31 @@
         ) (builtins.readDir dir)
       );
 
-  layerRoots = {
+  layerDefinitions = {
     hostName,
     userName,
   }: [
-    (repoRoot + "/.config")
-    (repoRoot + "/host/${hostName}/.config")
-    (repoRoot + "/user/${userName}/.config")
+    {
+      name = "global";
+      label = "Global";
+      root = repoRoot + "/.config";
+      description = "Shared by every host and user.";
+    }
+    {
+      name = "host";
+      label = "Host";
+      root = repoRoot + "/host/${hostName}/.config";
+      description = "Machine-specific overrides for ${hostName}.";
+    }
+    {
+      name = "user";
+      label = "User";
+      root = repoRoot + "/user/${userName}/.config";
+      description = "Personal overrides for ${userName}.";
+    }
   ];
+
+  layerRoots = args: map (layer: layer.root) (layerDefinitions args);
 
   discoverPaths = {
     hostName,
@@ -82,19 +101,22 @@
       )
     );
 
-  modeFor = relPath:
-    if
-      lib.any (suffix: lib.hasSuffix suffix relPath) [
-        ".json"
-        ".qml"
-        ".qmldir"
-        ".svg"
-        ".toml"
-        ".yaml"
-        ".yml"
-      ]
+  defaultOverrideSuffixes = [
+    ".json"
+    ".qml"
+    ".qmldir"
+    ".svg"
+    ".toml"
+    ".yaml"
+    ".yml"
+  ];
+
+  defaultModeFor = relPath:
+    if lib.any (suffix: lib.hasSuffix suffix relPath) defaultOverrideSuffixes
     then "override"
     else "merge";
+
+  modeFor = fileModes: relPath: fileModes.${relPath} or (defaultModeFor relPath);
 
   supportsComment = relPath: (commentStyleFor relPath) != null;
 
@@ -105,6 +127,7 @@
 
   renderText = {
     layers,
+    mode,
     relPath,
     substitutions,
   }: let
@@ -119,12 +142,13 @@
     renderedLayers = map (layer: applySubstitutions (builtins.readFile layer)) layers;
     prefix = warningLineFor relPath;
   in
-    if modeFor relPath == "override"
+    if mode == "override"
     then prefix + (last renderedLayers)
     else prefix + lib.concatMapStrings ensureTrailingNewline renderedLayers;
 
   makeEntry = {
     commonSubstitutions ? {},
+    fileModes ? {},
     hostName,
     perFileSubstitutions ? {},
     relPath,
@@ -132,17 +156,18 @@
   }: let
     roots = layerRoots {inherit hostName userName;};
     layers = builtins.filter pathExists (map (root: root + "/${relPath}") roots);
+    mode = modeFor fileModes relPath;
     substitutions = commonSubstitutions // (perFileSubstitutions.${relPath} or {});
   in
     if layers == []
     then throw "No layered dotfile layers found for ${relPath}"
-    else if modeFor relPath == "override" && substitutions == {} && !supportsComment relPath
+    else if mode == "override" && substitutions == {} && !supportsComment relPath
     then {source = last layers;}
     else {
       type = "copy";
       permissions = "644";
       text = renderText {
-        inherit layers relPath substitutions;
+        inherit layers mode relPath substitutions;
       };
     };
 
@@ -157,8 +182,11 @@
       key = relPath;
     };
 in {
+  inherit defaultOverrideSuffixes layerDefinitions;
+
   mkHjemDotfiles = {
     commonSubstitutions ? {},
+    fileModes ? {},
     hostName,
     perFileSubstitutions ? {},
     userName,
@@ -174,12 +202,15 @@ in {
         in {
           inherit destination relPath;
           entry = makeEntry {
-            inherit commonSubstitutions hostName perFileSubstitutions relPath userName;
+            inherit commonSubstitutions fileModes hostName perFileSubstitutions relPath userName;
           };
         }
       )
       paths;
   in {
+    layers = layerDefinitions {inherit hostName userName;};
+    inherit paths;
+
     files = lib.listToAttrs (
       map
       (item: lib.nameValuePair item.destination.key item.entry)
