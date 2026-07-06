@@ -57,51 +57,31 @@
       export QT_STYLE_OVERRIDE=Fusion
       exec ${picker} -stylesheet ${qss}
     '';
+  themeTargets = import (inputs.self + "/theme/programs") {
+    inherit lib pkgs sharePickerBinary;
+    theme = activeTheme;
+  };
   mkThemedHjemUser = userName: let
     layeredDotfiles = dotfilesLib.mkHjemDotfiles {
-      commonSubstitutions = themeDotfileSubstitutions // {
-        "{{bash-preexec}}" = "${pkgs.bash-preexec}";
-        "{{nix-direnv}}" = "${pkgs.nix-direnv}";
-      };
+      commonSubstitutions =
+        themeDotfileSubstitutions
+        // {
+          "{{bash-preexec}}" = "${pkgs.bash-preexec}";
+          "{{nix-direnv}}" = "${pkgs.nix-direnv}";
+        };
       hostName = config.networking.hostName;
       inherit userName;
     };
   in {
     files =
       layeredDotfiles.files
-      // {
-        ".gtkrc-2.0".text = activeTheme.outputs.gtk2Rc;
-        ".mozilla/firefox/profiles.ini".text = activeTheme.outputs.firefoxProfilesIni;
-        ".mozilla/firefox/default/user.js".text = activeTheme.outputs.firefoxUserJs;
-        ".mozilla/firefox/default/chrome/userContent.css".text = activeTheme.outputs.firefoxUserContent;
-        ".mozilla/firefox/default/chrome/userChrome.css".text = activeTheme.outputs.firefoxUserChrome;
-      };
+      // themeTargets.homeFiles;
 
     xdg.config.files =
       layeredDotfiles.xdgConfigFiles
-      // {
-        "gtk-3.0/settings.ini".text = activeTheme.outputs.gtk3Settings;
-        "gtk-3.0/gtk.css".text = activeTheme.outputs.gtk3Css;
-        "gtk-3.0/gtk-dark.css".text = activeTheme.outputs.gtk3DarkCss;
-        "gtk-4.0/settings.ini".text = activeTheme.outputs.gtk4Settings;
-        "gtk-4.0/gtk.css".text = activeTheme.outputs.gtk4Css;
-        "gtk-4.0/gtk-dark.css".text = activeTheme.outputs.gtk4DarkCss;
-        "kitty/theme.conf".text = activeTheme.outputs.kittyTheme;
-        "Kvantum/kvantum.kvconfig".text = activeTheme.outputs.kvantumConfig;
-        "kdeglobals".text = activeTheme.outputs.kdeGlobals;
-        "kdedefaults/kdeglobals".text = activeTheme.outputs.kdeGlobals;
-        "qt5ct/qt5ct.conf".text = activeTheme.outputs.qt5ctConfig;
-        "qt5ct/colors/${activeTheme.outputs.qtctColorSchemeFileName}".text = activeTheme.outputs.qtctColorScheme;
-        "qt6ct/qt6ct.conf".text = activeTheme.outputs.qt6ctConfig;
-        "qt6ct/colors/${activeTheme.outputs.qtctColorSchemeFileName}".text = activeTheme.outputs.qtctColorScheme;
-        "theme/palette.json".text = activeTheme.outputs.paletteJson;
-        "theme/palette.sh".text = activeTheme.outputs.paletteShell;
-        "hypr/xdph.conf".text = "screencopy:custom_picker_binary = ${sharePickerBinary}";
-      };
+      // themeTargets.xdgConfigFiles;
 
-    xdg.data.files = {
-      "color-schemes/${activeTheme.outputs.kdeColorSchemeFileName}".text = activeTheme.outputs.kdeColorScheme;
-    };
+    xdg.data.files = themeTargets.xdgDataFiles;
   };
 in {
   options.modules.theme =
@@ -185,23 +165,7 @@ in {
       }
     ];
 
-    environment.etc = {
-      "gtk-2.0/gtkrc".text = activeTheme.outputs.gtk2Rc;
-      "xdg/gtk-3.0/settings.ini".text = activeTheme.outputs.gtk3Settings;
-      "xdg/gtk-3.0/gtk.css".text = activeTheme.outputs.gtk3Css;
-      "xdg/gtk-3.0/gtk-dark.css".text = activeTheme.outputs.gtk3DarkCss;
-      "xdg/gtk-4.0/settings.ini".text = activeTheme.outputs.gtk4Settings;
-      "xdg/gtk-4.0/gtk.css".text = activeTheme.outputs.gtk4Css;
-      "xdg/gtk-4.0/gtk-dark.css".text = activeTheme.outputs.gtk4DarkCss;
-      "xdg/Kvantum/kvantum.kvconfig".text = activeTheme.outputs.kvantumConfig;
-      "xdg/kdeglobals".text = activeTheme.outputs.kdeGlobals;
-      "xdg/kdedefaults/kdeglobals".text = activeTheme.outputs.kdeGlobals;
-      "xdg/qt5ct/qt5ct.conf".text = activeTheme.outputs.qt5ctConfig;
-      "xdg/qt5ct/colors/${activeTheme.outputs.qtctColorSchemeFileName}".text = activeTheme.outputs.qtctColorScheme;
-      "xdg/qt6ct/qt6ct.conf".text = activeTheme.outputs.qt6ctConfig;
-      "xdg/qt6ct/colors/${activeTheme.outputs.qtctColorSchemeFileName}".text = activeTheme.outputs.qtctColorScheme;
-      "xdg/color-schemes/${activeTheme.outputs.kdeColorSchemeFileName}".text = activeTheme.outputs.kdeColorScheme;
-    };
+    environment.etc = themeTargets.environmentEtc;
 
     environment.variables = activeTheme.outputs.environmentVariables;
 
