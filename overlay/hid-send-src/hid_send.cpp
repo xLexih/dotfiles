@@ -1,5 +1,6 @@
 #include <linux/hidraw.h>
 #include <sys/ioctl.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -31,12 +32,35 @@ int main(int argc, char *argv[]) {
 
     unsigned char buf[256];
     int buf_len = 0;
-    char *hex_token;
-    char *rest = strdup(hex_data_str);
-    char *hex_str_copy = rest;
+    char *hex_str_copy = strdup(hex_data_str);
+    if (hex_str_copy == NULL) {
+        perror("strdup");
+        close(fd);
+        return 1;
+    }
 
-    while ((hex_token = strtok_r(rest, ":", &rest)) != NULL && buf_len < sizeof(buf)) {
-        buf[buf_len++] = (unsigned char)strtol(hex_token, NULL, 16);
+    char *saveptr = NULL;
+    for (char *hex_token = strtok_r(hex_str_copy, ":", &saveptr);
+         hex_token != NULL;
+         hex_token = strtok_r(NULL, ":", &saveptr)) {
+        if (buf_len >= (int)sizeof(buf)) {
+            fprintf(stderr, "Error: hex data is too long, max is %zu bytes.\n", sizeof(buf));
+            free(hex_str_copy);
+            close(fd);
+            return 1;
+        }
+
+        char *end = NULL;
+        errno = 0;
+        long value = strtol(hex_token, &end, 16);
+        if (errno != 0 || end == hex_token || *end != '\0' || value < 0 || value > 0xff) {
+            fprintf(stderr, "Error: invalid byte '%s'. Expected hex value from 00 to ff.\n", hex_token);
+            free(hex_str_copy);
+            close(fd);
+            return 1;
+        }
+
+        buf[buf_len++] = (unsigned char)value;
     }
     free(hex_str_copy);
 
@@ -49,6 +73,8 @@ int main(int argc, char *argv[]) {
     int res = ioctl(fd, HIDIOCSFEATURE(buf_len), buf);
     if (res < 0) {
         perror("ioctl HIDIOCSFEATURE");
+        close(fd);
+        return 1;
     } else {
         printf("Success! Sent %d bytes to %s\n", buf_len, device_path);
     }
