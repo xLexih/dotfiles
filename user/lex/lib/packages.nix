@@ -19,7 +19,6 @@
       fastfetch
       jq
       tree
-      openssh
     ];
 
     browsersAndCommunication = [
@@ -63,7 +62,6 @@
       tcpdump
       traceroute
       mtr
-      dig
       powertop
     ];
 
