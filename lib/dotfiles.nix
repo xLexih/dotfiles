@@ -103,6 +103,7 @@
 
   defaultOverrideSuffixes = [
     ".json"
+    ".jsonc"
     ".qml"
     ".qmldir"
     ".svg"

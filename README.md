@@ -30,7 +30,7 @@ host/<name>/.config → Host-specific (hardware, display, keybinds)
 user/<name>/.config → User-specific (personal preferences)
 ```
 
-Text-based configs (`.conf`, `.ini`, `.sh`) are **concatenated** across all layers that exist, producing a merged result. Structured formats (`.json`, `.qml`, `.svg`, `.toml`, `.yaml`) use **last-wins** — the most specific layer replaces the others entirely.
+Text-based configs (`.conf`, `.ini`, `.sh`) are **concatenated** across all layers that exist, producing a merged result. Structured formats (`.json`, `.jsonc`, `.qml`, `.svg`, `.toml`, `.yaml`) use **last-wins** — the most specific layer replaces the others entirely.
 
 Merged text files receive a warning banner so manual edits aren't mistaken for persistent changes.
 See [docs/config-layers.md](docs/config-layers.md) for the exact placement and merge rules.

@@ -21,7 +21,7 @@ default to last-wins replacement because concatenating them would usually make
 invalid output. The built-in replacement suffixes are:
 
 ```text
-.json .qml .qmldir .svg .toml .yaml .yml
+.json .jsonc .qml .qmldir .svg .toml .yaml .yml
 ```
 
 If a specific file needs different behavior, pass a `fileModes` override to
