@@ -53,6 +53,20 @@
       system: let
         pkgs = inputs.nixpkgs.legacyPackages.${system};
         hostConfigs = lib.filterAttrs (_: cfg: cfg.pkgs.stdenv.hostPlatform.system == system) self.nixosConfigurations;
+        dotfilesLib = import (self + "/lib/dotfiles.nix") {inherit lib self;};
+        dotfileSample = dotfilesLib.mkHjemDotfiles {
+          hostName = "desktop";
+          userName = "lex";
+        };
+        dotfileLayerNames = lib.concatStringsSep "," (map (layer: layer.name) dotfileSample.layers);
+        dotfileHasHomeBashrc =
+          if builtins.hasAttr ".bashrc" dotfileSample.files
+          then "yes"
+          else "no";
+        dotfileHasHyprland =
+          if builtins.hasAttr "hypr/hyprland.conf" dotfileSample.xdgConfigFiles
+          then "yes"
+          else "no";
         evalChecks =
           lib.mapAttrs' (
             name: cfg: let
@@ -124,6 +138,18 @@
               test "$bad" -eq 0
               touch $out
             '';
+
+          dotfile-layer-contract = pkgs.runCommand "dotfile-layer-contract" {} ''
+            test ${lib.escapeShellArg dotfileLayerNames} = global,host,user
+            test ${lib.escapeShellArg dotfileHasHomeBashrc} = yes
+            test ${lib.escapeShellArg dotfileHasHyprland} = yes
+
+            cat > $out <<EOF
+            layers=${dotfileLayerNames}
+            homeBashrc=${dotfileHasHomeBashrc}
+            hyprland=${dotfileHasHyprland}
+            EOF
+          '';
         }
     );
   };
