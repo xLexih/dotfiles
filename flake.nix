@@ -129,6 +129,7 @@
               find module host user \
                 -path host/homelab -prune -o \
                 -path '*/.config' -prune -o \
+                -path '*/lib' -prune -o \
                 -type f -name '*.nix' -print | sort > "$files"
 
               while IFS= read -r file; do

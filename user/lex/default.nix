@@ -7,7 +7,7 @@
 }: let
   cfg = config.modules.user.lex;
   activeTheme = config.modules.theme.active;
-  lexPackages = import ./_packages.nix {inherit pkgs;};
+  lexPackages = import ./lib/packages.nix {inherit pkgs;};
   spicePkgs = inputs.spicetify-nix.legacyPackages.${pkgs.stdenv.hostPlatform.system};
 in {
   imports = [
@@ -65,7 +65,7 @@ in {
       };
     };
 
-    programs.firefox = import ./_firefox.nix {inherit activeTheme pkgs;};
+    programs.firefox = import ./lib/firefox.nix {inherit activeTheme pkgs;};
     programs.spicetify = {
       enable = true;
       alwaysEnableDevTools = true;

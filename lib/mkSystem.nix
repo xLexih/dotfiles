@@ -3,7 +3,7 @@
   system,
   users ? [],
 }: let
-  filteredImportTree = path: (inputs.import-tree.matchNot ".*/\\.config/.*") path;
+  filteredImportTree = path: (inputs.import-tree.matchNot ".*/(\\.config|lib)/.*") path;
 
   userEnableModule = {lib, ...}: {
     config = lib.mkMerge (map (user: {
