@@ -30,7 +30,6 @@
     upower
     usbutils # lsusb
     xdg-ninja
-    cmake
   ];
 
   programs.bash = {
