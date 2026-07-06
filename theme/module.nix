@@ -25,11 +25,12 @@
     "${pkgs.qt6.qtbase}/lib/qt-6/qml"
   ];
 
-  enabledThemes = lib.filter (name: cfg.${name}.enable) themeNames;
+  legacyEnabledThemes = lib.filter (name: cfg.${name}.enable) themeNames;
   activeThemeName =
-    if enabledThemes != []
-    then lib.head enabledThemes
-    else themeRegistry.default;
+    if legacyEnabledThemes != []
+    then lib.head legacyEnabledThemes
+    else cfg.name;
+  themeEnabled = cfg.enable || legacyEnabledThemes != [];
   activeTheme = themeRegistry.themes.${activeThemeName};
   activeOverlayTheme = overlayThemeRegistry.themes.${activeThemeName};
 
@@ -89,6 +90,24 @@ in {
       enable = lib.mkEnableOption "the ${name} theme";
     })
     // {
+      enable = lib.mkEnableOption "system theming";
+      name = lib.mkOption {
+        type = lib.types.enum themeNames;
+        default = themeRegistry.default;
+        description = "Theme name to use when modules.theme.enable is set.";
+      };
+      available = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        readOnly = true;
+        default = themeNames;
+        description = "Themes discovered from theme/<name>/default.nix.";
+      };
+      activeName = lib.mkOption {
+        type = lib.types.str;
+        readOnly = true;
+        default = activeThemeName;
+        description = "Resolved active theme name after legacy per-theme enable flags are considered.";
+      };
       active = lib.mkOption {
         type = lib.types.attrsOf lib.types.anything;
         readOnly = true;
@@ -137,11 +156,11 @@ in {
       };
     };
 
-  config = lib.mkIf (enabledThemes != []) {
+  config = lib.mkIf themeEnabled {
     assertions = [
       {
-        assertion = lib.length enabledThemes <= 1;
-        message = "Only one theme can be enabled at a time. Currently enabled: ${lib.concatStringsSep ", " enabledThemes}";
+        assertion = lib.length legacyEnabledThemes <= 1;
+        message = "Only one legacy per-theme enable flag can be set at a time. Currently enabled: ${lib.concatStringsSep ", " legacyEnabledThemes}";
       }
     ];
 

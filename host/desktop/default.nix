@@ -11,7 +11,10 @@
   modules.hardware.cpu.vendor = "amd";
   modules.hardware.kernel.package = "xanmod_latest";
   modules.performance.enable = true;
-  modules.theme.hexagon.enable = true;
+  modules.theme = {
+    enable = true;
+    name = "hexagon";
+  };
 
   modules.session.hyprland.enable = true;
   modules.session.greetd.enable = true;

@@ -49,7 +49,7 @@ Software lives in one of three places depending on what it needs:
 
 **module/software/** is reserved for software that genuinely requires system-level integration: services, firewall rules, kernel modules, or virtualization. If it can run as a plain user package, it belongs in the user config or an overlay instead.
 
-Themes are discovered from `theme/<name>/default.nix`. Enabling exactly one `modules.theme.<name>` option generates files for each configured user. Program-specific theme targets live in `theme/programs/`, so adding a new themed application should usually mean adding one small target file instead of expanding `theme/module.nix`.
+Themes are discovered from `theme/<name>/default.nix`. Enable one with `modules.theme = { enable = true; name = "<name>"; };`. Program-specific theme targets live in `theme/programs/`, so adding a new themed application should usually mean adding one small target file instead of expanding `theme/module.nix`.
 
 ## Rough Repository Structure
 

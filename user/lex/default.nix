@@ -256,7 +256,6 @@ in {
         };
       };
     };
-    modules.theme.hexagon.enable = true;
     programs.spicetify = {
       enable = true;
       alwaysEnableDevTools = true;
