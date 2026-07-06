@@ -118,12 +118,12 @@
             name: cfg:
               lib.nameValuePair "contract-${name}" (
                 pkgs.runCommand "contract-${name}" {} ''
-                  cat > $out <<EOF
-                  hostName=${cfg.config.networking.hostName}
-                  stateVersion=${cfg.config.system.stateVersion}
-                  cpuVendor=${cfg.config.modules.hardware.cpu.vendor}
-                  themeName=${cfg.config.modules.theme.active.name}
-                  EOF
+                  {
+                    printf 'hostName=%s\n' ${lib.escapeShellArg cfg.config.networking.hostName}
+                    printf 'stateVersion=%s\n' ${lib.escapeShellArg cfg.config.system.stateVersion}
+                    printf 'cpuVendor=%s\n' ${lib.escapeShellArg cfg.config.modules.hardware.cpu.vendor}
+                    printf 'themeName=%s\n' ${lib.escapeShellArg cfg.config.modules.theme.active.name}
+                  } > $out
                 ''
               )
           )
@@ -175,34 +175,34 @@
             '';
 
           dotfile-layer-contract = pkgs.runCommand "dotfile-layer-contract" {} ''
-            test ${lib.escapeShellArg dotfileLayerNames} = global,host,user
-            test ${lib.escapeShellArg dotfileHasHomeBashrc} = yes
-            test ${lib.escapeShellArg dotfileHasHyprland} = yes
+            test ${lib.escapeShellArg dotfileLayerNames} = ${lib.escapeShellArg "global,host,user"}
+            test ${lib.escapeShellArg dotfileHasHomeBashrc} = ${lib.escapeShellArg "yes"}
+            test ${lib.escapeShellArg dotfileHasHyprland} = ${lib.escapeShellArg "yes"}
             test -z ${lib.escapeShellArg shadowedXdgDotfilesText}
 
-            cat > $out <<EOF
-            layers=${dotfileLayerNames}
-            homeBashrc=${dotfileHasHomeBashrc}
-              hyprland=${dotfileHasHyprland}
-              shadowedXdgDotfiles=${shadowedXdgDotfilesText}
-              EOF
+            {
+              printf 'layers=%s\n' ${lib.escapeShellArg dotfileLayerNames}
+              printf 'homeBashrc=%s\n' ${lib.escapeShellArg dotfileHasHomeBashrc}
+              printf 'hyprland=%s\n' ${lib.escapeShellArg dotfileHasHyprland}
+              printf 'shadowedXdgDotfiles=%s\n' ${lib.escapeShellArg shadowedXdgDotfilesText}
+            } > $out
           '';
 
           theme-registry-contract = pkgs.runCommand "theme-registry-contract" {} ''
             test -z ${lib.escapeShellArg supportThemeNamesText}
-            cat > $out <<EOF
-            themes=${discoveredThemeNamesText}
-            supportThemes=${supportThemeNamesText}
-            EOF
+            {
+              printf 'themes=%s\n' ${lib.escapeShellArg discoveredThemeNamesText}
+              printf 'supportThemes=%s\n' ${lib.escapeShellArg supportThemeNamesText}
+            } > $out
           '';
 
           overlay-registry-contract = pkgs.runCommand "overlay-registry-contract" {} ''
             test -n ${lib.escapeShellArg overlayFilesText}
             test -z ${lib.escapeShellArg parameterizedOverlayLeaksText}
-            cat > $out <<EOF
-            overlays=${overlayFilesText}
-            parameterizedLeaks=${parameterizedOverlayLeaksText}
-            EOF
+            {
+              printf 'overlays=%s\n' ${lib.escapeShellArg overlayFilesText}
+              printf 'parameterizedLeaks=%s\n' ${lib.escapeShellArg parameterizedOverlayLeaksText}
+            } > $out
           '';
         }
     );
