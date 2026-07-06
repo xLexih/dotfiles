@@ -26,6 +26,11 @@ in {
     boot.initrd.checkJournalingFS = false;
     boot.consoleLogLevel = 3;
 
+    zramSwap = {
+      enable = true;
+      algorithm = "lz4";
+    };
+
     systemd.services.NetworkManager-wait-online.enable = false;
     systemd.services.systemd-networkd-wait-online.enable = false;
     systemd.settings.Manager = {

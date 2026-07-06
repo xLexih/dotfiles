@@ -16,7 +16,4 @@
     fsType = "vfat";
     options = ["fmask=0077" "dmask=0077" "noatime" "nodiratime"];
   };
-
-  zramSwap.enable = true;
-  zramSwap.algorithm = "lz4";
 }
