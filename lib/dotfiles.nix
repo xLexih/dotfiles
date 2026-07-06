@@ -3,7 +3,7 @@
   self ? ../.,
 }: let
   repoRoot = self;
-  warningText = "Changes to this file are temporary, they get lost upon a nixos rebuild";
+  warningText = "Changes to this file are temporary, they get lost upon a NixOS rebuild";
 
   commentStyleFor = relPath:
     if
