@@ -8,6 +8,8 @@
       name: type:
         type
         == "directory"
+        && !(lib.hasPrefix "_" name)
+        && !(builtins.elem name ["programs" "template"])
         && builtins.pathExists (./. + "/${name}/default.nix")
     )
     (builtins.readDir ./.);

@@ -54,6 +54,14 @@
         pkgs = inputs.nixpkgs.legacyPackages.${system};
         hostConfigs = lib.filterAttrs (_: cfg: cfg.pkgs.stdenv.hostPlatform.system == system) self.nixosConfigurations;
         dotfilesLib = import (self + "/lib/dotfiles.nix") {inherit lib self;};
+        themeRegistry = import (self + "/theme") {
+          inherit lib;
+          pkgs = null;
+        };
+        discoveredThemeNames = builtins.attrNames themeRegistry.themes;
+        discoveredThemeNamesText = lib.concatStringsSep "," discoveredThemeNames;
+        supportThemeNames = lib.filter (name: builtins.elem name ["programs" "template"]) discoveredThemeNames;
+        supportThemeNamesText = lib.concatStringsSep "," supportThemeNames;
         dotfileSample = dotfilesLib.mkHjemDotfiles {
           hostName = "desktop";
           userName = "lex";
@@ -147,7 +155,15 @@
             cat > $out <<EOF
             layers=${dotfileLayerNames}
             homeBashrc=${dotfileHasHomeBashrc}
-            hyprland=${dotfileHasHyprland}
+              hyprland=${dotfileHasHyprland}
+              EOF
+          '';
+
+          theme-registry-contract = pkgs.runCommand "theme-registry-contract" {} ''
+            test -z ${lib.escapeShellArg supportThemeNamesText}
+            cat > $out <<EOF
+            themes=${discoveredThemeNamesText}
+            supportThemes=${supportThemeNamesText}
             EOF
           '';
         }
