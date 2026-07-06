@@ -135,11 +135,11 @@
               while IFS= read -r file; do
                 base="$(basename "$file")"
                 case "$base" in
-                  default.nix|_*.nix) continue ;;
+                  default.nix) continue ;;
                 esac
 
                 if ! rg -F --quiet "$base" flake.nix lib module host user overlay theme .config README.md; then
-                  echo "Unreferenced Nix file inside import-tree path must be prefixed with '_': $file" >&2
+                  echo "Unreferenced Nix file inside import-tree path must be referenced or moved under a lib/ helper directory: $file" >&2
                   bad=1
                 fi
               done < "$files"
