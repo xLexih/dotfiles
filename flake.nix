@@ -58,6 +58,21 @@
           inherit lib;
           pkgs = null;
         };
+        overlayFiles = lib.sort builtins.lessThan (
+          builtins.attrNames (
+            lib.filterAttrs (
+              name: type:
+                type
+                == "regular"
+                && lib.hasSuffix ".nix" name
+                && !(builtins.elem name ["default.nix" "codium.nix"])
+            )
+            (builtins.readDir (self + "/overlay"))
+          )
+        );
+        overlayFilesText = lib.concatStringsSep "," overlayFiles;
+        parameterizedOverlayLeaks = lib.filter (name: builtins.elem name ["codium.nix"]) overlayFiles;
+        parameterizedOverlayLeaksText = lib.concatStringsSep "," parameterizedOverlayLeaks;
         discoveredThemeNames = builtins.attrNames themeRegistry.themes;
         discoveredThemeNamesText = lib.concatStringsSep "," discoveredThemeNames;
         supportThemeNames = lib.filter (name: builtins.elem name ["programs" "template"]) discoveredThemeNames;
@@ -165,6 +180,15 @@
             cat > $out <<EOF
             themes=${discoveredThemeNamesText}
             supportThemes=${supportThemeNamesText}
+            EOF
+          '';
+
+          overlay-registry-contract = pkgs.runCommand "overlay-registry-contract" {} ''
+            test -n ${lib.escapeShellArg overlayFilesText}
+            test -z ${lib.escapeShellArg parameterizedOverlayLeaksText}
+            cat > $out <<EOF
+            overlays=${overlayFilesText}
+            parameterizedLeaks=${parameterizedOverlayLeaksText}
             EOF
           '';
         }
