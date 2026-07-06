@@ -7,6 +7,7 @@
 }: let
   cfg = config.modules.user.lex;
   activeTheme = config.modules.theme.active;
+  lexPackages = import ./_packages.nix {inherit pkgs;};
   spicePkgs = inputs.spicetify-nix.legacyPackages.${pkgs.stdenv.hostPlatform.system};
 in {
   imports = [
@@ -28,112 +29,7 @@ in {
         ".local/share/lutris/runners/proton/GE-Proton".source = pkgs.proton-ge-bin.steamcompattool;
       };
 
-      packages = with pkgs; [
-        # terminals & utilities
-        kitty
-        alacritty
-        nautilus
-        alejandra
-        atuin
-        delta
-        direnv
-        fzf
-        lazygit
-        nh
-        nix-direnv
-        quickshell
-        hid-send
-        nix-tree
-        nil
-        nixd
-        fastfetch
-        jq
-        tree
-        openssh
-
-        # browsers & communication
-        vesktop
-
-        # media
-        vlc
-        pwvucontrol
-        inkscape
-        gimp
-        krita-custom
-
-        # notes & office
-        obsidian
-        office-suite
-
-        # development
-        android-tools
-        claude-code
-        codex
-        codium-custom
-        kilo
-        opencode
-        ani-cli
-
-        # kubernetes
-        k9s
-        kubectl
-        kubernetes-helm
-        cilium-cli
-        mirrord
-        devspace
-
-        # networking & diagnostics
-        nettools
-        tcpdump
-        traceroute
-        mtr
-        dig
-        powertop
-
-        # gaming
-        prismlauncher
-        lutris-custom
-
-        # remote
-        # rustdesk
-
-        # C/C++
-        gcc
-        cmake
-        gnumake
-        ninja
-        clang
-        clang-tools
-        gdb
-        mold
-        pkg-config
-        qt6.qtbase
-        qt6.qtdeclarative
-
-        # Go
-        go
-        gopls
-        go-tools
-        delve
-
-        # Java
-        jdk
-        jetbrains.jdk
-        jetbrains.jdk-21
-        jetbrains.idea
-        maven
-        gradle
-
-        # JavaScript / TypeScript
-        nodejs
-        yarn
-
-        # Python
-        python3
-
-        # SQL
-        mysql-workbench
-      ];
+      packages = lexPackages.all;
     };
 
     fonts.packages = with pkgs; [
