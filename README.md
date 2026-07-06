@@ -74,6 +74,7 @@ Themes are discovered from `theme/<name>/default.nix`. Enable one with `modules.
 ├── theme/                 # Theme definitions, program targets, generated outputs
 ├── user/<user_name>/      # User packages and personal dotfiles
 │   ├── .config/           # User-specific dotfile overrides
+│   └── lib/               # User helper files excluded from import-tree
 └── flake.nix              # Entry point — hosts, inputs, checks
 ```
 
@@ -83,4 +84,4 @@ Themes are discovered from `theme/<name>/default.nix`. Enable one with `modules.
 nix flake check path:.
 ```
 
-This runs all checks defined in the flake: evaluation of each host configuration, contract assertions (hostName, stateVersion, CPU vendor, theme), formatting with Alejandra, and import-tree hygiene (ensuring non-default Nix files are either prefixed with `_` or referenced somewhere). The top-level checks intentionally skip `host/homelab`, which is maintained as its own flake/subproject.
+This runs all checks defined in the flake: evaluation of each host configuration, contract assertions (hostName, stateVersion, CPU vendor, theme), formatting with Alejandra, and import-tree hygiene (ensuring non-default Nix files are referenced or placed in a `lib/` helper directory). The top-level checks intentionally skip `host/homelab`, which is maintained as its own flake/subproject.
