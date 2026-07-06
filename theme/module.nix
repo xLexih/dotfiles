@@ -162,6 +162,10 @@ in {
         assertion = lib.length legacyEnabledThemes <= 1;
         message = "Only one legacy per-theme enable flag can be set at a time. Currently enabled: ${lib.concatStringsSep ", " legacyEnabledThemes}";
       }
+      {
+        assertion = !(cfg.enable && legacyEnabledThemes != [] && cfg.name != activeThemeName);
+        message = "Conflicting theme selection: modules.theme.name is ${cfg.name}, but the legacy modules.theme.${activeThemeName}.enable flag is also set.";
+      }
     ];
 
     fonts = {
