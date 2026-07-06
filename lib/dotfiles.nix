@@ -118,6 +118,8 @@
 
   modeFor = fileModes: relPath: fileModes.${relPath} or (defaultModeFor relPath);
 
+  validModes = ["merge" "override"];
+
   supportsComment = relPath: (commentStyleFor relPath) != null;
 
   ensureTrailingNewline = text:
@@ -161,6 +163,8 @@
   in
     if layers == []
     then throw "No layered dotfile layers found for ${relPath}"
+    else if !(builtins.elem mode validModes)
+    then throw "Unsupported layered dotfile mode '${mode}' for ${relPath}. Expected one of: ${lib.concatStringsSep ", " validModes}"
     else if mode == "override" && substitutions == {} && !supportsComment relPath
     then {source = last layers;}
     else {
