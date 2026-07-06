@@ -51,7 +51,7 @@ Software lives in one of three places depending on what it needs:
 
 Themes are discovered from `theme/<name>/default.nix`. Enable one with `modules.theme = { enable = true; name = "<name>"; };`. Program-specific theme targets live in `theme/programs/`, so adding a new themed application should usually mean adding one small target file instead of expanding `theme/module.nix`. See [theme/programs/README.md](theme/programs/README.md).
 
-## Rough Repository Structure
+## Repository Structure
 
 ```
 .
