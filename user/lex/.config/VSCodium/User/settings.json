@@ -32,7 +32,7 @@
   "nix.serverSettings": {
     "nixd": {
       "nixpkgs": {
-        "expr": "import (builtins.getFlake \"/home/lex/dotfiles\").inputs.nixpkgs { }"
+        "expr": "import /etc/nix/inputs/nixpkgs { }"
       },
       "formatting": {
         "command": ["alejandra"]
