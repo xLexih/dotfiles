@@ -18,5 +18,6 @@ target attrsets into `hjem` and `/etc`. To add a themed program, create
 `programs` in `theme/programs/default.nix`.
 
 Theme-specific values still live in `theme/<name>/default.nix` and generated
-outputs still live under `theme/<name>/outputs.nix`. This keeps the shape of a
-theme separate from the list of programs that consume it.
+outputs still live under `theme/<name>/outputs.nix`. Hosts select a theme with
+`modules.theme = { enable = true; name = "<name>"; };`. This keeps the shape of
+a theme separate from the list of programs that consume it.
