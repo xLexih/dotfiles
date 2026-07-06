@@ -6,79 +6,11 @@
   gtk = helpers.mkGtkTheme {inherit theme;};
   qt = helpers.mkQtTheme {inherit theme;};
   firefox = helpers.mkFirefoxTheme {inherit theme;};
-
-  sessionVariables = {
-    GTK_THEME = theme.gtk.name;
-    THEME_NAME = theme.name;
-    THEME_GTK = theme.gtk.name;
-    THEME_ICON = theme.icon.name;
-    THEME_CURSOR = theme.cursor.name;
-    THEME_CURSOR_SIZE = toString theme.cursor.size;
-    THEME_BG = theme.ui.bg;
-    THEME_BG_DARK = theme.ui.bgDark;
-    THEME_BG_DARKER = theme.ui.bgDarker;
-    THEME_SURFACE = theme.ui.surface;
-    THEME_OVERLAY = theme.ui.overlay;
-    THEME_FG = theme.ui.fg;
-    THEME_FG_MUTED = theme.ui.fgMuted;
-    THEME_ACCENT = theme.ui.accent;
-    THEME_ACCENT_ALT = theme.ui.accentAlt;
-    THEME_ACCENT_BRIGHT = theme.ui.accentBright;
-    THEME_SHADOW = theme.ui.shadow;
-    THEME_RED = theme.ui.red;
-    THEME_GREEN = theme.ui.green;
-    THEME_YELLOW = theme.ui.yellow;
-    THEME_BLUE = theme.ui.blue;
-    THEME_CYAN = theme.ui.cyan;
-    PROMPT_COLOR = helpers.promptColorFor theme;
-  };
-
-  dotfileSubstitutions = {
-    "{{gtk_theme}}" = theme.gtk.name;
-    "{{icon_theme}}" = theme.icon.name;
-    "{{cursor_theme}}" = theme.cursor.name;
-    "{{cursor_theme_name}}" = theme.cursor.name;
-    "{{cursor_size}}" = toString theme.cursor.size;
-    "{{font_sans}}" = theme.font.sans;
-    "{{font_document}}" = theme.font.document;
-    "{{font_mono}}" = theme.font.mono;
-    "{{ui_bg}}" = theme.ui.bg;
-    "{{ui_bg_hex}}" = helpers.stripHex theme.ui.bg;
-    "{{ui_bg_dark}}" = theme.ui.bgDark;
-    "{{ui_bg_dark_hex}}" = helpers.stripHex theme.ui.bgDark;
-    "{{ui_bg_darker}}" = theme.ui.bgDarker;
-    "{{ui_bg_darker_hex}}" = helpers.stripHex theme.ui.bgDarker;
-    "{{ui_surface}}" = theme.ui.surface;
-    "{{ui_surface_hex}}" = helpers.stripHex theme.ui.surface;
-    "{{ui_overlay}}" = theme.ui.overlay;
-    "{{ui_overlay_hex}}" = helpers.stripHex theme.ui.overlay;
-    "{{ui_fg}}" = theme.ui.fg;
-    "{{ui_fg_hex}}" = helpers.stripHex theme.ui.fg;
-    "{{ui_fg_muted}}" = theme.ui.fgMuted;
-    "{{ui_fg_muted_hex}}" = helpers.stripHex theme.ui.fgMuted;
-    "{{ui_accent}}" = theme.ui.accent;
-    "{{ui_accent_hex}}" = helpers.stripHex theme.ui.accent;
-    "{{ui_accent_alt}}" = theme.ui.accentAlt;
-    "{{ui_accent_alt_hex}}" = helpers.stripHex theme.ui.accentAlt;
-    "{{ui_accent_bright}}" = theme.ui.accentBright;
-    "{{ui_accent_bright_hex}}" = helpers.stripHex theme.ui.accentBright;
-    "{{ui_shadow}}" = theme.ui.shadow;
-    "{{ui_shadow_hex}}" = helpers.stripHex theme.ui.shadow;
-    "{{ui_red}}" = theme.ui.red;
-    "{{ui_green}}" = theme.ui.green;
-    "{{ui_yellow}}" = theme.ui.yellow;
-    "{{ui_blue}}" = theme.ui.blue;
-    "{{ui_cyan}}" = theme.ui.cyan;
-    "{{qt_platform_theme}}" = qt.platformTheme;
-    "{{qt_style}}" = qt.style;
-    "{{quickshell_primary}}" = theme.ui.surface;
-    "{{quickshell_secondary}}" = theme.ui.accent;
-    "{{quickshell_secondary_bright}}" = theme.ui.accentBright;
-  };
+  tokens = helpers.mkThemeTokens {inherit qt theme;};
 
   t = theme.ui;
 in {
-  inherit dotfileSubstitutions sessionVariables;
+  inherit (tokens) dotfileSubstitutions sessionVariables;
 
   paletteJson = builtins.toJSON {
     name = theme.name;
@@ -105,7 +37,7 @@ in {
     ++ lib.mapAttrsToList (
       name: value: "export ${name}=${lib.escapeShellArg value}"
     )
-    sessionVariables
+    tokens.sessionVariables
   );
 
   dconfSettings = gtk.dconfSettings;
