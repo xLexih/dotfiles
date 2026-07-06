@@ -8,21 +8,21 @@
   cpuVendor = config.modules.hardware.cpu.vendor;
 
   powerSwitchScript = pkgs.writeShellScript "power-profile-switch" ''
-    AC_STATE=$(cat /sys/class/power_supply/AC0/online 2>/dev/null || echo "1")
+    AC_STATE=$(${pkgs.coreutils}/bin/cat /sys/class/power_supply/AC0/online 2>/dev/null || echo "1")
 
     # HWP dynamic boost
     echo 1 > /sys/devices/system/cpu/intel_pstate/hwp_dynamic_boost 2>/dev/null || true
 
     # P-cores (0-15) off on battery, E-cores (16-31) stay
     if [ "$AC_STATE" = "1" ]; then
-      for cpu in $(seq 1 15); do
+      for cpu in $(${pkgs.coreutils}/bin/seq 1 15); do
         echo 1 > /sys/devices/system/cpu/cpu$cpu/online 2>/dev/null || true
       done
       # iGPU: full clock on AC
       echo 1650 > /sys/class/drm/card1/gt_max_freq_mhz 2>/dev/null || true
       echo 1650 > /sys/class/drm/card1/gt_boost_freq_mhz 2>/dev/null || true
     else
-      for cpu in $(seq 1 15); do
+      for cpu in $(${pkgs.coreutils}/bin/seq 1 15); do
         echo 0 > /sys/devices/system/cpu/cpu$cpu/online 2>/dev/null || true
       done
       # iGPU: cap at 900MHz on battery
@@ -31,12 +31,12 @@
     fi
 
     # Find the active Hyprland session via /run/user/*/hypr/
-    HYPR_SOCKET=$(find /run/user -name ".socket.sock" -path "*/hypr/*" 2>/dev/null | head -1)
+    HYPR_SOCKET=$(${pkgs.findutils}/bin/find /run/user -name ".socket.sock" -path "*/hypr/*" 2>/dev/null | ${pkgs.coreutils}/bin/head -1)
 
     if [ -n "$HYPR_SOCKET" ]; then
-      INSTANCE_DIR=$(dirname "$HYPR_SOCKET")
-      export HYPRLAND_INSTANCE_SIGNATURE=$(basename "$INSTANCE_DIR")
-      HYPR_UID=$(stat -c '%u' "$HYPR_SOCKET")
+      INSTANCE_DIR=$(${pkgs.coreutils}/bin/dirname "$HYPR_SOCKET")
+      export HYPRLAND_INSTANCE_SIGNATURE=$(${pkgs.coreutils}/bin/basename "$INSTANCE_DIR")
+      HYPR_UID=$(${pkgs.coreutils}/bin/stat -c '%u' "$HYPR_SOCKET")
       export XDG_RUNTIME_DIR="/run/user/$HYPR_UID"
       HYPRCTL="${pkgs.hyprland}/bin/hyprctl"
 
@@ -69,11 +69,11 @@
     # yt6801: unbind on battery for PCI D3cold
     if [ "$AC_STATE" = "1" ]; then
       echo "0000:3a:00.0" > /sys/bus/pci/drivers/yt6801/bind 2>/dev/null || true
-      systemctl start nvidia-powerd.service 2>/dev/null || true
+      ${pkgs.systemd}/bin/systemctl start nvidia-powerd.service 2>/dev/null || true
     else
       ${pkgs.iproute2}/bin/ip link set enp58s0 down 2>/dev/null || true
       echo "0000:3a:00.0" > /sys/bus/pci/drivers/yt6801/unbind 2>/dev/null || true
-      systemctl stop nvidia-powerd.service 2>/dev/null || true
+      ${pkgs.systemd}/bin/systemctl stop nvidia-powerd.service 2>/dev/null || true
     fi
   '';
 in {
