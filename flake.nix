@@ -81,6 +81,17 @@
           hostName = "desktop";
           userName = "lex";
         };
+        defaultThemeTargets = import (self + "/theme/programs") {
+          inherit lib pkgs;
+          sharePickerBinary = "/run/current-system/sw/bin/false";
+          theme = themeRegistry.themes.${themeRegistry.default};
+        };
+        shadowedXdgDotfiles =
+          builtins.filter (
+            name: builtins.hasAttr name defaultThemeTargets.xdgConfigFiles
+          )
+          (builtins.attrNames dotfileSample.xdgConfigFiles);
+        shadowedXdgDotfilesText = lib.concatStringsSep "," shadowedXdgDotfiles;
         dotfileLayerNames = lib.concatStringsSep "," (map (layer: layer.name) dotfileSample.layers);
         dotfileHasHomeBashrc =
           if builtins.hasAttr ".bashrc" dotfileSample.files
@@ -167,11 +178,13 @@
             test ${lib.escapeShellArg dotfileLayerNames} = global,host,user
             test ${lib.escapeShellArg dotfileHasHomeBashrc} = yes
             test ${lib.escapeShellArg dotfileHasHyprland} = yes
+            test -z ${lib.escapeShellArg shadowedXdgDotfilesText}
 
             cat > $out <<EOF
             layers=${dotfileLayerNames}
             homeBashrc=${dotfileHasHomeBashrc}
               hyprland=${dotfileHasHyprland}
+              shadowedXdgDotfiles=${shadowedXdgDotfilesText}
               EOF
           '';
 
