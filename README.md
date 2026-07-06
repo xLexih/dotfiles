@@ -49,7 +49,7 @@ Software lives in one of three places depending on what it needs:
 
 **module/software/** is reserved for software that genuinely requires system-level integration: services, firewall rules, kernel modules, or virtualization. If it can run as a plain user package, it belongs in the user config or an overlay instead.
 
-Themes are discovered from `theme/<name>/default.nix`. Enabling exactly one `modules.theme.<name>` option generates the GTK, Qt, Firefox, Kitty, and palette files for each configured user.
+Themes are discovered from `theme/<name>/default.nix`. Enabling exactly one `modules.theme.<name>` option generates files for each configured user. Program-specific theme targets live in `theme/programs/`, so adding a new themed application should usually mean adding one small target file instead of expanding `theme/module.nix`.
 
 ## Rough Repository Structure
 
@@ -71,7 +71,7 @@ Themes are discovered from `theme/<name>/default.nix`. Enabling exactly one `mod
 │   ├── session/           # Display manager and window manager
 │   └── software/          # System-level services (docker, VMs, etc.)
 ├── overlay/               # Custom package builds and patches
-├── theme/<theme_name>     # Theme definitions, palette generation, toolkit outputs
+├── theme/                 # Theme definitions, program targets, generated outputs
 ├── user/<user_name>/      # User packages and personal dotfiles
 │   ├── .config/           # User-specific dotfile overrides
 └── flake.nix              # Entry point — hosts, inputs, checks
