@@ -7,7 +7,7 @@ final: prev: {
 
     buildPhase = ''
       runHook preBuild
-      g++ hid_send.cpp -o hid-send
+      g++ -Wall -Wextra -O2 hid_send.cpp -o hid-send
       runHook postBuild
     '';
 
