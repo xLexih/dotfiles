@@ -32,6 +32,83 @@
     parsed = fontParts font;
   in "${parsed.family},${parsed.size},-1,5,50,0,0,0,0,0";
 
+  uiTokenNames = {
+    accent = "ACCENT";
+    accentAlt = "ACCENT_ALT";
+    accentBright = "ACCENT_BRIGHT";
+    bg = "BG";
+    bgDark = "BG_DARK";
+    bgDarker = "BG_DARKER";
+    blue = "BLUE";
+    cyan = "CYAN";
+    fg = "FG";
+    fgMuted = "FG_MUTED";
+    green = "GREEN";
+    overlay = "OVERLAY";
+    red = "RED";
+    shadow = "SHADOW";
+    surface = "SURFACE";
+    yellow = "YELLOW";
+  };
+
+  lowerTokenName = name: lib.toLower (builtins.replaceStrings ["_"] ["_"] uiTokenNames.${name});
+
+  mkThemeTokens = {
+    qt,
+    theme,
+  }: let
+    uiSessionVariables =
+      lib.mapAttrs' (
+        name: value:
+          lib.nameValuePair "THEME_${uiTokenNames.${name}}" value
+      )
+      theme.ui;
+
+    uiDotfileSubstitutions =
+      lib.foldlAttrs (
+        acc: name: value: let
+          token = lowerTokenName name;
+        in
+          acc
+          // {
+            "{{ui_${token}}}" = value;
+            "{{ui_${token}_hex}}" = stripHex value;
+          }
+      )
+      {}
+      theme.ui;
+  in {
+    sessionVariables =
+      {
+        GTK_THEME = theme.gtk.name;
+        THEME_NAME = theme.name;
+        THEME_GTK = theme.gtk.name;
+        THEME_ICON = theme.icon.name;
+        THEME_CURSOR = theme.cursor.name;
+        THEME_CURSOR_SIZE = toString theme.cursor.size;
+        PROMPT_COLOR = promptColorFor theme;
+      }
+      // uiSessionVariables;
+
+    dotfileSubstitutions =
+      {
+        "{{gtk_theme}}" = theme.gtk.name;
+        "{{icon_theme}}" = theme.icon.name;
+        "{{cursor_theme}}" = theme.cursor.name;
+        "{{cursor_theme_name}}" = theme.cursor.name;
+        "{{cursor_size}}" = toString theme.cursor.size;
+        "{{font_sans}}" = theme.font.sans;
+        "{{font_document}}" = theme.font.document;
+        "{{font_mono}}" = theme.font.mono;
+        "{{qt_platform_theme}}" = qt.platformTheme;
+        "{{qt_style}}" = qt.style;
+        "{{quickshell_primary}}" = theme.ui.surface;
+        "{{quickshell_secondary}}" = theme.ui.accent;
+        "{{quickshell_secondary_bright}}" = theme.ui.accentBright;
+      }
+      // uiDotfileSubstitutions;
+  };
+
   gtkPreferDark = theme:
     if theme.gtk.preferDark or true
     then "1"
@@ -1107,6 +1184,7 @@ in {
     mkFirefoxTheme
     mkGtkTheme
     mkQtTheme
+    mkThemeTokens
     promptColorFor
     rgbCsv
     stripHex
