@@ -41,7 +41,7 @@ Software lives in one of three places depending on what it needs:
 
 | Need | Location | Example |
 | ---- | -------- | ------- |
-| Plain package | `user/lex/default.nix` | Firefox, Spotify |
+| Plain package | `user/<name>/lib/packages.nix` | Kitty, VSCodium, development tools |
 | Custom build or patch | `overlay/` | Codium with extensions, Krita plugins |
 | System services or NixOS options | `module/software/` | Docker, Sunshine, libvirt |
 
