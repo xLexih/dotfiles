@@ -14,8 +14,8 @@
   boot.kernelModules = [
     "kvm_intel" # Intel virtualization
     "yt6801" # Motorcomm Ethernet
-    "asus_wmi" # For power managment
-    "asus_nb_wmi" # For power managment
+    "asus_wmi" # For power management
+    "asus_nb_wmi" # For power management
     "tuxedo-keyboard"
   ];
   boot.blacklistedKernelModules = ["ite_8291"];
