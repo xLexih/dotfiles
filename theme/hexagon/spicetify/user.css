@@ -12,8 +12,8 @@
 :root .Root__right-sidebar,
 :root .Root__now-playing-bar {
   background:
-    radial-gradient(circle at top right, rgba(196, 160, 255, 0.06), transparent 28%),
-    radial-gradient(circle at top left, rgba(168, 142, 224, 0.05), transparent 24%),
+    radial-gradient(circle at top right, rgba(198, 160, 255, 0.06), transparent 28%),
+    radial-gradient(circle at top left, rgba(139, 213, 202, 0.05), transparent 24%),
     var(--spice-player) !important;
   color: var(--spice-text);
 }
@@ -31,7 +31,7 @@
 :root .GenericModal__overlay .GenericModal {
   background: var(--hexagon-panel) !important;
   border: 1px solid var(--hexagon-outline);
-  box-shadow: 0 12px 32px rgba(10, 6, 16, 0.4);
+  box-shadow: 0 12px 32px rgba(8, 5, 13, 0.42);
 }
 
 :root .Root__nav-bar,
@@ -95,7 +95,7 @@
   color: var(--spice-text) !important;
   border: 1px solid color-mix(in srgb, var(--spice-accent) 28%, transparent) !important;
   border-radius: 999px !important;
-  box-shadow: 0 4px 16px rgba(10, 6, 16, 0.25);
+  box-shadow: 0 4px 16px rgba(8, 5, 13, 0.28);
 }
 
 :root button[data-encore-id="buttonPrimary"]:not([aria-label="Play"]):not([aria-label="Pause"]):not([aria-label^="Play "]):not([aria-label^="Pause "]):not([aria-label*="Resume"]):not([title="Play"]):not([title="Pause"]):hover {

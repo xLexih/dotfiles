@@ -4,17 +4,17 @@
   pkgs ? null,
 }: let
   ui = {
-    bg = "#1a1025";
-    bgDark = "#140c1c";
-    bgDarker = "#0f0914";
-    surface = "#221430";
-    overlay = "#2d1d3e";
-    fg = "#e4daf0";
-    fgMuted = "#887ea0";
-    accent = "#c4a0ff";
-    accentAlt = "#a88ee0";
-    accentBright = "#dfc4ff";
-    shadow = "#0a0610";
+    bg = "#1a1024";
+    bgDark = "#130c1b";
+    bgDarker = "#0d0812";
+    surface = "#251735";
+    overlay = "#38274d";
+    fg = "#eee6f8";
+    fgMuted = "#b0a4c8";
+    accent = "#c6a0ff";
+    accentAlt = "#8bd5ca";
+    accentBright = "#e2c7ff";
+    shadow = "#08050d";
     red = "#f38ba8";
     green = "#a6e3a1";
     yellow = "#f9e2af";
@@ -85,6 +85,26 @@
     };
 
     inherit ui;
+
+    roles = {
+      activeBg = ui.overlay;
+      activeFg = ui.fg;
+      accentFg = ui.bgDarker;
+      border = ui.overlay;
+      borderStrong = ui.accentAlt;
+      dangerFg = ui.bgDarker;
+      disabledFg = ui.fgMuted;
+      focus = ui.accentBright;
+      hoverBg = ui.surface;
+      inputBg = ui.bgDarker;
+      link = ui.accentAlt;
+      panelBg = ui.bg;
+      panelBgAlt = ui.bgDark;
+      selectionBg = ui.accent;
+      selectionFg = ui.bgDarker;
+      successFg = ui.bgDarker;
+      warningFg = ui.bgDarker;
+    };
 
     kitty = {
       background = ui.bg;

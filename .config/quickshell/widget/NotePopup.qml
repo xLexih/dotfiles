@@ -33,7 +33,7 @@ Item {
             title: "Notes"
             implicitWidth: 320
             implicitHeight: 400
-            color: Asset.Theme.primary
+            color: Asset.Theme.surface
             visible: true
 
             onVisibleChanged: {
@@ -97,7 +97,7 @@ Item {
 
                     Text {
                         text: "Notes"
-                        color: Asset.Theme.secondary
+                        color: Asset.Theme.accent
                         font.pixelSize: 13
                         font.weight: Font.Bold
                     }
@@ -105,7 +105,7 @@ Item {
                     Text {
                         anchors.right: parent.right
                         text: popup.markdownMode ? "md" : "txt"
-                        color: Asset.Theme.secondary
+                        color: Asset.Theme.muted
                         font.pixelSize: 11
                         opacity: 0.7
 
@@ -122,12 +122,22 @@ Item {
                     clip: true
                     flickableDirection: Flickable.VerticalFlick
 
-                    ScrollBar.vertical: ScrollBar {}
+                    ScrollBar.vertical: ScrollBar {
+                        id: noteScrollBar
+
+                        contentItem: Rectangle {
+                            implicitWidth: 5
+                            radius: 3
+                            color: noteScrollBar.hovered || noteScrollBar.pressed ? Asset.Theme.accent : Asset.Theme.border
+                        }
+                    }
 
                     TextEdit {
                         id: noteArea
                         width: parent.width
-                        color: Asset.Theme.secondary
+                        color: Asset.Theme.text
+                        selectedTextColor: Asset.Theme.selectionText
+                        selectionColor: Asset.Theme.selection
                         font.pixelSize: popup.fontSize
                         wrapMode: TextEdit.Wrap
                         selectByMouse: true
