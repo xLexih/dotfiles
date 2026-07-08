@@ -28,6 +28,14 @@
     )
     programFiles;
 
+  managedFile = file:
+    if lib.isAttrs file && (file ? text || file ? source)
+    then {clobber = true;} // file
+    else file;
+
+  managedFiles = files:
+    lib.mapAttrs (_: managedFile) files;
+
   mergeProgramAttr = attr:
     lib.foldl'
     (acc: program: acc // (program.${attr} or {}))
@@ -36,8 +44,8 @@
 in {
   inherit programs;
 
-  homeFiles = mergeProgramAttr "homeFiles";
-  xdgConfigFiles = mergeProgramAttr "xdgConfigFiles";
-  xdgDataFiles = mergeProgramAttr "xdgDataFiles";
+  homeFiles = managedFiles (mergeProgramAttr "homeFiles");
+  xdgConfigFiles = managedFiles (mergeProgramAttr "xdgConfigFiles");
+  xdgDataFiles = managedFiles (mergeProgramAttr "xdgDataFiles");
   environmentEtc = mergeProgramAttr "environmentEtc";
 }

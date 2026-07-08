@@ -8,7 +8,8 @@
   firefox = helpers.mkFirefoxTheme {inherit theme;};
   tokens = helpers.mkThemeTokens {inherit qt theme;};
 
-  t = theme.ui;
+  roles = helpers.mkThemeRoles theme;
+  t = helpers.mkThemePalette theme;
 in {
   inherit (tokens) dotfileSubstitutions sessionVariables;
 
@@ -22,6 +23,7 @@ in {
     };
     font = theme.font;
     ui = theme.ui;
+    inherit roles;
     qt = {
       platformTheme = qt.platformTheme;
       style = qt.style;
@@ -103,24 +105,57 @@ in {
     QWidget {
       background-color: ${t.bg};
       color: ${t.fg};
+      selection-background-color: ${t.selectionBg};
+      selection-color: ${t.selectionFg};
     }
     QLabel {
       color: ${t.fg};
     }
+    QFrame, QGroupBox {
+      border-color: ${t.border};
+    }
+    QLineEdit, QComboBox, QListView, QTreeView {
+      background-color: ${t.inputBg};
+      color: ${t.fg};
+      border: 1px solid ${t.border};
+      border-radius: 6px;
+      padding: 5px 8px;
+      selection-background-color: ${t.selectionBg};
+      selection-color: ${t.selectionFg};
+    }
+    QLineEdit:focus, QComboBox:focus, QListView:focus, QTreeView:focus {
+      border-color: ${t.focus};
+    }
+    QListView::item, QTreeView::item {
+      min-height: 24px;
+      padding: 4px 8px;
+    }
+    QListView::item:hover, QTreeView::item:hover {
+      background-color: ${t.hoverBg};
+    }
+    QListView::item:selected, QTreeView::item:selected {
+      background-color: ${t.selectionBg};
+      color: ${t.selectionFg};
+    }
     QPushButton {
       background-color: ${t.surface};
       color: ${t.fg};
-      border: 1px solid ${t.overlay};
+      border: 1px solid ${t.border};
       border-radius: 6px;
       padding: 6px 16px;
     }
     QPushButton:hover {
-      background-color: ${t.overlay};
+      background-color: ${t.hoverBg};
+      border-color: ${t.borderStrong};
     }
     QPushButton:pressed, QPushButton:checked {
-      background-color: ${t.accent};
-      color: ${t.bg};
-      border-color: ${t.accent};
+      background-color: ${t.selectionBg};
+      color: ${t.selectionFg};
+      border-color: ${t.selectionBg};
+    }
+    QPushButton:disabled {
+      color: ${t.disabledFg};
+      border-color: ${t.border};
     }
   '';
 
@@ -129,5 +164,8 @@ in {
   firefoxUserContent = firefox.userContent;
   firefoxUserChrome = firefox.userChrome;
 
-  codium = import ./codium {inherit theme;};
+  codium = import ./codium {
+    inherit theme;
+    palette = t;
+  };
 }
