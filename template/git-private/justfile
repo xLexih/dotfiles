@@ -1,0 +1,69 @@
+set shell := ["bash", "-eu", "-o", "pipefail", "-c"]
+
+scripts := "scripts/private scripts/pre-commit"
+
+default:
+    @just --list
+
+# Configure hooks for this clone.
+setup:
+    chmod +x scripts/private scripts/pre-commit
+    git config core.hooksPath scripts
+
+# Verify setup without changing git config.
+setup-check:
+    test -x scripts/private
+    test -x scripts/pre-commit
+    test "$(git config --get core.hooksPath)" = scripts
+
+# Run shell syntax checks.
+lint:
+    for file in {{ scripts }}; do bash -n "$file"; done
+
+# Run shellcheck when it is available.
+shellcheck:
+    shellcheck {{ scripts }}
+
+# Run the same checks expected before handing off changes.
+check: lint shellcheck setup-check flake-check
+    git diff --check
+
+# Run the pre-commit hook directly.
+hook:
+    scripts/pre-commit
+
+# Call the private-file CLI. Example: just private check --fix
+private *args:
+    ./scripts/private {{ args }}
+
+# Encrypt one private plaintext file. Example: just encrypt config.private.yaml
+encrypt file:
+    ./scripts/private encrypt --file "{{ file }}"
+
+# Decrypt one .age file. Example: just decrypt config.yaml.age
+decrypt file:
+    ./scripts/private decrypt --file "{{ file }}"
+
+# Show private-file CLI help.
+help-private:
+    ./scripts/private help
+
+# Validate the flake outputs.
+flake-check:
+    nix flake check
+
+# Update flake.lock to the latest allowed input revisions.
+flake-update:
+    nix flake update
+
+# Refresh flake.lock without changing flake.nix.
+flake-lock:
+    nix flake lock
+
+# Format Nix files through the flake formatter.
+fmt:
+    nix fmt
+
+# Enter the flake development shell.
+dev:
+    nix develop

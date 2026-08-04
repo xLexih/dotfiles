@@ -47,7 +47,6 @@ in {
     };
 
     environment.systemPackages = with pkgs; [
-      bottles
       goverlay
       heroic
       mangohud

@@ -170,6 +170,7 @@
     then {source = last layers;}
     else {
       type = "copy";
+      clobber = true;
       permissions = "644";
       text = renderText {
         inherit layers mode relPath substitutions;

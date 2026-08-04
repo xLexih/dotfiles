@@ -25,6 +25,9 @@
   inputs.nix-vscode-extensions.url = "github:nix-community/nix-vscode-extensions";
   inputs.nix-vscode-extensions.inputs.nixpkgs.follows = "nixpkgs";
 
+  inputs.octelium-custom-client.url = "path:/data/project/homelab/octelium-custom-client";
+  inputs.octelium-custom-client.inputs.nixpkgs.follows = "nixpkgs";
+
   outputs = {self, ...} @ inputs: let
     inherit (inputs.nixpkgs) lib;
 
@@ -46,6 +49,11 @@
     };
   in {
     formatter = forAllSystems (system: inputs.nixpkgs.legacyPackages.${system}.alejandra);
+
+    templates.git-private = {
+      path = ./template/git-private;
+      description = "Private-file encryption Git repository template";
+    };
 
     inherit nixosConfigurations;
 
