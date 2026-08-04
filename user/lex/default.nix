@@ -61,6 +61,7 @@ in {
         delta.side-by-side = true;
         merge.conflictstyle = "zdiff3";
         diff.colorMoved = "default";
+        alias.private = "!git-private";
       };
     };
 
@@ -77,5 +78,7 @@ in {
         shuffle
       ];
     };
+
+    environment.systemPackages = [ pkgs.spicetify-cli ];
   };
 }

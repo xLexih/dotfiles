@@ -1,0 +1,3 @@
+*.private*
+age/private.key
+.direnv/

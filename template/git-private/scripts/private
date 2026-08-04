@@ -1,0 +1,999 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+INVOCATION_CWD="$(pwd -P)"
+ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+ROOT="$(cd "${ROOT}" && pwd -P)"
+if [ -n "${GIT_PREFIX:-}" ] && [ -d "${ROOT}/${GIT_PREFIX}" ]; then
+  INVOCATION_CWD="$(cd "${ROOT}/${GIT_PREFIX}" && pwd -P)"
+fi
+cd "${ROOT}" || exit 1
+
+PRIVATE_MARKER="${PRIVATE_MARKER:-.private}"
+ENCRYPTED_SUFFIX="${ENCRYPTED_SUFFIX:-.age}"
+AGE_KEY_DIR="${AGE_KEY_DIR:-age}"
+
+DEFAULT_AGE_PUBLIC_KEY_FILE="${ROOT}/${AGE_KEY_DIR}/public.key"
+DEFAULT_AGE_PRIVATE_KEY_FILE="${ROOT}/${AGE_KEY_DIR}/private.key"
+AGE_PUBLIC_KEY_FILE="${AGE_PUBLIC_KEY_FILE:-${DEFAULT_AGE_PUBLIC_KEY_FILE}}"
+AGE_PRIVATE_KEY_FILE="${AGE_PRIVATE_KEY_FILE:-${DEFAULT_AGE_PRIVATE_KEY_FILE}}"
+KEY_COMMENT="${KEY_COMMENT:-age-private-files}"
+SSH_KEY_PASSPHRASE="${SSH_KEY_PASSPHRASE:-}"
+YES="${YES:-0}"
+PRIVATE_NONINTERACTIVE="${PRIVATE_NONINTERACTIVE:-${PRIVATE_HOOK_NONINTERACTIVE:-0}}"
+
+age_ok=1
+key_ok=0
+public_refreshed=0
+stage_outputs=0
+staged_by_command=0
+identity_file="${AGE_PRIVATE_KEY_FILE}"
+identity_tmp=""
+
+private_files=()
+tracked_private_files=()
+missing_encryption=()
+stale_encryption=()
+synced_encryption=()
+unverified_encryption=()
+
+cleanup() {
+  [ -z "${identity_tmp}" ] || rm -f -- "${identity_tmp}"
+}
+
+trap cleanup EXIT
+
+reset_identity() {
+  cleanup
+  identity_tmp=""
+  identity_file="${AGE_PRIVATE_KEY_FILE}"
+}
+
+supports_color() {
+  [ -z "${NO_COLOR:-}" ] && { [ -t 2 ] || [ "${FORCE_COLOR:-0}" = "1" ]; }
+}
+
+color() {
+  local code="$1"
+  shift
+
+  if supports_color; then
+    printf '\033[%sm%s\033[0m' "${code}" "$*"
+  else
+    printf '%s' "$*"
+  fi
+}
+
+say() {
+  printf '%s\n' "$*" >&2
+}
+
+status() {
+  local code="$1"
+  local label="$2"
+  shift 2
+
+  say "  $(color "${code}" "${label}") $*"
+}
+
+ok() { status "1;32" "OK" "$*"; }
+info() { status "1;34" "INFO" "$*"; }
+warn() { status "1;33" "WARN" "$*"; }
+fail() { status "1;31" "FAIL" "$*"; }
+die() { fail "$*"; exit 1; }
+
+usage() {
+  cat >&2 <<USAGE
+usage:
+  private check [--pre-commit] [--fix] [--file FILE]
+  private encrypt --file FILE [--output FILE] [--recipient-file FILE|--key FILE] [--stage] [--force]
+  private decrypt --file FILE [--output FILE|--stdout] [--identity-file FILE|--key FILE] [--force]
+
+defaults:
+  recipient file: ${AGE_KEY_DIR}/public.key
+  identity file:  ${AGE_KEY_DIR}/private.key
+
+setup:
+  just setup
+
+global git alias:
+  git config --global alias.private '!git-private'
+USAGE
+}
+
+can_prompt() {
+  [ "${PRIVATE_NONINTERACTIVE}" != "1" ] &&
+    [ -r /dev/tty ] &&
+    [ -w /dev/tty ]
+}
+
+ask() {
+  local prompt="$1"
+  local answer
+
+  if ! can_prompt; then
+    fail "cannot prompt without an interactive terminal."
+    info "rerun from a terminal or set YES=1 only when you intentionally accept the prompt."
+    return 1
+  fi
+
+  printf '%s' "$(color "1;36" "?") ${prompt}" >&2
+  { read -r answer </dev/tty; } 2>/dev/null || answer=""
+
+  printf '%s\n' "${answer}"
+}
+
+is_yes() {
+  case "$1" in
+    y | Y | yes | YES) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+confirm() {
+  local answer
+
+  [ "${YES}" = "1" ] && return 0
+  answer="$(ask "$1 [y/N] ")" || return 1
+  is_yes "${answer}"
+}
+
+confirm_default_yes() {
+  local answer
+
+  [ "${YES}" = "1" ] && return 0
+  answer="$(ask "$1 [Y/n] ")" || return 1
+  [ -z "${answer}" ] || is_yes "${answer}"
+}
+
+validate_config() {
+  [ -n "${PRIVATE_MARKER}" ] || die "PRIVATE_MARKER must not be empty."
+  [ -n "${ENCRYPTED_SUFFIX}" ] || die "ENCRYPTED_SUFFIX must not be empty."
+  [[ "${PRIVATE_MARKER}" != */* ]] || die "PRIVATE_MARKER must be a filename marker, not a path."
+  [[ "${ENCRYPTED_SUFFIX}" != */* ]] || die "ENCRYPTED_SUFFIX must be a suffix, not a path."
+  [[ "${PRIVATE_MARKER}" != *[\*\?\[]* ]] || die "PRIVATE_MARKER must not contain shell glob metacharacters."
+  [ "${PRIVATE_MARKER}" != "${ENCRYPTED_SUFFIX}" ] || die "PRIVATE_MARKER and ENCRYPTED_SUFFIX must be different."
+}
+
+in_repo() {
+  [[ "$1" == "${ROOT}"/* ]]
+}
+
+repo_path() {
+  local path="$1"
+
+  in_repo "${path}" && path="${path#"${ROOT}"/}"
+  [[ "${path}" == ./* ]] && path="${path#./}"
+
+  printf '%s\n' "${path}"
+}
+
+file_uri() {
+  local path="$1"
+  local char
+  local hex
+  local uri=""
+  local had_lc=0
+  local old_lc="${LC_ALL-}"
+  local i
+
+  [ "${LC_ALL+x}" = "x" ] && had_lc=1
+  case "${path}" in
+    /*) ;;
+    *) path="${ROOT}/${path#./}" ;;
+  esac
+
+  LC_ALL=C
+  for ((i = 0; i < ${#path}; i++)); do
+    char="${path:i:1}"
+    case "${char}" in
+      [a-zA-Z0-9._~/-]) uri+="${char}" ;;
+      *) printf -v hex '%%%02X' "'${char}"; uri+="${hex}" ;;
+    esac
+  done
+
+  if [ "${had_lc}" = "1" ]; then
+    LC_ALL="${old_lc}"
+  else
+    unset LC_ALL
+  fi
+
+  printf 'file://%s\n' "${uri}"
+}
+
+link_path() {
+  local path="$1"
+  local label
+  local uri
+
+  label="$(repo_path "${path}")"
+  if [ -t 2 ] || [ "${FORCE_HYPERLINK:-0}" = "1" ]; then
+    uri="$(file_uri "${path}")"
+    printf '\033]8;;%s\033\\%s\033]8;;\033\\%s' "${uri}" "${label}" ""
+  else
+    printf '%s' "${label}"
+  fi
+}
+
+abs_path() {
+  local path="$1"
+
+  case "${path}" in
+    ~/*) path="${HOME}/${path#~/}" ;;
+    /*) ;;
+    *) path="${ROOT}/${path}" ;;
+  esac
+
+  command -v realpath >/dev/null 2>&1 || die "realpath is required to normalize paths."
+  realpath -m -- "${path}"
+}
+
+abs_user_path() {
+  local path="$1"
+
+  case "${path}" in
+    ~/*) path="${HOME}/${path#~/}" ;;
+    /*) ;;
+    *) path="${INVOCATION_CWD}/${path}" ;;
+  esac
+
+  command -v realpath >/dev/null 2>&1 || die "realpath is required to normalize paths."
+  realpath -m -- "${path}"
+}
+
+normalize_key_paths() {
+  AGE_PUBLIC_KEY_FILE="$(abs_path "${AGE_PUBLIC_KEY_FILE}")"
+  AGE_PRIVATE_KEY_FILE="$(abs_path "${AGE_PRIVATE_KEY_FILE}")"
+  identity_file="${AGE_PRIVATE_KEY_FILE}"
+}
+
+is_encrypted_name() {
+  local path="${1#./}"
+  [[ "${path}" == *"${ENCRYPTED_SUFFIX}" ]]
+}
+
+is_private_name() {
+  local path="${1#./}"
+
+  [[ "${path}" != *"${ENCRYPTED_SUFFIX}" && "${path}" == *"${PRIVATE_MARKER}"* ]]
+}
+
+encrypted_path_for() {
+  local source="${1#./}"
+  local IFS="/"
+  local -a parts=()
+  local -a target=()
+  local part
+  local clean
+  local path=""
+  local i
+  local last_index
+
+  read -r -a parts <<<"${source}"
+  for i in "${!parts[@]}"; do
+    part="${parts[$i]}"
+    clean="${part//"${PRIVATE_MARKER}"/}"
+
+    if [ -z "${clean}" ]; then
+      [ "${i}" -eq "$((${#parts[@]} - 1))" ] && clean="private"
+    fi
+
+    [ -z "${clean}" ] || target+=("${clean}")
+  done
+
+  [ "${#target[@]}" -gt 0 ] || target=("private")
+  last_index=$((${#target[@]} - 1))
+  target[last_index]="${target[last_index]}${ENCRYPTED_SUFFIX}"
+
+  for part in "${target[@]}"; do
+    if [ -z "${path}" ]; then
+      path="${part}"
+    else
+      path="${path}/${part}"
+    fi
+  done
+
+  printf '%s\n' "${path}"
+}
+
+private_path_for_encrypted() {
+  local encrypted="${1#./}"
+  local plain="${encrypted%"${ENCRYPTED_SUFFIX}"}"
+  local dir="${plain%/*}"
+  local base="${plain##*/}"
+  local ext=""
+  local stem
+
+  [ "${dir}" = "${plain}" ] && dir="."
+  if [[ "${base}" == *.* && "${base}" != .* ]]; then
+    ext=".${base##*.}"
+    stem="${base%"${ext}"}"
+    base="${stem}${PRIVATE_MARKER}${ext}"
+  else
+    base="${base}${PRIVATE_MARKER}"
+  fi
+
+  if [ "${dir}" = "." ]; then
+    printf '%s\n' "${base}"
+  else
+    printf '%s/%s\n' "${dir}" "${base}"
+  fi
+}
+
+has_recipient() {
+  [ -f "$1" ] && grep -Eq '^[[:space:]]*(age1[[:alnum:]]+|ssh-(ed25519|rsa)[[:space:]])' "$1"
+}
+
+public_key_ready() {
+  [ -f "${AGE_PUBLIC_KEY_FILE}" ] &&
+    [ ! -L "${AGE_PUBLIC_KEY_FILE}" ] &&
+    has_recipient "${AGE_PUBLIC_KEY_FILE}"
+}
+
+identity_needs_passphrase() {
+  if ssh-keygen -y -P "" -f "${AGE_PRIVATE_KEY_FILE}" >/dev/null 2>&1; then
+    return 1
+  fi
+
+  IFS= read -r line <"${AGE_PRIVATE_KEY_FILE}" || return 1
+  [[ "${line}" == *"PRIVATE KEY"* ]] ||
+    [ "${line}" = "age-encryption.org/v1" ] ||
+    [[ "${line}" == *"ENCRYPTED"* ]]
+}
+
+cache_identity_once() {
+  [ "${identity_file}" != "${AGE_PRIVATE_KEY_FILE}" ] && return 0
+  identity_needs_passphrase || return 0
+
+  if ! can_prompt; then
+    fail "private key requires a passphrase, but no interactive terminal is available."
+    return 1
+  fi
+
+  identity_tmp="$(mktemp "${TMPDIR:-/tmp}/age-identity.XXXXXX")" || return 1
+  chmod 600 "${identity_tmp}" || return 1
+
+  IFS= read -r line <"${AGE_PRIVATE_KEY_FILE}" || return 1
+  if [[ "${line}" == *"PRIVATE KEY"* ]]; then
+    cp -- "${AGE_PRIVATE_KEY_FILE}" "${identity_tmp}" || return 1
+    info "unlock private key once"
+    ssh-keygen -p -N "" -f "${identity_tmp}" </dev/tty >/dev/null || return 1
+  else
+    info "unlock age identity once"
+    age --decrypt --output "${identity_tmp}" -- "${AGE_PRIVATE_KEY_FILE}" </dev/tty || return 1
+    chmod 600 "${identity_tmp}" || return 1
+  fi
+
+  identity_file="${identity_tmp}"
+}
+
+check_key_files() {
+  local missing=0
+
+  if [ -f "${AGE_PRIVATE_KEY_FILE}" ]; then
+    ok "private key: $(link_path "${AGE_PRIVATE_KEY_FILE}")"
+  else
+    warn "missing private key: $(link_path "${AGE_PRIVATE_KEY_FILE}")"
+    missing=1
+  fi
+
+  if public_key_ready; then
+    ok "public recipient: $(link_path "${AGE_PUBLIC_KEY_FILE}")"
+  else
+    [ ! -L "${AGE_PUBLIC_KEY_FILE}" ] || warn "public recipient must be a regular tracked file: $(link_path "${AGE_PUBLIC_KEY_FILE}")"
+    has_recipient "${AGE_PUBLIC_KEY_FILE}" || warn "missing public recipient: $(link_path "${AGE_PUBLIC_KEY_FILE}")"
+    missing=1
+  fi
+
+  return "${missing}"
+}
+
+ensure_public_recipient() {
+  if ! { [ -f "${AGE_PUBLIC_KEY_FILE}" ] && has_recipient "${AGE_PUBLIC_KEY_FILE}"; }; then
+    fail "missing public recipient: $(link_path "${AGE_PUBLIC_KEY_FILE}")"
+    return 1
+  fi
+}
+
+key_paths_are_safe() {
+  local private_path
+
+  if [ "${AGE_PUBLIC_KEY_FILE}" = "${AGE_PRIVATE_KEY_FILE}" ]; then
+    fail "public and private key paths must be different."
+    return 1
+  fi
+
+  in_repo "${AGE_PUBLIC_KEY_FILE}" || {
+    fail "AGE_PUBLIC_KEY_FILE must point inside this repository so the recipient can be committed."
+    return 1
+  }
+
+  in_repo "${AGE_PRIVATE_KEY_FILE}" || return 0
+  private_path="$(repo_path "${AGE_PRIVATE_KEY_FILE}")"
+  if git ls-files --error-unmatch -- "${private_path}" >/dev/null 2>&1; then
+    fail "private key is tracked by Git: $(link_path "${private_path}")"
+    return 1
+  fi
+
+  if ! git check-ignore -q -- "${private_path}"; then
+    fail "private key path is inside the repository but is not ignored: $(link_path "${private_path}")"
+    info "add it to .gitignore or set AGE_PRIVATE_KEY_FILE outside the repository."
+    return 1
+  fi
+}
+
+keypair_roundtrip() {
+  local probe
+  local decrypted
+
+  probe="private-age-key-check:${BASHPID}:${RANDOM}"
+  decrypted="$(
+    printf '%s' "${probe}" |
+      age --encrypt --recipients-file "${AGE_PUBLIC_KEY_FILE}" |
+      age --decrypt --identity "${identity_file}" 2>/dev/null
+  )" || return 1
+
+  [ "${decrypted}" = "${probe}" ]
+}
+
+link_private_key() {
+  local source="$1"
+
+  if [ ! -f "${source}" ]; then
+    fail "private key not found: ${source}"
+    return 1
+  fi
+
+  [ "${source}" = "${AGE_PRIVATE_KEY_FILE}" ] && return 0
+
+  mkdir -p "$(dirname -- "${AGE_PRIVATE_KEY_FILE}")" || return 1
+  if [ -e "${AGE_PRIVATE_KEY_FILE}" ] || [ -L "${AGE_PRIVATE_KEY_FILE}" ]; then
+    if [ "$(readlink -- "${AGE_PRIVATE_KEY_FILE}" 2>/dev/null || true)" = "${source}" ]; then
+      return 0
+    fi
+
+    confirm "Replace $(repo_path "${AGE_PRIVATE_KEY_FILE}") with a symlink?" || return 1
+    rm -f -- "${AGE_PRIVATE_KEY_FILE}" || return 1
+  fi
+
+  ln -s -- "${source}" "${AGE_PRIVATE_KEY_FILE}"
+}
+
+copy_public_key() {
+  local source="$1"
+
+  if [ ! -f "${source}" ]; then
+    fail "public key not found: ${source}"
+    return 1
+  fi
+
+  has_recipient "${source}" || {
+    fail "public key does not contain an age or SSH recipient."
+    return 1
+  }
+
+  if [ "${source}" = "${AGE_PUBLIC_KEY_FILE}" ] && [ ! -L "${AGE_PUBLIC_KEY_FILE}" ]; then
+    stage_path "$(repo_path "${AGE_PUBLIC_KEY_FILE}")" || return 1
+    return 0
+  fi
+
+  mkdir -p "$(dirname -- "${AGE_PUBLIC_KEY_FILE}")" || return 1
+  if [ -e "${AGE_PUBLIC_KEY_FILE}" ] || [ -L "${AGE_PUBLIC_KEY_FILE}" ]; then
+    if [ ! -L "${AGE_PUBLIC_KEY_FILE}" ] && cmp -s -- "${source}" "${AGE_PUBLIC_KEY_FILE}"; then
+      stage_path "$(repo_path "${AGE_PUBLIC_KEY_FILE}")" || return 1
+      return 0
+    fi
+
+    confirm "Replace $(repo_path "${AGE_PUBLIC_KEY_FILE}") with public key contents?" || return 1
+    rm -f -- "${AGE_PUBLIC_KEY_FILE}" || return 1
+  fi
+
+  install -m 644 -- "${source}" "${AGE_PUBLIC_KEY_FILE}" || return 1
+  stage_path "$(repo_path "${AGE_PUBLIC_KEY_FILE}")"
+}
+
+link_keypair() {
+  local private_source
+  local public_source
+
+  private_source="$(ask "Existing private key path: ")" || return 1
+  public_source="$(ask "Existing public key path: ")" || return 1
+  private_source="$(abs_user_path "${private_source}")"
+  public_source="$(abs_user_path "${public_source}")"
+  link_private_key "${private_source}" || return 1
+  copy_public_key "${public_source}"
+}
+
+generate_keypair() {
+  command -v ssh-keygen >/dev/null 2>&1 || {
+    fail "ssh-keygen is required to generate a key pair."
+    return 1
+  }
+
+  if [ -e "${AGE_PRIVATE_KEY_FILE}" ] || [ -L "${AGE_PRIVATE_KEY_FILE}" ] || [ -e "${AGE_PUBLIC_KEY_FILE}" ] || [ -L "${AGE_PUBLIC_KEY_FILE}" ]; then
+    warn "Generating a new key pair replaces the repo age key files."
+    confirm "Replace existing age key files?" || return 1
+  fi
+
+  mkdir -p "$(dirname -- "${AGE_PRIVATE_KEY_FILE}")" "$(dirname -- "${AGE_PUBLIC_KEY_FILE}")" || return 1
+  rm -f -- "${AGE_PRIVATE_KEY_FILE}" "${AGE_PRIVATE_KEY_FILE}.pub" "${AGE_PUBLIC_KEY_FILE}" || return 1
+
+  if ! ssh-keygen \
+    -t ed25519 \
+    -a 100 \
+    -f "${AGE_PRIVATE_KEY_FILE}" \
+    -C "${KEY_COMMENT}" \
+    -N "${SSH_KEY_PASSPHRASE}" \
+    >/dev/null; then
+    return 1
+  fi
+
+  mv -- "${AGE_PRIVATE_KEY_FILE}.pub" "${AGE_PUBLIC_KEY_FILE}" || return 1
+  chmod 600 "${AGE_PRIVATE_KEY_FILE}" || return 1
+  chmod 644 "${AGE_PUBLIC_KEY_FILE}" || return 1
+  stage_path "$(repo_path "${AGE_PUBLIC_KEY_FILE}")"
+}
+
+ensure_key_material() {
+  local choice
+
+  [ "${key_ok}" = "1" ] && return 0
+  normalize_key_paths
+  key_paths_are_safe || return 1
+
+  while true; do
+    if check_key_files; then
+      cache_identity_once || return 1
+      if keypair_roundtrip; then
+        ok "private and public keys match"
+        key_ok=1
+        stage_path "$(repo_path "${AGE_PUBLIC_KEY_FILE}")" || return 1
+        return 0
+      fi
+
+      warn "private key cannot decrypt data encrypted to $(link_path "${AGE_PUBLIC_KEY_FILE}")"
+    fi
+
+    choice="$(ask "Key setup: [l]ink existing, [g]enerate new, [a]bort: ")" || return 1
+    case "${choice}" in
+      l | L | link | LINK) link_keypair && { key_ok=0; reset_identity; } ;;
+      g | G | gen | generate | GENERATE) generate_keypair && { key_ok=0; reset_identity; } ;;
+      a | A | abort | ABORT | "") return 1 ;;
+      *) warn "Choose l, g, or a." ;;
+    esac
+  done
+}
+
+ensure_age() {
+  local allow_missing="${1:-0}"
+  local age_path
+
+  if age_path="$(command -v age 2>/dev/null)"; then
+    age_ok=1
+    ok "age: ${age_path}"
+    return 0
+  fi
+
+  age_ok=0
+  say ""
+  warn "age is not installed."
+  if [ "${allow_missing}" = "1" ] &&
+    confirm "age is not installed, so encrypted files cannot be verified. Continue only if matching ${ENCRYPTED_SUFFIX} files already exist?"; then
+    warn "continuing without decrypt/reencrypt checks."
+    return 0
+  fi
+
+  die "install age and try again."
+}
+
+stage_path() {
+  local before
+  local after
+
+  [ "${stage_outputs}" = "1" ] || return 0
+  before="$(git diff --cached --name-status -- "$@" || true)"
+  git add -f -- "$@" || return 1
+  after="$(git diff --cached --name-status -- "$@" || true)"
+  [ "${before}" = "${after}" ] || staged_by_command=1
+}
+
+collect_private_files() {
+  local file_filter="${1:-}"
+  local default_private_key_path
+  local path
+  local private_key_path=""
+  local -A seen=()
+
+  private_files=()
+  default_private_key_path="$(repo_path "${DEFAULT_AGE_PRIVATE_KEY_FILE}")"
+  in_repo "${AGE_PRIVATE_KEY_FILE}" && private_key_path="$(repo_path "${AGE_PRIVATE_KEY_FILE}")"
+
+  if [ -n "${file_filter}" ]; then
+    path="$(repo_path "$(abs_user_path "${file_filter}")")"
+    if is_private_name "${path}" && [ -f "${path}" ]; then
+      private_files+=("${path}")
+    fi
+    return 0
+  fi
+
+  while IFS= read -r -d '' path; do
+    path="$(repo_path "${path}")"
+    path="${path#./}"
+
+    if [ "${path}" = "${default_private_key_path}" ] ||
+      { [ -n "${private_key_path}" ] && [ "${path}" = "${private_key_path}" ]; }; then
+      continue
+    fi
+
+    if is_private_name "${path}" && [ -f "${path}" ] && [ -z "${seen["${path}"]+x}" ]; then
+      seen["${path}"]=1
+      private_files+=("${path}")
+    fi
+  done < <(find . -path ./.git -prune -o -type f -print0)
+}
+
+collect_tracked_private_files() {
+  local path
+  local default_private_key_path
+  local private_key_path=""
+
+  default_private_key_path="$(repo_path "${DEFAULT_AGE_PRIVATE_KEY_FILE}")"
+  in_repo "${AGE_PRIVATE_KEY_FILE}" && private_key_path="$(repo_path "${AGE_PRIVATE_KEY_FILE}")"
+
+  tracked_private_files=()
+  while IFS= read -r -d '' path; do
+    if [ "${path}" = "${default_private_key_path}" ] ||
+      { [ -n "${private_key_path}" ] && [ "${path}" = "${private_key_path}" ]; } ||
+      is_private_name "${path}"; then
+      tracked_private_files+=("${path}")
+    fi
+  done < <(git ls-files -z)
+}
+
+verify_private_file() {
+  local source="$1"
+  local encrypted="$2"
+
+  ensure_key_material || return 2
+  age --decrypt --identity "${identity_file}" -- "${encrypted}" 2>/dev/null |
+    cmp -s -- "${source}" -
+}
+
+scan_private_pairs() {
+  local source
+  local encrypted
+  local recipient_changed=0
+
+  missing_encryption=()
+  stale_encryption=()
+  synced_encryption=()
+  unverified_encryption=()
+
+  if [ "${age_ok}" = "1" ] &&
+    [ "${public_refreshed}" != "1" ] &&
+    [ "${#private_files[@]}" -gt 0 ] &&
+    public_key_changed; then
+    recipient_changed=1
+  fi
+
+  for source in "${private_files[@]}"; do
+    encrypted="$(encrypted_path_for "${source}")"
+
+    if [ ! -f "${encrypted}" ]; then
+      missing_encryption+=("${source}")
+    elif [ "${age_ok}" != "1" ]; then
+      unverified_encryption+=("${encrypted}")
+    elif [ "${recipient_changed}" = "1" ]; then
+      stale_encryption+=("${source}")
+    elif ! verify_private_file "${source}" "${encrypted}"; then
+      stale_encryption+=("${source}")
+    else
+      synced_encryption+=("${encrypted}")
+    fi
+  done
+}
+
+public_key_changed() {
+  local path
+
+  in_repo "${AGE_PUBLIC_KEY_FILE}" || return 1
+
+  path="$(repo_path "${AGE_PUBLIC_KEY_FILE}")"
+  ! git diff --quiet -- "${path}" ||
+    ! git diff --cached --quiet -- "${path}"
+}
+
+stage_synced_encryptions() {
+  [ "${#synced_encryption[@]}" -eq 0 ] || stage_path "${synced_encryption[@]}"
+}
+
+encrypt_to_file() {
+  local source="$1"
+  local encrypted="$2"
+  local tmp
+
+  info "encrypt $(link_path "${source}") -> $(link_path "${encrypted}")"
+  mkdir -p "$(dirname -- "${encrypted}")" || return 1
+  tmp="$(mktemp -- "${encrypted}.tmp.XXXXXX")" || return 1
+
+  if ! age --encrypt --recipients-file "${AGE_PUBLIC_KEY_FILE}" --output "${tmp}" -- "${source}"; then
+    rm -f -- "${tmp}"
+    return 1
+  fi
+
+  if ! mv -- "${tmp}" "${encrypted}"; then
+    rm -f -- "${tmp}"
+    return 1
+  fi
+}
+
+encrypt_private_file_for_check() {
+  local source="$1"
+  local encrypted
+
+  encrypted="$(encrypted_path_for "${source}")"
+  ensure_key_material || return 1
+  encrypt_to_file "${source}" "${encrypted}" || return 1
+  stage_path "${encrypted}" || return 1
+  stage_path "$(repo_path "${AGE_PUBLIC_KEY_FILE}")"
+}
+
+repair_private_files() {
+  local source
+  local count
+
+  needs_repair || return 0
+  count=$((${#missing_encryption[@]} + ${#stale_encryption[@]}))
+  confirm_default_yes "Create or refresh encryption for ${#missing_encryption[@]} missing and ${#stale_encryption[@]} stale file(s)?" || return 1
+
+  for source in "${missing_encryption[@]}" "${stale_encryption[@]}"; do
+    encrypt_private_file_for_check "${source}" || return 1
+  done
+
+  public_refreshed=1
+  ok "updated ${count} encrypted file(s)"
+}
+
+print_list() {
+  local label="$1"
+  local code="$2"
+  local path
+  shift 2
+
+  [ "$#" -eq 0 ] && return 0
+  say ""
+  say "$(color "${code}" "${label}")"
+  for path in "$@"; do
+    printf '  - ' >&2
+    link_path "${path}" >&2
+    printf '\n' >&2
+  done
+}
+
+print_report() {
+  print_list "NO MATCHING ENCRYPTION" "1;31" "${missing_encryption[@]}"
+  print_list "STALE ENCRYPTION" "1;33" "${stale_encryption[@]}"
+  print_list "UNVERIFIED ENCRYPTION" "1;33" "${unverified_encryption[@]}"
+  print_list "TRACKED PRIVATE PLAINTEXT" "1;35" "${tracked_private_files[@]}"
+}
+
+needs_repair() {
+  [ "${#missing_encryption[@]}" -gt 0 ] ||
+    [ "${#stale_encryption[@]}" -gt 0 ]
+}
+
+block_unsynced() {
+  die "private files are not in sync with their encrypted ${ENCRYPTED_SUFFIX} files."
+}
+
+scan_and_stage() {
+  scan_private_pairs
+  [ "${age_ok}" != "1" ] || stage_synced_encryptions
+}
+
+check_encrypted_file() {
+  local encrypted="$1"
+
+  [ -f "${encrypted}" ] || die "encrypted file not found: $(link_path "${encrypted}")"
+  ensure_age 0
+  ensure_key_material || die "key check failed."
+  age --decrypt --identity "${identity_file}" -- "${encrypted}" >/dev/null ||
+    die "cannot decrypt $(link_path "${encrypted}")"
+  ok "encrypted file decrypts: $(link_path "${encrypted}")"
+}
+
+run_check() {
+  local pre_commit=0
+  local fix=0
+  local file_filter=""
+  local mode_label="private check"
+
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --pre-commit) pre_commit=1; fix=1; stage_outputs=1; mode_label="safety check"; shift ;;
+      --fix) fix=1; shift ;;
+      --file) file_filter="${2:-}"; [ -n "${file_filter}" ] || die "--file requires a path."; shift 2 ;;
+      --help | -h) usage; return 0 ;;
+      *) die "unknown check option: $1" ;;
+    esac
+  done
+
+  say "$(color "1;36" "${mode_label}")"
+  validate_config
+  normalize_key_paths
+
+  if [ -n "${file_filter}" ] && is_encrypted_name "${file_filter}" && ! is_private_name "${file_filter}"; then
+    check_encrypted_file "$(repo_path "$(abs_user_path "${file_filter}")")"
+    return 0
+  fi
+
+  collect_private_files "${file_filter}"
+  collect_tracked_private_files
+  if [ "${#tracked_private_files[@]}" -gt 0 ]; then
+    print_report
+    die "remove tracked plaintext from Git before committing."
+  fi
+
+  if [ "${#private_files[@]}" -eq 0 ]; then
+    ok "no private plaintext files found"
+    return 0
+  fi
+
+  ensure_age "${pre_commit}"
+  if [ "${age_ok}" = "1" ]; then
+    ensure_key_material || die "key check failed."
+  fi
+
+  scan_and_stage
+  print_report
+
+  if [ "${age_ok}" != "1" ]; then
+    if [ "${#missing_encryption[@]}" -gt 0 ]; then
+      die "install age to create missing encrypted files."
+    fi
+
+    warn "freshness checks were skipped because age is missing."
+    ok "private files have matching ${ENCRYPTED_SUFFIX} paths"
+    return 0
+  fi
+
+  if needs_repair; then
+    if [ "${fix}" = "1" ]; then
+      repair_private_files || block_unsynced
+      scan_and_stage
+      print_report
+    else
+      block_unsynced
+    fi
+  fi
+
+  needs_repair && block_unsynced
+
+  if [ "${pre_commit}" = "1" ] && [ "${staged_by_command}" = "1" ]; then
+    ok "all private files match their encrypted ${ENCRYPTED_SUFFIX} files"
+    say ""
+    status "1;31" "COMMIT BLOCKED" "safety check staged files, so this commit was not created."
+    status "1;31" "RUN AGAIN" "rerun git commit to include the staged files."
+    exit 1
+  fi
+
+  ok "all private files match their encrypted ${ENCRYPTED_SUFFIX} files"
+}
+
+run_encrypt() {
+  local source=""
+  local output=""
+  local force=0
+
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --file) source="${2:-}"; [ -n "${source}" ] || die "--file requires a path."; shift 2 ;;
+      --output) output="${2:-}"; [ -n "${output}" ] || die "--output requires a path."; shift 2 ;;
+      --recipient-file | --public-key | --key) AGE_PUBLIC_KEY_FILE="${2:-}"; [ -n "${AGE_PUBLIC_KEY_FILE}" ] || die "$1 requires a path."; AGE_PUBLIC_KEY_FILE="$(abs_user_path "${AGE_PUBLIC_KEY_FILE}")"; shift 2 ;;
+      --stage) stage_outputs=1; shift ;;
+      --force) force=1; shift ;;
+      --help | -h) usage; return 0 ;;
+      *) die "unknown encrypt option: $1" ;;
+    esac
+  done
+
+  [ -n "${source}" ] || die "encrypt requires --file."
+  say "$(color "1;36" "private encrypt")"
+  validate_config
+  normalize_key_paths
+  ensure_age 0
+  ensure_public_recipient || die "recipient check failed."
+
+  source="$(repo_path "$(abs_user_path "${source}")")"
+  [ -f "${source}" ] || die "file not found: $(link_path "${source}")"
+  is_private_name "${source}" || [ "${force}" = "1" ] || die "refusing to encrypt file without ${PRIVATE_MARKER} marker; use --force to override."
+  if [ -n "${output}" ]; then
+    output="$(repo_path "$(abs_user_path "${output}")")"
+  else
+    output="$(encrypted_path_for "${source}")"
+  fi
+
+  encrypt_to_file "${source}" "${output}" || die "encryption failed."
+  stage_path "${output}" || die "failed to stage encrypted file."
+  if in_repo "${AGE_PUBLIC_KEY_FILE}"; then
+    stage_path "$(repo_path "${AGE_PUBLIC_KEY_FILE}")" || die "failed to stage public recipient."
+  fi
+  ok "encrypted file ready: $(link_path "${output}")"
+}
+
+run_decrypt() {
+  local encrypted=""
+  local output=""
+  local output_given=0
+  local stdout=0
+  local force=0
+  local tmp
+
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --file) encrypted="${2:-}"; [ -n "${encrypted}" ] || die "--file requires a path."; shift 2 ;;
+      --output) output="${2:-}"; [ -n "${output}" ] || die "--output requires a path."; output_given=1; shift 2 ;;
+      --identity-file | --private-key | --key) AGE_PRIVATE_KEY_FILE="${2:-}"; [ -n "${AGE_PRIVATE_KEY_FILE}" ] || die "$1 requires a path."; AGE_PRIVATE_KEY_FILE="$(abs_user_path "${AGE_PRIVATE_KEY_FILE}")"; shift 2 ;;
+      --stdout) stdout=1; shift ;;
+      --force) force=1; shift ;;
+      --help | -h) usage; return 0 ;;
+      *) die "unknown decrypt option: $1" ;;
+    esac
+  done
+
+  [ -n "${encrypted}" ] || die "decrypt requires --file."
+  validate_config
+  normalize_key_paths
+  ensure_age 0
+  [ -f "${AGE_PRIVATE_KEY_FILE}" ] || die "missing private key: $(link_path "${AGE_PRIVATE_KEY_FILE}")"
+  cache_identity_once || die "failed to unlock private key."
+
+  encrypted="$(repo_path "$(abs_user_path "${encrypted}")")"
+  [ -f "${encrypted}" ] || die "encrypted file not found: $(link_path "${encrypted}")"
+
+  if [ "${stdout}" = "1" ]; then
+    age --decrypt --identity "${identity_file}" -- "${encrypted}"
+    return
+  fi
+
+  say "$(color "1;36" "private decrypt")"
+  if [ "${output_given}" = "1" ]; then
+    output="$(repo_path "$(abs_user_path "${output}")")"
+  else
+    output="$(private_path_for_encrypted "${encrypted}")"
+  fi
+  if [ -e "${output}" ] && [ "${force}" != "1" ]; then
+    die "refusing to overwrite existing file: $(link_path "${output}")"
+  fi
+
+  mkdir -p "$(dirname -- "${output}")" || die "failed to create output directory."
+  tmp="$(mktemp -- "${output}.tmp.XXXXXX")" || die "failed to create temporary output."
+  if ! age --decrypt --identity "${identity_file}" -- "${encrypted}" >"${tmp}"; then
+    rm -f -- "${tmp}"
+    die "decryption failed."
+  fi
+  chmod 600 "${tmp}" || {
+    rm -f -- "${tmp}"
+    die "failed to chmod decrypted file."
+  }
+  if ! mv -- "${tmp}" "${output}"; then
+    rm -f -- "${tmp}"
+    die "failed to write decrypted file."
+  fi
+
+  ok "decrypted file ready: $(link_path "${output}")"
+}
+
+main() {
+  local command="${1:-}"
+
+  case "${command}" in
+    check) shift; run_check "$@" ;;
+    encrypt) shift; run_encrypt "$@" ;;
+    decrypt) shift; run_decrypt "$@" ;;
+    --help | -h | help | "") usage; [ -n "${command}" ] ;;
+    *) usage; die "unknown command: ${command}" ;;
+  esac
+}
+
+main "$@"

@@ -26,6 +26,7 @@ in
               [
                 inputs.nix-index-database.overlays.nix-index
                 inputs.nix-cachyos-kernel.overlays.default
+                inputs.octelium-custom-client.overlays.default
               ]
               ++ (import (inputs.self + "/overlay") {inherit (inputs.nixpkgs) lib;})
               ++ [

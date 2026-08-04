@@ -10,6 +10,7 @@ in {
     type = lib.types.listOf lib.types.str;
     default = [
       "pnpm-10.29.2"
+      "electron-40.10.5"
     ];
     description = "Insecure nixpkgs packages allowed for this system.";
   };

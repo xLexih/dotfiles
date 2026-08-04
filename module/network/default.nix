@@ -1,4 +1,6 @@
 {...}: {
+  boot.kernelModules = ["tun"];
+
   networking.nftables.enable = true; # modern firewall backend
 
   networking.networkmanager = {

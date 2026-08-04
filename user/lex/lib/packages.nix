@@ -44,6 +44,7 @@
       claude-code
       codex
       codium-custom
+      git-private
       kilo
       opencode
       ani-cli
@@ -59,6 +60,8 @@
     ];
 
     networkingAndDiagnostics = [
+      octelium-custom-client
+      octelium-custom-cli
       nettools
       tcpdump
       traceroute
