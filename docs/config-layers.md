@@ -24,6 +24,9 @@ invalid output. The built-in replacement suffixes are:
 .json .jsonc .qml .qmldir .svg .toml .yaml .yml
 ```
 
+Lua configuration is treated as plain text and uses `--` for the generated-file
+warning, so layered `.lua` fragments execute in global, host, then user order.
+
 If a specific file needs different behavior, pass a `fileModes` override to
 `mkHjemDotfiles`:
 

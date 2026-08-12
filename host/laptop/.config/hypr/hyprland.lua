@@ -1,0 +1,5 @@
+hl.monitor({ output = "eDP-1", mode = "2560x1600@240.00", position = "0x0", scale = 1.33, cm = "auto" })
+hl.env("AQ_DRM_DEVICES", "/dev/dri/card2:/dev/dri/card1")
+hl.env("XCURSOR_SIZE", "21")
+hl.env("HYPRCURSOR_SIZE", "21")
+hl.config({ misc = { vrr = 1 } })

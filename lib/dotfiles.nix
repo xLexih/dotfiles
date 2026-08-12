@@ -17,6 +17,8 @@
         ".qss"
       ]
     then "slashes"
+    else if lib.hasSuffix ".lua" relPath
+    then "dashes"
     else if
       relPath
       == "bashrc"
@@ -42,6 +44,8 @@
     then "# ${warningText}\n"
     else if style == "slashes"
     then "// ${warningText}\n"
+    else if style == "dashes"
+    then "-- ${warningText}\n"
     else "";
 
   last = list: builtins.elemAt list (builtins.length list - 1);

@@ -46,6 +46,7 @@
       git-private
       kilo
       opencode
+      pi-coding-agent
       ani-cli
     ];
 
