@@ -28,6 +28,10 @@
   inputs.octelium-custom-client.url = "path:/data/project/homelab/octelium-custom-client";
   inputs.octelium-custom-client.inputs.nixpkgs.follows = "nixpkgs";
 
+  inputs.llm-agents = {
+    url = "github:numtide/llm-agents.nix";
+    inputs.nixpkgs.follows = "nixpkgs";
+  };
   outputs = {self, ...} @ inputs: let
     inherit (inputs.nixpkgs) lib;
 
@@ -86,7 +90,13 @@
         supportThemeNames = lib.filter (name: builtins.elem name ["programs" "template"]) discoveredThemeNames;
         supportThemeNamesText = lib.concatStringsSep "," supportThemeNames;
         dotfileSample = dotfilesLib.mkHjemDotfiles {
+          commonSubstitutions = themeRegistry.themes.${themeRegistry.default}.outputs.dotfileSubstitutions;
           hostName = "desktop";
+          userName = "lex";
+        };
+        laptopDotfileSample = dotfilesLib.mkHjemDotfiles {
+          commonSubstitutions = themeRegistry.themes.${themeRegistry.default}.outputs.dotfileSubstitutions;
+          hostName = "laptop";
           userName = "lex";
         };
         defaultThemeTargets = import (self + "/theme/programs") {
@@ -106,9 +116,15 @@
           then "yes"
           else "no";
         dotfileHasHyprland =
+          if builtins.hasAttr "hypr/hyprland.lua" dotfileSample.xdgConfigFiles
+          then "yes"
+          else "no";
+        dotfileHasLegacyHyprland =
           if builtins.hasAttr "hypr/hyprland.conf" dotfileSample.xdgConfigFiles
           then "yes"
           else "no";
+        desktopHyprlandLua = pkgs.writeText "hyprland-desktop.lua" dotfileSample.xdgConfigFiles."hypr/hyprland.lua".text;
+        laptopHyprlandLua = pkgs.writeText "hyprland-laptop.lua" laptopDotfileSample.xdgConfigFiles."hypr/hyprland.lua".text;
         evalChecks =
           lib.mapAttrs' (
             name: cfg: let
@@ -186,14 +202,22 @@
             test ${lib.escapeShellArg dotfileLayerNames} = ${lib.escapeShellArg "global,host,user"}
             test ${lib.escapeShellArg dotfileHasHomeBashrc} = ${lib.escapeShellArg "yes"}
             test ${lib.escapeShellArg dotfileHasHyprland} = ${lib.escapeShellArg "yes"}
+            test ${lib.escapeShellArg dotfileHasLegacyHyprland} = ${lib.escapeShellArg "no"}
             test -z ${lib.escapeShellArg shadowedXdgDotfilesText}
 
             {
               printf 'layers=%s\n' ${lib.escapeShellArg dotfileLayerNames}
               printf 'homeBashrc=%s\n' ${lib.escapeShellArg dotfileHasHomeBashrc}
               printf 'hyprland=%s\n' ${lib.escapeShellArg dotfileHasHyprland}
+              printf 'legacyHyprland=%s\n' ${lib.escapeShellArg dotfileHasLegacyHyprland}
               printf 'shadowedXdgDotfiles=%s\n' ${lib.escapeShellArg shadowedXdgDotfilesText}
             } > $out
+          '';
+
+          hyprland-lua-syntax = pkgs.runCommand "hyprland-lua-syntax" {nativeBuildInputs = [pkgs.lua];} ''
+            luac -p ${desktopHyprlandLua}
+            luac -p ${laptopHyprlandLua}
+            touch $out
           '';
 
           theme-registry-contract = pkgs.runCommand "theme-registry-contract" {} ''

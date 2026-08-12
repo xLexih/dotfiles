@@ -37,6 +37,14 @@ in {
       };
     };
 
+    systemd.user.targets.hyprland-session = {
+      description = "Hyprland compositor session";
+      documentation = ["man:systemd.special(7)"];
+      bindsTo = ["graphical-session.target"];
+      wants = ["graphical-session-pre.target"];
+      after = ["graphical-session-pre.target"];
+    };
+
     environment.systemPackages = with pkgs; [
       rofi # app launcher
       dunst # notification daemon

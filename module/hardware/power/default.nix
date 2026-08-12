@@ -48,21 +48,20 @@
           TARGET_RATE="60"
         fi
 
-        echo "$MONITOR_JSON" | ${pkgs.jq}/bin/jq -r '.[] | select(.name | startswith("eDP")) | "\(.name),\(.width)x\(.height)@'"$TARGET_RATE"',\(.x)x\(.y),\(.scale)"' | while read -r line; do
-          $HYPRCTL keyword monitor "$line" 2>/dev/null
+        echo "$MONITOR_JSON" | ${pkgs.jq}/bin/jq --arg targetRate "$TARGET_RATE" -r '
+          .[]
+          | select(.name | startswith("eDP"))
+          | "hl.monitor({ output = \(.name | @json), mode = \(("\(.width)x\(.height)@" + $targetRate) | @json), position = \(("\(.x)x\(.y)") | @json), scale = \(.scale) })"
+        ' | while read -r luaMonitor; do
+          $HYPRCTL eval "$luaMonitor" 2>/dev/null
         done
 
         if [ "$AC_STATE" = "1" ]; then
-          $HYPRCTL keyword decoration:blur:enabled true 2>/dev/null
-          $HYPRCTL keyword decoration:shadow:enabled true 2>/dev/null
-          $HYPRCTL keyword animations:enabled true 2>/dev/null
-          $HYPRCTL keyword render:direct_scanout false 2>/dev/null
+          LUA_CONFIG='hl.config({ decoration = { blur = { enabled = true }, shadow = { enabled = true } }, animations = { enabled = true }, render = { direct_scanout = false } })'
         else
-          $HYPRCTL keyword decoration:blur:enabled false 2>/dev/null
-          $HYPRCTL keyword decoration:shadow:enabled false 2>/dev/null
-          $HYPRCTL keyword animations:enabled false 2>/dev/null
-          $HYPRCTL keyword render:direct_scanout true 2>/dev/null
+          LUA_CONFIG='hl.config({ decoration = { blur = { enabled = false }, shadow = { enabled = false } }, animations = { enabled = false }, render = { direct_scanout = true } })'
         fi
+        $HYPRCTL eval "$LUA_CONFIG" 2>/dev/null
       fi
     fi
 

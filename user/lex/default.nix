@@ -27,9 +27,13 @@ in {
     hjem.users.lex = {
       files = {
         ".local/share/lutris/runners/proton/GE-Proton".source = pkgs.proton-ge-bin.steamcompattool;
+        ".omp/plugins/node_modules/omp-provider-surplus".source = pkgs.omp-provider-surplus + "/lib/omp-provider-surplus";
       };
-
-      packages = lexPackages.all;
+      packages =
+        lexPackages.all
+        ++ [
+          inputs.llm-agents.packages.${pkgs.system}.omp
+        ];
     };
 
     fonts.packages = with pkgs; [
@@ -79,6 +83,6 @@ in {
       ];
     };
 
-    environment.systemPackages = [ pkgs.spicetify-cli ];
+    environment.systemPackages = [pkgs.spicetify-cli];
   };
 }
