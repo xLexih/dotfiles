@@ -27,12 +27,37 @@ in {
     hjem.users.lex = {
       files = {
         ".local/share/lutris/runners/proton/GE-Proton".source = pkgs.proton-ge-bin.steamcompattool;
+        ".omp/plugins/omp-plugins.lock.json" = {
+          clobber = true;
+          text = builtins.toJSON {
+            plugins = {
+              omp-provider-surplus = {
+                version = "0.8.2";
+                enabledFeatures = null;
+                enabled = true;
+              };
+              omp-time-manager = {
+                version = "0.1.3";
+                enabledFeatures = null;
+                enabled = true;
+              };
+              omp-provider-openbroker = {
+                version = "0.6.0";
+                enabledFeatures = null;
+                enabled = true;
+              };
+            };
+            settings = {};
+          };
+        };
         ".omp/plugins/node_modules/omp-provider-surplus".source = pkgs.omp-provider-surplus + "/lib/omp-provider-surplus";
+        ".omp/plugins/node_modules/omp-time-manager".source = pkgs.omp-time-manager + "/lib/omp-time-manager";
+        ".omp/plugins/node_modules/omp-provider-openbroker".source = pkgs.omp-provider-openbroker + "/lib/omp-provider-openbroker";
       };
       packages =
         lexPackages.all
         ++ [
-          inputs.llm-agents.packages.${pkgs.system}.omp
+          inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.omp
         ];
     };
 

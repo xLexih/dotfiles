@@ -1,6 +1,6 @@
 {
   "name": "omp-provider-surplus",
-  "version": "0.2.0",
+  "version": "0.8.2",
   "description": "Live-market Surplus Intelligence provider for Oh My Pi",
   "type": "module",
   "main": "./src/index.ts",
