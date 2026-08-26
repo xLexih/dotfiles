@@ -1,0 +1,17 @@
+{
+  "name": "omp-time-manager",
+  "version": "0.1.3",
+  "description": "Prompt and model-call duration status for Oh My Pi",
+  "type": "module",
+  "main": "./src/index.ts",
+  "files": ["src"],
+  "omp": {
+    "extensions": ["./src/index.ts"]
+  },
+  "peerDependencies": {
+    "@oh-my-pi/pi-coding-agent": ">=17.2.15"
+  },
+  "scripts": {
+    "test": "bun test"
+  }
+}
