@@ -38,7 +38,7 @@ export function openBrokerCompat(model: Model): Model["compat"] {
     requiresReasoningContentForToolCalls: kimi || minimax || deepseek && Boolean(model.reasoning),
     requiresReasoningContentForAllAssistantTurns: minimax || deepseek && Boolean(model.reasoning),
     allowsSyntheticReasoningContentForToolCalls: !minimax && (!deepseek || !model.reasoning),
-    requiresAssistantContentForToolCalls: kimi || minimax,
+    requiresAssistantContentForToolCalls: kimi || minimax || deepseek && Boolean(model.reasoning),
     thinkingFormat: "openai",
     reasoningDisableMode: "lowest-effort",
     omitReasoningEffort: false,
