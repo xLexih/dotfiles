@@ -18,13 +18,16 @@ export function openBrokerCompat(model: Model): Model["compat"] {
     supportsSamplingParams: true,
     supportsPenaltyAndStopParams: true,
     supportsUsageInStreaming: true,
-    // MiniMax streams cumulative reasoning_content snapshots; the built-in catalog
-    // derives this from the /minimax/i id pattern, which a hand-built compat must
-    // carry explicitly or thinking deltas concatenate as if incremental.
     reasoningDeltasMayBeCumulative: minimax,
     // Match built-in reasoning-model watchdogs: long thinking pauses must not
     // trip the default idle timeout.
     streamIdleTimeoutMs: kimi || (deepseek && Boolean(model.reasoning)) ? 300_000 : undefined,
+    // Reasoning prefill on the devshard can sit silent >300s before the first SSE
+    // event; the first-event watchdog would kill it as a false timeout. 0 = no
+    // first-event watchdog (unbounded prefill), while streamIdleTimeoutMs still
+    // protects against genuine inter-event stalls. Mirrors the built-in's local
+    // backend handling of unbounded model-load/prefill time.
+    streamFirstEventTimeoutMs: kimi || (deepseek && Boolean(model.reasoning)) ? 0 : undefined,
     streamMarkupHealingPattern: kimi ? "kimi" : deepseek ? "dsml" : undefined,
     toolSchemaFlavor: kimi ? "moonshot-mfjs" : undefined,
     alwaysSendMaxTokens: kimi,
