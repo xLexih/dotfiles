@@ -140,7 +140,7 @@ final: prev: {
 
   omp-provider-opencode-free = prev.stdenvNoCC.mkDerivation {
     pname = "omp-provider-opencode-free";
-    version = "0.2.0";
+    version = "0.1.0";
     src = ./omp/provider-opencode-free;
 
     nativeCheckInputs = [prev.bun];
@@ -160,9 +160,10 @@ final: prev: {
 
     passthru.extensionPath = "lib/omp-provider-opencode-free/src/index.ts";
     meta = {
-      description = "OpenCode Zen free-model provider extension for Oh My Pi (no login required)";
-      homepage = "https://opencode.ai/zen";
+      description = "OpenCode Zen free-models provider extension for Oh My Pi";
+      homepage = "https://opencode.ai/docs/zen";
       platforms = prev.lib.platforms.all;
     };
   };
+
 }
