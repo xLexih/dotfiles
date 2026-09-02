@@ -28,9 +28,13 @@ const opencodeFreeProvider: ExtensionFactory = pi => {
 	pi.registerProvider("opencode-free", {
 		baseUrl: "https://opencode.ai/zen/v1",
 		api: "openai-completions",
-		// No `authHeader: true`, no `oauth.login` — this provider is free-only.
+		// `auth: "none"` tells OMP 18.0.8's runtime-register check that this
+		// provider is intentionally keyless. The Zen free models accept
+		// chat-completions without an `Authorization` header, so neither
+		// `apiKey` nor `oauth` is needed. See the runtime check at
+		// omp-linux-x64:507217: `(t.auth ?? "apiKey") !== "none"`.
+		auth: "none",
 		models: OPENCODE_ZEN_MODELS.map(d => withCompat(buildOpencodeZenModel(d))),
-		...(environmentKey ? {apiKey: environmentKey} : {}),
 		fetchDynamicModels: async apiKey => {
 			// `/v1/models` is public on Zen, so we always call it (with or
 			// without a key). The response is intersected with the curated
