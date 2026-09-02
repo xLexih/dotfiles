@@ -1,71 +1,58 @@
 import {describe, expect, it} from "bun:test";
-import {opencodeZenCompat} from "../src/compat.ts";
+import {opencodeFreeCompat} from "../src/compat.ts";
 
-const compat = (id: string) => opencodeZenCompat({id} as {id: string});
-
-describe("opencodeZenCompat per-family branches", () => {
-	it("uses the OpenAI-standard `reasoning` field on every family", () => {
-		for (const id of [
-			"mimo-v2.5-free",
-			"muse-spark-1.3-contributor-free",
-			"nemotron-3-ultra-free",
-			"ling-3.0-flash-fin-free",
-		]) {
-			expect(compat(id).reasoningContentField).toBe("reasoning");
-		}
+describe("opencodeFreeCompat", () => {
+	it("uses the OpenAI-standard `reasoning` field on both families", () => {
+		expect(opencodeFreeCompat("openai-completions").reasoningContentField).toBe("reasoning");
+		expect(opencodeFreeCompat("openai-responses").reasoningContentField).toBe("reasoning");
 	});
 
-	it("disables the DeepSeek-style replay flags on every family", () => {
-		for (const id of [
-			"mimo-v2.5-free",
-			"nemotron-3-ultra-free",
-			"muse-spark-1.3-contributor-free",
-		]) {
-			const c = compat(id);
+	it("disables the DeepSeek-style replay flags that bit OpenBroker", () => {
+		for (const api of ["openai-completions", "openai-responses"] as const) {
+			const c = opencodeFreeCompat(api);
 			expect(c.requiresReasoningContentForToolCalls).toBe(false);
 			expect(c.requiresReasoningContentForAllAssistantTurns).toBe(false);
 			expect(c.allowsSyntheticReasoningContentForToolCalls).toBe(true);
 		}
 	});
 
-	it("applies the Nemotron branch: 5-minute idle watchdog, no first-event watchdog", () => {
-		const c = compat("nemotron-3-ultra-free");
-		expect(c.streamIdleTimeoutMs).toBe(300_000);
-		expect(c.streamFirstEventTimeoutMs).toBe(0);
-	});
-
-	it("applies the mimo / muse branch: standard OpenAI-compat, no special watchdogs", () => {
-		for (const id of ["mimo-v2.5-free", "muse-spark-1.3-contributor-free"]) {
-			const c = compat(id);
-			expect(c.streamIdleTimeoutMs).toBeUndefined();
-			expect(c.streamFirstEventTimeoutMs).toBeUndefined();
+	it("extends the stream idle watchdog to 5 minutes and disables the first-event watchdog", () => {
+		for (const api of ["openai-completions", "openai-responses"] as const) {
+			const c = opencodeFreeCompat(api);
+			expect(c.streamIdleTimeoutMs).toBe(300_000);
+			expect(c.streamFirstEventTimeoutMs).toBe(0);
 		}
 	});
 
-	it("applies the ling branch: no reasoning controls at all", () => {
-		const c = compat("ling-3.0-flash-fin-free");
-		expect(c.supportsReasoningEffort).toBe(false);
-		expect(c.supportsReasoningParams).toBe(false);
-	});
-
-	it("lets tool-call turns send content: null on every family", () => {
-		for (const id of [
-			"mimo-v2.5-free",
-			"nemotron-3-ultra-free",
-			"muse-spark-1.3-contributor-free",
-			"ling-3.0-flash-fin-free",
-		]) {
-			expect(compat(id).requiresAssistantContentForToolCalls).toBe(false);
-		}
-	});
-
-	it("enables OpenAI-style tool choice and standard tool-strict behavior", () => {
-		const c = compat("mimo-v2.5-free");
+	it("enables OpenAI-style tool calls and forced/named tool choice", () => {
+		const c = opencodeFreeCompat("openai-completions");
 		expect(c.supportsToolChoice).toBe(true);
 		expect(c.supportsForcedToolChoice).toBe(true);
 		expect(c.supportsNamedToolChoice).toBe(true);
 		expect(c.toolSchemaFlavor).toBeUndefined();
 		expect(c.streamMarkupHealingPattern).toBeUndefined();
+	});
+
+	it("keeps encrypted-reasoning replay on chat but off on Responses", () => {
+		// Third-party `/v1/responses` proxies may reject encrypted-reasoning
+		// replay; the chat family keeps it like TokenRouter.
+		expect(opencodeFreeCompat("openai-completions").includeEncryptedReasoning).toBe(true);
+		expect(opencodeFreeCompat("openai-responses").includeEncryptedReasoning).toBe(false);
+	});
+
+	it("accepts `reasoning_effort` and exposes the standard OpenAI thinking format", () => {
+		for (const api of ["openai-completions", "openai-responses"] as const) {
+			const c = opencodeFreeCompat(api);
+			expect(c.supportsReasoningEffort).toBe(true);
+			expect(c.thinkingFormat).toBe("openai");
+			expect(c.omitReasoningEffort).toBe(false);
+			expect(c.reasoningDisableMode).toBe("lowest-effort");
+		}
+	});
+
+	it("does not impose strict tool-call schemas", () => {
+		const c = opencodeFreeCompat("openai-responses");
+		expect(c.supportsStrictMode).toBe(false);
 		expect(c.toolStrictMode).toBe("mixed");
 	});
 });

@@ -1,33 +1,44 @@
 import type {Model} from "@oh-my-pi/pi-ai";
+import type {OpencodeFreeApi} from "./catalog.ts";
 
 /**
- * OpenCode Zen compat policy. Zen is a clean OpenAI surface (live probe on
- * 2026-09-02 returned `choices[0].message.reasoning` as a string, standard
- * `usage` block with `prompt_tokens_details.cached_tokens`, and the standard
- * `finish_reason` set). The compat policy mirrors the OpenBroker Kimi/Nemotron
- * branches for the prefill-stall exemption that reasoning models need.
+ * OpenAI-compat policy for Zen's free routes.
+ *
+ * Zen is a plain OpenAI gateway (no DSML/inband tool envelopes, standard
+ * `tool_calls`), so the chat policy mirrors the proven TokenRouter surface
+ * (`overlay/omp/provider-tokenrouter/src/compat.ts`): OpenAI-standard
+ * `reasoning` field, no forced reasoning replay, standard tool choice.
+ *
+ * The single Responses difference is `includeEncryptedReasoning`: pi-ai's own
+ * endpoint-constraints doc warns third-party `/v1/responses` proxies may
+ * reject encrypted-reasoning replay or `previous_response_id` chaining, so
+ * the Responses branch omits it (stateless `store: false` likewise keeps
+ * chaining off — the Responses default for non-OpenAI hosts).
  */
-export function opencodeZenCompat(model: Pick<Model, "id">): Model<"openai-completions">["compat"] {
-	const id = model.id.toLowerCase();
-	const isReasoning = id.includes("mimo") || id.includes("nemotron") || id.includes("muse");
-	const isNemotron = id.includes("nemotron");
-
+export function opencodeFreeCompat(api: OpencodeFreeApi): Model<"openai-completions">["compat"] {
 	return {
 		supportsStore: false,
 		supportsDeveloperRole: false,
 		supportsMultipleSystemMessages: false,
-		supportsReasoningEffort: isReasoning,
-		supportsReasoningParams: isReasoning,
+		supportsReasoningEffort: true,
+		supportsReasoningParams: true,
 		supportsSamplingParams: true,
 		supportsPenaltyAndStopParams: true,
 		supportsUsageInStreaming: true,
 		reasoningDeltasMayBeCumulative: false,
-		// Nemotron reasoning prefill can sit silent past 300s — same
-		// exemption OpenBroker applies for Kimi.
-		streamIdleTimeoutMs: isNemotron ? 300_000 : undefined,
-		streamFirstEventTimeoutMs: isNemotron ? 0 : undefined,
+		// Long thinking prefill on a free tier can sit silent past the
+		// default 300s idle timeout. Same exemption OpenBroker uses for Kimi
+		// at `overlay/omp/provider-openbroker/src/compat.ts:34-39`.
+		streamIdleTimeoutMs: 300_000,
+		// Reasoning prefill may also sit silent past the first-event
+		// watchdog. 0 = no first-event watchdog; the inter-event watchdog
+		// still bounds genuine stalls.
+		streamFirstEventTimeoutMs: 0,
+		// Plain OpenAI surface — no DSML/inband markup healing.
 		streamMarkupHealingPattern: undefined,
 		toolSchemaFlavor: undefined,
+		// Don't force `max_tokens` on every request; let the model/library
+		// pick the natural completion length.
 		alwaysSendMaxTokens: false,
 		disableReasoningOnForcedToolChoice: false,
 		disableReasoningOnToolChoice: false,
@@ -35,17 +46,21 @@ export function opencodeZenCompat(model: Pick<Model, "id">): Model<"openai-compl
 		supportsForcedToolChoice: true,
 		supportsNamedToolChoice: true,
 		maxTokensField: "max_tokens",
-		// Live probe confirmed the upstream field is `reasoning`.
+		// Zen documents `@ai-sdk/openai` / `@ai-sdk/openai-compatible`
+		// wire shapes; the OpenAI-standard field is `reasoning`, not
+		// `reasoning_content` (same live-probe lesson as TokenRouter).
 		reasoningContentField: "reasoning",
-		// Same lesson as OpenBroker: do NOT force replay.
+		// Do NOT force reasoning replay — the OpenBroker `compat.ts:58-64`
+		// lesson applies to any plain OpenAI proxy.
 		requiresReasoningContentForToolCalls: false,
 		requiresReasoningContentForAllAssistantTurns: false,
 		allowsSyntheticReasoningContentForToolCalls: true,
+		// Tool turns can send `content: null`.
 		requiresAssistantContentForToolCalls: false,
 		thinkingFormat: "openai",
 		reasoningDisableMode: "lowest-effort",
 		omitReasoningEffort: false,
-		includeEncryptedReasoning: true,
+		includeEncryptedReasoning: api === "openai-completions",
 		supportsStrictMode: false,
 		toolStrictMode: "mixed",
 	};

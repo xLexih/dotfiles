@@ -1,57 +1,106 @@
-import type {Model} from "@oh-my-pi/pi-ai";
+import {createAssistantMessageEventStream, type Context, type Model, type SimpleStreamOptions} from "@oh-my-pi/pi-ai";
 import type {ExtensionFactory} from "@oh-my-pi/pi-coding-agent";
-import {opencodeZenCompat} from "./compat.ts";
-import {buildOpencodeZenModel, OPENCODE_ZEN_MODELS, parseOpencodeZenModels, staticOpencodeZenModels} from "./catalog.ts";
+import {streamOpenAICompletions} from "@oh-my-pi/pi-ai/providers/openai-completions";
+import {streamOpenAIResponses} from "@oh-my-pi/pi-ai/providers/openai-responses";
+import type {OAuthLoginCallbacks} from "@oh-my-pi/pi-ai/oauth/types";
+import {opencodeFreeCompat} from "./compat.ts";
+import {
+	buildOpencodeFreeModel,
+	isResponsesModel,
+	OPENCODE_FREE_BASE_URL,
+	OPENCODE_FREE_MODELS,
+	OPENCODE_FREE_MODELS_URL,
+	parseOpencodeFreeModels,
+	staticOpencodeFreeModels,
+} from "./catalog.ts";
 
-const MODELS_URL = "https://opencode.ai/zen/v1/models";
+async function loginOpencodeFree(callbacks: OAuthLoginCallbacks): Promise<string> {
+	const apiKey = (
+		await callbacks.onPrompt({
+			message: "Paste your OpenCode Zen API key (from https://opencode.ai/auth)",
+			placeholder: "From https://opencode.ai/auth",
+		})
+	).trim();
+	if (callbacks.signal?.aborted) throw new Error("OpenCode Free login cancelled");
+	if (!apiKey) throw new Error("An OpenCode Zen API key is required");
+	callbacks.onProgress?.("Validating OpenCode Zen API key...");
+	const fetchImpl = callbacks.fetch ?? fetch;
+	const response = await fetchImpl(OPENCODE_FREE_MODELS_URL, {
+		method: "GET",
+		headers: {Authorization: `Bearer ${apiKey}`, "Accept-Encoding": "identity"},
+		signal: AbortSignal.timeout(15_000),
+	});
+	// NOTE: `GET /zen/v1/models` is public (200 without a key), so this only
+	// proves the endpoint is reachable — a wrong key surfaces on first inference.
+	if (!response.ok) throw new Error(`OpenCode Zen API key validation failed (${response.status})`);
+	return apiKey;
+}
 
-/**
- * OpenCode Zen free-model provider. The provider id is `opencode-free` (not
- * `opencode`) to keep it distinct from any future built-in or third-party
- * `opencode` provider, and to make the model picker's prefix self-documenting
- * — every model under this prefix is a no-auth free route.
- *
- * Zen's `/v1/models` is public; the `:free` models in our catalog accept
- * chat-completions without an `Authorization` header. The provider therefore
- * registers without `authHeader: true` and without an `oauth` login flow:
- * the user can pick any of the 6 free models immediately after install, no
- * `/login` step required.
- */
+// Single provider id, two endpoint families. Dispatch is by curated model id
+// (not `requested.api`, which the registry may overwrite with the provider
+// api) — Responses-only ids such as `muse-spark-1.3-contributor-free` must go
+// through `streamOpenAIResponses`; sending them to Chat Completions is what
+// returns the gateway 500.
+function opencodeFreeStream(requested: Model, context: Context, options?: SimpleStreamOptions) {
+	const outer = createAssistantMessageEventStream();
+	void (async () => {
+		try {
+			if (isResponsesModel(requested.id)) {
+				const model = {
+					...requested,
+					api: "openai-responses",
+					compat: requested.compat ?? opencodeFreeCompat("openai-responses"),
+				} as Model<"openai-responses">;
+				for await (const event of streamOpenAIResponses(model, context, options)) outer.push(event);
+			} else {
+				const model = {
+					...requested,
+					api: "openai-completions",
+					compat: requested.compat ?? opencodeFreeCompat("openai-completions"),
+				} as Model<"openai-completions">;
+				for await (const event of streamOpenAICompletions(model, context, options)) outer.push(event);
+			}
+		} catch (error) {
+			outer.fail(error);
+		}
+	})();
+	return outer;
+}
+
 const opencodeFreeProvider: ExtensionFactory = pi => {
-	const environmentKey = process.env.OPENCODE_API_KEY?.trim();
-
-	const withCompat = (model: Model<"openai-completions">): Model<"openai-completions"> => ({
-		...model,
-		compat: opencodeZenCompat(model),
-	} as Model<"openai-completions">);
+	const environmentKey = process.env.OPENCODE_ZEN_API_KEY?.trim();
 
 	pi.registerProvider("opencode-free", {
-		baseUrl: "https://opencode.ai/zen/v1",
-		api: "openai-completions",
-		// OMP 18.0.8's `runtime-register` check (omp-linux-x64:507217) is
-		// `!t.apiKey && !t.oauthConfigured` — `auth: "none"` is *ignored*
-		// for runtime-registered providers, so we satisfy the check with a
-		// non-empty `apiKey` placeholder. The actual request builder checks
-		// `authHeader` independently (omp-linux-x64:507217 next branch);
-		// setting `authHeader: false` keeps OMP from sending a bogus
-		// `Authorization: Bearer anonymous` header (Zen rejects that with
-		// 401 AuthError on the live probe).
-		apiKey: "anonymous",
-		authHeader: false,
-		auth: "none",
-		models: OPENCODE_ZEN_MODELS.map(d => withCompat(buildOpencodeZenModel(d))),
+		baseUrl: OPENCODE_FREE_BASE_URL,
+		// Custom discriminator (same pattern as surplus/openbroker): the real
+		// endpoint family is per-model and resolved in `opencodeFreeStream`.
+		api: "opencode-free" as never,
+		streamSimple: opencodeFreeStream,
+		// Static fallback list — used at registration time and re-asserted if
+		// the live fetch fails. `fetchDynamicModels` replaces it with the
+		// live (descriptor-filtered) list after login.
+		models: OPENCODE_FREE_MODELS.map(
+			descriptor =>
+				({...buildOpencodeFreeModel(descriptor), compat: opencodeFreeCompat(descriptor.api)} as Model<"openai-completions">),
+		),
+		...(environmentKey ? {apiKey: environmentKey} : {}),
+		authHeader: true,
+		oauth: {name: "OpenCode Free", login: loginOpencodeFree},
 		fetchDynamicModels: async apiKey => {
-			// `/v1/models` is public on Zen, so we always call it (with or
-			// without a key). The response is intersected with the curated
-			// descriptors; if the curated intersection is empty (e.g. Zen
-			// dropped the entire free roster), fall back to the static list.
-			const fetchImpl = fetch;
 			const headers: Record<string, string> = {"Accept-Encoding": "identity"};
 			if (apiKey?.trim()) headers.Authorization = `Bearer ${apiKey}`;
-			const response = await fetchImpl(MODELS_URL, {method: "GET", headers, signal: AbortSignal.timeout(10_000)});
+			const response = await fetch(OPENCODE_FREE_MODELS_URL, {
+				method: "GET",
+				headers,
+				signal: AbortSignal.timeout(10_000),
+			});
 			if (!response.ok) return [];
-			const models = parseOpencodeZenModels(await response.json());
-			return models.length ? models : staticOpencodeZenModels().map(withCompat);
+			const models = parseOpencodeFreeModels(await response.json());
+			// Keep the static catalog visible if the live list contains none
+			// of the curated free ids (e.g. Zen rotated the free roster).
+			return models.length
+				? models.map(m => ({...m, compat: opencodeFreeCompat(m.api)}))
+				: staticOpencodeFreeModels().map(m => ({...m, compat: opencodeFreeCompat(m.api)}));
 		},
 	});
 };
