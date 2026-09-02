@@ -42,18 +42,11 @@ export interface ClineModelDescriptor {
  * `hint: "avoid"` so OMP's `ctx.models` does not route large contexts to
  * 32k-context small models.
  */
+// Ordering priority: working free models first (live-verified 2026-09-03),
+// then intermittent ones, then known-broken (`hint: "avoid"`) last. OMP's
+// model picker reads the array in order, so flagship / high-context
+// options surface first.
 export const CLINE_MODELS: readonly ClineModelDescriptor[] = [
-	{
-		id: "z-ai/glm-5.2:free",
-		name: "GLM 5.2 Free",
-		// Z.AI / GLM-5.2: max_position_embeddings = 1,048,576.
-		contextWindow: 1_048_576,
-		maxTokens: 16_384,
-		reasoning: true,
-		input: ["text"],
-		highContextWarnTokens: 200_000,
-		highContextHint: "acceptable",
-	},
 	{
 		id: "minimax/minimax-m3:free",
 		name: "MiniMax M3 Free",
@@ -67,15 +60,15 @@ export const CLINE_MODELS: readonly ClineModelDescriptor[] = [
 		highContextHint: "preferred",
 	},
 	{
-		id: "minimax/minimax-m2.7:free",
-		name: "MiniMax M2.7 Free",
-		// M2.7: 204,800-token context per MiniMax's hosted API docs.
-		contextWindow: 204_800,
-		maxTokens: 16_384,
+		id: "nvidia/nemotron-3-super-120b-a12b:free",
+		name: "Nemotron 3 Super 120B Free",
+		contextWindow: 1_000_000,
+		// NVIDIA's OpenCode default: 32k output.
+		maxTokens: 32_768,
 		reasoning: true,
 		input: ["text"],
-		highContextWarnTokens: 150_000,
-		highContextHint: "acceptable",
+		highContextWarnTokens: 200_000,
+		highContextHint: "preferred",
 	},
 	{
 		id: "nvidia/nemotron-3-ultra-550b-a55b:free",
@@ -83,17 +76,6 @@ export const CLINE_MODELS: readonly ClineModelDescriptor[] = [
 		// NVIDIA family: up to 1,048,576; conservative cap on free tier.
 		contextWindow: 1_048_576,
 		maxTokens: 16_384,
-		reasoning: true,
-		input: ["text"],
-		highContextWarnTokens: 200_000,
-		highContextHint: "acceptable",
-	},
-	{
-		id: "nvidia/nemotron-3-super-120b-a12b:free",
-		name: "Nemotron 3 Super 120B Free",
-		contextWindow: 1_000_000,
-		// NVIDIA's OpenCode default: 32k output.
-		maxTokens: 32_768,
 		reasoning: true,
 		input: ["text"],
 		highContextWarnTokens: 200_000,
@@ -121,16 +103,6 @@ export const CLINE_MODELS: readonly ClineModelDescriptor[] = [
 		highContextHint: "acceptable",
 	},
 	{
-		id: "cohere/north-mini-code:free",
-		name: "Cohere North Mini Code Free",
-		contextWindow: 128_000,
-		maxTokens: 8_192,
-		reasoning: false,
-		input: ["text"],
-		highContextWarnTokens: 100_000,
-		highContextHint: "acceptable",
-	},
-	{
 		id: "google/gemma-4-31b-it:free",
 		name: "Gemma 4 31B IT Free",
 		contextWindow: 32_000,
@@ -138,7 +110,7 @@ export const CLINE_MODELS: readonly ClineModelDescriptor[] = [
 		reasoning: false,
 		input: ["text"],
 		highContextWarnTokens: 24_000,
-		highContextHint: "avoid",
+		highContextHint: "acceptable",
 	},
 	{
 		id: "google/gemma-4-26b-a4b-it:free",
@@ -148,7 +120,53 @@ export const CLINE_MODELS: readonly ClineModelDescriptor[] = [
 		reasoning: false,
 		input: ["text"],
 		highContextWarnTokens: 24_000,
+		highContextHint: "acceptable",
+	},
+	// `z-ai/glm-5.2:free` is currently rate-limited upstream by Decart
+	// (Cline's provider for this model id). Cline/OpenRouter return HTTP 429
+	// with `provider_error_code: "upstream_429"` and
+	// `limit_source: "upstream_provider_shared_pool"`. The error message
+	// recommends adding an OpenRouter BYOK key — see
+	// https://openrouter.ai/settings/integrations. Without it, the public
+	// free bucket stays throttled. Marked `hint: "avoid"` so OMP doesn't
+	// surface it as a primary suggestion, but kept in the list so it
+	// re-appears when Decart restores capacity.
+	{
+		id: "z-ai/glm-5.2:free",
+		name: "GLM 5.2 Free (currently rate-limited upstream)",
+		// Z.AI / GLM-5.2: max_position_embeddings = 1,048,576.
+		contextWindow: 1_048_576,
+		maxTokens: 16_384,
+		reasoning: true,
+		input: ["text"],
+		highContextWarnTokens: 200_000,
 		highContextHint: "avoid",
+	},
+	// `minimax/minimax-m2.7:free` and `cohere/north-mini-code:free` are
+	// intermittent — they returned `{"error":"empty response content"}` on
+	// 2026-09-03 probes but are not consistently broken. Marked
+	// `hint: "acceptable"` so they show in the picker but OMP's `ctx.models`
+	// selection will prefer the working ones.
+	{
+		id: "minimax/minimax-m2.7:free",
+		name: "MiniMax M2.7 Free",
+		// M2.7: 204,800-token context per MiniMax's hosted API docs.
+		contextWindow: 204_800,
+		maxTokens: 16_384,
+		reasoning: true,
+		input: ["text"],
+		highContextWarnTokens: 150_000,
+		highContextHint: "acceptable",
+	},
+	{
+		id: "cohere/north-mini-code:free",
+		name: "Cohere North Mini Code Free",
+		contextWindow: 128_000,
+		maxTokens: 8_192,
+		reasoning: false,
+		input: ["text"],
+		highContextWarnTokens: 100_000,
+		highContextHint: "acceptable",
 	},
 ];
 
