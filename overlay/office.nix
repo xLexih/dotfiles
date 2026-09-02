@@ -3,7 +3,7 @@ final: prev: {
     name = "office-suite";
     paths = with prev; [
       onlyoffice-desktopeditors # document editor
-      libreoffice-qt6-fresh # full office suite
+      libreoffice-qt-stable # full office suite
       zotero # reference manager
     ];
   };

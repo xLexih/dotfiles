@@ -56,8 +56,8 @@ in {
                 enabledFeatures = null;
                 enabled = true;
               };
-              omp-provider-opencode-zen = {
-                version = "0.1.0";
+              omp-provider-opencode-free = {
+                version = "0.2.0";
                 enabledFeatures = null;
                 enabled = true;
               };
@@ -69,8 +69,7 @@ in {
         ".omp/plugins/node_modules/omp-time-manager".source = pkgs.omp-time-manager + "/lib/omp-time-manager";
         ".omp/plugins/node_modules/omp-provider-openbroker".source = pkgs.omp-provider-openbroker + "/lib/omp-provider-openbroker";
         ".omp/plugins/node_modules/omp-provider-tokenrouter".source = pkgs.omp-provider-tokenrouter + "/lib/omp-provider-tokenrouter";
-        ".omp/plugins/node_modules/omp-provider-cline".source = pkgs.omp-provider-cline + "/lib/omp-provider-cline";
-        ".omp/plugins/node_modules/omp-provider-opencode-zen".source = pkgs.omp-provider-opencode-zen + "/lib/omp-provider-opencode-zen";
+        ".omp/plugins/node_modules/omp-provider-opencode-free".source = pkgs.omp-provider-opencode-free + "/lib/omp-provider-opencode-free";
       };
       packages =
         lexPackages.all

@@ -42,7 +42,7 @@
     development = [
       android-tools
       claude-code
-      codex
+      pkgs.llm-agents.codex
       codium-custom
       git-private
       kilo

@@ -1,6 +1,6 @@
 {
   "name": "omp-provider-openbroker",
-  "version": "0.6.0",
+  "version": "0.8.0",
   "description": "OpenBroker Gonka inference provider for Oh My Pi",
   "type": "module",
   "main": "./src/index.ts",

@@ -16,6 +16,12 @@
           "bluetooth.profile-preference" = "quality";
           "bluetooth.autoswitch-to-headset-profile" = true;
         };
+        "monitor.alsa.rules" = [
+          {
+            matches = [{"node.name" = "alsa_input.pci-0000_00_1f.3.analog-stereo";}];
+            actions = {"update-props" = {"priority.session" = 2020;};};
+          }
+        ];
         "monitor.bluez.rules" = [
           {
             matches = [{"api.bluez5.address" = "80:C3:BA:2A:7F:F4";}];

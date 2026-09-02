@@ -6,6 +6,11 @@ export interface OpenBrokerModel {
   cost: {input: number; output: number; cacheRead: number; cacheWrite: number};
   contextWindow: number;
   maxTokens: number;
+
+  /** Soft warning threshold above which the provider suggests compacting. */
+  highContextWarnTokens: number;
+  /** Recommendation for sessions running at large context. */
+  highContextHint: "preferred" | "acceptable" | "avoid";
 }
 
 const BALANCE_URL = "https://api.openbroker.gonka.gg/v1/balance";
@@ -19,9 +24,25 @@ export const BROKER_MODELS_URL = "https://proxy.gonkabroker.com/v1/models";
  */
 export const OPENBROKER_MODELS: OpenBrokerModel[] = [
   // Effective limits from the public Gonka Broker GET /v1/models catalog.
-  {id: "MiniMaxAI/MiniMax-M2.7", name: "MiniMax M2.7", reasoning: true, input: ["text"], cost: {input: 0, output: 0, cacheRead: 0, cacheWrite: 0}, contextWindow: 204_800, maxTokens: 16_384},
-  {id: "moonshotai/Kimi-K2.6", name: "Kimi K2.6", reasoning: true, input: ["text"], cost: {input: 0, output: 0, cacheRead: 0, cacheWrite: 0}, contextWindow: 262_144, maxTokens: 8_192},
-  {id: "deepseek-ai/DeepSeek-V4-Flash-0731", name: "DeepSeek V4 Flash 0731", reasoning: true, input: ["text"], cost: {input: 0, output: 0, cacheRead: 0, cacheWrite: 0}, contextWindow: 400_000, maxTokens: 16_384},
+  //
+  // DeepSeek's maxTokens is lowered from the broker's advertised 16,384 to 4,096
+  // as a verbosity brake. The model can naturally finish shorter responses; the
+  // previous 16k budget let mid-stream self-corrections spiral into 12k+ char
+  // rambles that hit `length` mid-thought, which combined with the 18.0.6 retry
+  // wedge caused the 1260-iteration loops. A 4k cap keeps the model on-task.
+  //
+  // highContextWarnTokens is the soft threshold above which the provider suggests
+  // OMP compact. The broker's devshard accepts 200k+ prompt tokens cleanly (probed
+  // 2026-08-28), so this is a *nudge* not a *ceiling* — the real failure mode was
+  // the retry wedge, not context overflow.
+  //
+  // highContextHint ranks the model for sessions running at large context. Kimi
+  // produced the cleanest outputs at 200k in the probe (consistent 3-token
+  // responses); MiniMax is acceptable but always-on thinking burns output
+  // budget; DeepSeek is acceptable with the lowered maxTokens cap.
+  {id: "MiniMaxAI/MiniMax-M2.7", name: "MiniMax M2.7", reasoning: true, input: ["text"], cost: {input: 0, output: 0, cacheRead: 0, cacheWrite: 0}, contextWindow: 204_800, maxTokens: 16_384, highContextWarnTokens: 150_000, highContextHint: "acceptable"},
+  {id: "moonshotai/Kimi-K2.6", name: "Kimi K2.6", reasoning: true, input: ["text"], cost: {input: 0, output: 0, cacheRead: 0, cacheWrite: 0}, contextWindow: 262_144, maxTokens: 8_192, highContextWarnTokens: 200_000, highContextHint: "preferred"},
+  {id: "deepseek-ai/DeepSeek-V4-Flash-0731", name: "DeepSeek V4 Flash 0731", reasoning: true, input: ["text"], cost: {input: 0, output: 0, cacheRead: 0, cacheWrite: 0}, contextWindow: 400_000, maxTokens: 4_096, highContextWarnTokens: 150_000, highContextHint: "acceptable"},
 ];
 
 function positiveInteger(value: unknown): number | undefined {

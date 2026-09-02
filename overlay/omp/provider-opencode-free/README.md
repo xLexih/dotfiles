@@ -1,18 +1,19 @@
-# OMP OpenCode Zen provider
+# OMP OpenCode Zen free provider
 
-This extension adds [OpenCode Zen](https://opencode.ai/zen), OpenCode's
-curated, agentic-coding model gateway, as a provider for Oh My Pi. Zen
-exposes 66 models behind an OpenAI-compatible surface at
+This extension adds the free tier of [OpenCode Zen](https://opencode.ai/zen),
+OpenCode's curated, agentic-coding model gateway, as a provider for Oh My Pi.
+Zen exposes 66 models behind an OpenAI-compatible surface at
 `https://opencode.ai/zen/v1`; this provider curates the `:free`-suffixed
-roster that survived live probes on 2026-09-02.
+roster that survived live probes on 2026-09-02 and exposes them as the
+`opencode-free` provider id with no login required.
 
 | Field | Value |
 |---|---|
-| Provider ID | `opencode` |
+| Provider ID | `opencode-free` |
 | Base URL | `https://opencode.ai/zen/v1` |
-| Authentication | Optional — free models work without a key; `/login opencode` adds a Bearer header for paid access |
-| Login | `/login opencode` |
-| Environment | `OPENCODE_API_KEY` |
+| Authentication | None required for the free models |
+| Login | _(not needed — pick a model and chat)_ |
+| Environment | `OPENCODE_API_KEY` (optional, currently unused) |
 
 ## Free models
 
@@ -30,14 +31,13 @@ roster that survived live probes on 2026-09-02.
 and is dropped from the curated list. Re-add it by appending a row in
 `src/catalog.ts` once Zen brings it back.
 
-## Anonymous chat works
+## No login required
 
-A live probe against `https://opencode.ai/zen/v1/chat/completions` on
-2026-09-02 returned `200 OK` with no `Authorization` header — the free
-models are anonymous-callable. The provider therefore registers without
-`authHeader: true` and only injects the Bearer header after
-`/login opencode` adds a key.
-
+The provider id is `opencode-free` and there is no `/login opencode-free`
+flow. Zen's free models are anonymous-callable; a live probe against
+`https://opencode.ai/zen/v1/chat-completions` on 2026-09-02 returned
+`200 OK` with no `Authorization` header (`usage.prompt_tokens_details.cached_tokens: 192`
+on the anonymous call). Just pick a model and chat.
 ## Request compatibility
 
 Live probe on 2026-09-02 (`mimo-v2.5-free`):
