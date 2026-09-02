@@ -138,10 +138,10 @@ final: prev: {
     };
   };
 
-  omp-provider-opencode-zen = prev.stdenvNoCC.mkDerivation {
-    pname = "omp-provider-opencode-zen";
-    version = "0.1.0";
-    src = ./omp/provider-opencode-zen;
+  omp-provider-opencode-free = prev.stdenvNoCC.mkDerivation {
+    pname = "omp-provider-opencode-free";
+    version = "0.2.0";
+    src = ./omp/provider-opencode-free;
 
     nativeCheckInputs = [prev.bun];
     doCheck = true;
@@ -152,15 +152,15 @@ final: prev: {
     '';
     installPhase = ''
       runHook preInstall
-      mkdir -p "$out/lib/omp-provider-opencode-zen"
-      cp package.json "$out/lib/omp-provider-opencode-zen/"
-      cp -r src "$out/lib/omp-provider-opencode-zen/"
+      mkdir -p "$out/lib/omp-provider-opencode-free"
+      cp package.json "$out/lib/omp-provider-opencode-free/"
+      cp -r src "$out/lib/omp-provider-opencode-free/"
       runHook postInstall
     '';
 
-    passthru.extensionPath = "lib/omp-provider-opencode-zen/src/index.ts";
+    passthru.extensionPath = "lib/omp-provider-opencode-free/src/index.ts";
     meta = {
-      description = "OpenCode Zen free-model provider extension for Oh My Pi";
+      description = "OpenCode Zen free-model provider extension for Oh My Pi (no login required)";
       homepage = "https://opencode.ai/zen";
       platforms = prev.lib.platforms.all;
     };

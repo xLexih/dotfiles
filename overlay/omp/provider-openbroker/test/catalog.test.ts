@@ -17,12 +17,24 @@ describe("OpenBroker catalog", () => {
     expect(OPENBROKER_MODELS.every(model => Object.values(model.cost).every(cost => cost === 0))).toBe(true);
   });
 
-  it("uses the broker-published effective limits", () => {
+  it("uses the broker-published context window but a verbosity-braked maxTokens for DeepSeek", () => {
     expect(Object.fromEntries(OPENBROKER_MODELS.map(model => [model.id, [model.contextWindow, model.maxTokens]]))).toEqual({
       "MiniMaxAI/MiniMax-M2.7": [204_800, 16_384],
       "moonshotai/Kimi-K2.6": [262_144, 8_192],
-      "deepseek-ai/DeepSeek-V4-Flash-0731": [400_000, 16_384],
+      // DeepSeek's maxTokens is intentionally 4,096 — well below the broker's
+      // advertised 16,384 — as a verbosity brake. The model can naturally
+      // finish shorter responses; 4k prevents the 12k ramble pattern that
+      // combined with the 18.0.6 retry wedge to produce 1260-iteration loops.
+      "deepseek-ai/DeepSeek-V4-Flash-0731": [400_000, 4_096],
     });
+  });
+
+  it("tags models with high-context warning thresholds and a recommended-for-large-context hint", () => {
+    const byId = Object.fromEntries(OPENBROKER_MODELS.map(model => [model.id, model]));
+    expect(byId["MiniMaxAI/MiniMax-M2.7"]?.highContextWarnTokens).toBe(150_000);
+    expect(byId["MiniMaxAI/MiniMax-M2.7"]?.highContextHint).toBe("acceptable");
+    expect(byId["moonshotai/Kimi-K2.6"]?.highContextHint).toBe("preferred");
+    expect(byId["deepseek-ai/DeepSeek-V4-Flash-0731"]?.highContextHint).toBe("acceptable");
   });
 
   it("marks all broker chat models as reasoning-capable", () => {

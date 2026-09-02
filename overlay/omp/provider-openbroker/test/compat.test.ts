@@ -29,23 +29,55 @@ describe("OpenBroker compat", () => {
     expect(compatFor("MiniMaxAI/MiniMax-M2.7").streamMarkupHealingPattern).toBeUndefined();
     expect(compatFor("moonshotai/Kimi-K2.6").streamMarkupHealingPattern).toBe("kimi");
     expect(compatFor("moonshotai/Kimi-K2.6").toolSchemaFlavor).toBe("moonshot-mfjs");
-    expect(compatFor("deepseek-ai/DeepSeek-V4-Flash-0731").streamMarkupHealingPattern).toBe("dsml");
+    // The broker is a standard OpenAI surface (delta.tool_calls), not a DeepSeek
+    // DSML/inband surface — dsml healing would corrupt tool parsing.
+    expect(compatFor("deepseek-ai/DeepSeek-V4-Flash-0731").streamMarkupHealingPattern).toBeUndefined();
   });
+
   it("disables the first-event watchdog for reasoning families", () => {
-    // Reasoning prefill can sit silent >300s before the first SSE event; the
-    // default first-event timeout aborts the stream as "timed out while waiting
-    // for the first event". 0 keeps the idle watchdog while allowing unbounded
-    // prefill time.
     expect(compatFor("deepseek-ai/DeepSeek-V4-Flash-0731").streamFirstEventTimeoutMs).toBe(0);
     expect(compatFor("moonshotai/Kimi-K2.6").streamFirstEventTimeoutMs).toBe(0);
     expect(compatFor("MiniMaxAI/MiniMax-M2.7").streamFirstEventTimeoutMs).toBeUndefined();
   });
-  it("injects non-empty assistant content on tool-call turns for every reasoning family", () => {
-    // DeepSeek reasoning rejected `content: ""` next to tool_calls with
-    // `400 messages[N].content[0].text: must not be empty`, which stranded
-    // every tool call (e.g. read) and surfaced as an unexpected stop.
-    expect(compatFor("deepseek-ai/DeepSeek-V4-Flash-0731").requiresAssistantContentForToolCalls).toBe(true);
-    expect(compatFor("MiniMaxAI/MiniMax-M2.7").requiresAssistantContentForToolCalls).toBe(true);
-    expect(compatFor("moonshotai/Kimi-K2.6").requiresAssistantContentForToolCalls).toBe(true);
+
+  it("reads thinking from the `reasoning` field the broker actually emits", () => {
+    // docs.gonkabroker.com: thinking arrives in `reasoning`
+    // (`choices[].delta.reasoning`), never `reasoning_content`.
+    expect(compatFor("deepseek-ai/DeepSeek-V4-Flash-0731").reasoningContentField).toBe("reasoning");
+    expect(compatFor("moonshotai/Kimi-K2.6").reasoningContentField).toBe("reasoning");
+    expect(compatFor("MiniMaxAI/MiniMax-M2.7").reasoningContentField).toBe("reasoning");
+  });
+
+  it("does not enforce DeepSeek-native reasoning replay", () => {
+    // The broker rebuilds history server-side as a plain OpenAI surface; it does
+    // not require `reasoning_content` passthrough the way DeepSeek's native API
+    // does. Enabling it caused pi-ai to inject empty `reasoning_content: ""` on
+    // every assistant turn when the model produced no thinking, poisoning the
+    // request and degrading the model into a loop as context grew.
+    for (const id of ["deepseek-ai/DeepSeek-V4-Flash-0731", "moonshotai/Kimi-K2.6", "MiniMaxAI/MiniMax-M2.7"]) {
+      expect(compatFor(id).requiresReasoningContentForToolCalls).toBe(false);
+      expect(compatFor(id).requiresReasoningContentForAllAssistantTurns).toBe(false);
+      expect(compatFor(id).allowsSyntheticReasoningContentForToolCalls).toBe(true);
+    }
+  });
+
+  it("sends standard content:null on tool-call turns instead of empty text arrays", () => {
+    // Empty `content: [{type:"text",text:""}]` next to tool_calls 400s on the
+    // broker ("content[].text: must not be empty"). Standard OpenAI `content:
+    // null` avoids the validator; the MiniMax route's array-format requirement
+    // is handled by the payload normalizer.
+    expect(compatFor("deepseek-ai/DeepSeek-V4-Flash-0731").requiresAssistantContentForToolCalls).toBe(false);
+    expect(compatFor("MiniMaxAI/MiniMax-M2.7").requiresAssistantContentForToolCalls).toBe(false);
+    expect(compatFor("moonshotai/Kimi-K2.6").requiresAssistantContentForToolCalls).toBe(false);
+  });
+
+  it("omits reasoning_effort for MiniMax, whose thinking is always on and not controllable", () => {
+    expect(compatFor("MiniMaxAI/MiniMax-M2.7").omitReasoningEffort).toBe(true);
+    expect(compatFor("moonshotai/Kimi-K2.6").omitReasoningEffort).toBe(false);
+    expect(compatFor("deepseek-ai/DeepSeek-V4-Flash-0731").omitReasoningEffort).toBe(false);
+  });
+
+  it("keeps tool_choice from silently disabling DeepSeek reasoning", () => {
+    expect(compatFor("deepseek-ai/DeepSeek-V4-Flash-0731").disableReasoningOnToolChoice).toBe(false);
   });
 });
