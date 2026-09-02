@@ -1,6 +1,7 @@
 import type {Model} from "@oh-my-pi/pi-ai";
 import type {ExtensionFactory} from "@oh-my-pi/pi-coding-agent";
 import type {OAuthLoginCallbacks} from "@oh-my-pi/pi-ai/oauth/types";
+import {tokenrouterCompat} from "./compat.ts";
 import {buildTokenrouterModel, parseTokenrouterModels, staticTokenrouterModels, TOKENROUTER_MODELS} from "./catalog.ts";
 
 const MODELS_URL = "https://api.tokenrouter.com/v1/models";
