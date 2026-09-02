@@ -15,18 +15,41 @@ the free `:free` tier that survived live probes on 2026-09-02.
 
 ## Models
 
-| Model ID | Name | Context | Max output | Hint |
+Live status verified 2026-09-03 (all tested with the user's own Cline key
+against `https://api.cline.bot/api/v1/chat/completions`):
+
+| Status | Model ID | Context | Max output | Hint |
 |---|---|---:|---:|---|
-| `z-ai/glm-5.2:free` | GLM 5.2 Free | 1,048,576 | 16,384 | acceptable |
-| `minimax/minimax-m3:free` | MiniMax M3 Free | 1,000,000 | 65,536 | preferred |
-| `minimax/minimax-m2.7:free` | MiniMax M2.7 Free | 204,800 | 16,384 | acceptable |
-| `nvidia/nemotron-3-ultra-550b-a55b:free` | Nemotron 3 Ultra 550B Free | 1,048,576 | 16,384 | acceptable |
-| `nvidia/nemotron-3-super-120b-a12b:free` | Nemotron 3 Super 120B Free | 1,000,000 | 32,768 | acceptable |
-| `nvidia/nemotron-3.5-lightning:free` | Nemotron 3.5 Lightning Free | 1,048,576 | 16,384 | acceptable |
-| `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free` | Nemotron 3 Nano 30B Free | 262,144 | 16,384 | acceptable |
-| `cohere/north-mini-code:free` | Cohere North Mini Code Free | 128,000 | 8,192 | acceptable |
-| `google/gemma-4-31b-it:free` | Gemma 4 31B IT Free | 32,000 | 8,192 | avoid |
-| `google/gemma-4-26b-a4b-it:free` | Gemma 4 26B IT Free | 32,000 | 8,192 | avoid |
+| ✅ | `minimax/minimax-m3:free` | 1,000,000 | 65,536 | preferred |
+| ✅ | `nvidia/nemotron-3-super-120b-a12b:free` | 1,000,000 | 32,768 | preferred |
+| ✅ | `nvidia/nemotron-3-ultra-550b-a55b:free` | 1,048,576 | 16,384 | acceptable |
+| ✅ | `nvidia/nemotron-3.5-lightning:free` | 1,048,576 | 16,384 | acceptable |
+| ✅ | `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free` | 262,144 | 16,384 | acceptable |
+| ✅ | `google/gemma-4-31b-it:free` | 32,000 | 8,192 | acceptable |
+| ✅ | `google/gemma-4-26b-a4b-it:free` | 32,000 | 8,192 | acceptable |
+| ⚠️ | `z-ai/glm-5.2:free` | 1,048,576 | 16,384 | avoid (Decart 429) |
+| ⚠️ | `minimax/minimax-m2.7:free` | 204,800 | 16,384 | acceptable (intermittent) |
+| ⚠️ | `cohere/north-mini-code:free` | 128,000 | 8,192 | acceptable (intermittent) |
+
+### `z-ai/glm-5.2:free` is currently rate-limited upstream
+
+Cline/OpenRouter returns HTTP 429 for this model id with:
+
+```json
+{
+  "provider_name": "Decart",
+  "is_byok": false,
+  "provider_error_code": "upstream_429",
+  "limit_source": "upstream_provider_shared_pool",
+  "remedy_hint": "Retry shortly, add your own provider key (https://openrouter.ai/settings/integrations), or route to another provider with provider routing: https://openrouter.ai/docs/features/provider-routing"
+}
+```
+
+Decart is throttling Cline's shared free pool for this model. The Cline
+recommendation is an OpenRouter BYOK key — see the link above. Without
+it, the public bucket stays throttled. Marked `hint: "avoid"` in the
+curated catalog so OMP doesn't surface it as a primary suggestion, but
+kept in the list so it re-appears when Decart restores capacity.
 
 Context windows come from the upstream model card (Z.AI's Hugging Face
 configs, NVIDIA's NIM model cards, MiniMax's hosted API docs). Output

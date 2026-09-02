@@ -7,18 +7,18 @@ import {
 } from "../src/catalog.ts";
 
 describe("Cline catalog", () => {
-	it("contains the curated free models in a stable order", () => {
+	it("contains the curated free models in working-first order", () => {
 		expect(CLINE_MODELS.map(m => m.id)).toEqual([
-			"z-ai/glm-5.2:free",
 			"minimax/minimax-m3:free",
-			"minimax/minimax-m2.7:free",
-			"nvidia/nemotron-3-ultra-550b-a55b:free",
 			"nvidia/nemotron-3-super-120b-a12b:free",
+			"nvidia/nemotron-3-ultra-550b-a55b:free",
 			"nvidia/nemotron-3.5-lightning:free",
 			"nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
-			"cohere/north-mini-code:free",
 			"google/gemma-4-31b-it:free",
 			"google/gemma-4-26b-a4b-it:free",
+			"z-ai/glm-5.2:free",
+			"minimax/minimax-m2.7:free",
+			"cohere/north-mini-code:free",
 		]);
 	});
 
@@ -44,16 +44,22 @@ describe("Cline catalog", () => {
 		expect(getClineDescriptor("minimax/minimax-m2.7:free")?.maxTokens).toBe(16_384);
 	});
 
-	it("marks the small 32k-context gemma models as 'avoid'", () => {
-		expect(getClineDescriptor("google/gemma-4-31b-it:free")?.highContextHint).toBe("avoid");
-		expect(getClineDescriptor("google/gemma-4-26b-a4b-it:free")?.highContextHint).toBe("avoid");
+	it("marks gemma-4 IT as 'acceptable' and the rate-limited glm-5.2 as 'avoid'", () => {
+		// gemma-4 IT models are 32k-context small. They're working in live
+		// probes (2026-09-03) but should not be routed large contexts.
+		// `z-ai/glm-5.2:free` is currently rate-limited upstream by Decart
+		// (Cline's provider for that model id), so OMP's `ctx.models`
+		// selection will prefer other options until Decart restores the
+		// shared free pool.
+		expect(getClineDescriptor("google/gemma-4-31b-it:free")?.highContextHint).toBe("acceptable");
+		expect(getClineDescriptor("google/gemma-4-26b-a4b-it:free")?.highContextHint).toBe("acceptable");
+		expect(getClineDescriptor("z-ai/glm-5.2:free")?.highContextHint).toBe("avoid");
 	});
 
 	it("exposes the OMP-typed model shape used at registration", () => {
 		const model = buildClineModel(CLINE_MODELS[0]!);
 		expect(model).toMatchObject({
-			id: "z-ai/glm-5.2:free",
-			provider: "cline",
+			id: "minimax/minimax-m3:free",
 			baseUrl: "https://api.cline.bot/api/v1",
 			api: "openai-completions",
 			reasoning: true,
