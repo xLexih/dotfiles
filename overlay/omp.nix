@@ -56,7 +56,7 @@ final: prev: {
 
   omp-provider-openbroker = prev.stdenvNoCC.mkDerivation {
     pname = "omp-provider-openbroker";
-    version = "0.6.0";
+    version = "0.8.0";
     src = ./omp/provider-openbroker;
 
     nativeCheckInputs = [prev.bun];
@@ -78,6 +78,90 @@ final: prev: {
     meta = {
       description = "OpenBroker Gonka inference provider extension for Oh My Pi";
       homepage = "https://openbroker.gonka.gg";
+      platforms = prev.lib.platforms.all;
+    };
+  };
+
+  omp-provider-tokenrouter = prev.stdenvNoCC.mkDerivation {
+    pname = "omp-provider-tokenrouter";
+    version = "0.1.0";
+    src = ./omp/provider-tokenrouter;
+
+    nativeCheckInputs = [prev.bun];
+    doCheck = true;
+    checkPhase = ''
+      runHook preCheck
+      bun test test
+      runHook postCheck
+    '';
+    installPhase = ''
+      runHook preInstall
+      mkdir -p "$out/lib/omp-provider-tokenrouter"
+      cp package.json "$out/lib/omp-provider-tokenrouter/"
+      cp -r src "$out/lib/omp-provider-tokenrouter/"
+      runHook postInstall
+    '';
+
+    passthru.extensionPath = "lib/omp-provider-tokenrouter/src/index.ts";
+    meta = {
+      description = "TokenRouter OpenAI-compatible provider extension for Oh My Pi";
+      homepage = "https://www.tokenrouter.com";
+      platforms = prev.lib.platforms.all;
+    };
+  };
+
+  omp-provider-cline = prev.stdenvNoCC.mkDerivation {
+    pname = "omp-provider-cline";
+    version = "0.1.0";
+    src = ./omp/provider-cline;
+
+    nativeCheckInputs = [prev.bun];
+    doCheck = true;
+    checkPhase = ''
+      runHook preCheck
+      bun test test
+      runHook postCheck
+    '';
+    installPhase = ''
+      runHook preInstall
+      mkdir -p "$out/lib/omp-provider-cline"
+      cp package.json "$out/lib/omp-provider-cline/"
+      cp -r src "$out/lib/omp-provider-cline/"
+      runHook postInstall
+    '';
+
+    passthru.extensionPath = "lib/omp-provider-cline/src/index.ts";
+    meta = {
+      description = "Cline OpenAI-compatible provider extension for Oh My Pi";
+      homepage = "https://app.cline.bot";
+      platforms = prev.lib.platforms.all;
+    };
+  };
+
+  omp-provider-opencode-zen = prev.stdenvNoCC.mkDerivation {
+    pname = "omp-provider-opencode-zen";
+    version = "0.1.0";
+    src = ./omp/provider-opencode-zen;
+
+    nativeCheckInputs = [prev.bun];
+    doCheck = true;
+    checkPhase = ''
+      runHook preCheck
+      bun test test
+      runHook postCheck
+    '';
+    installPhase = ''
+      runHook preInstall
+      mkdir -p "$out/lib/omp-provider-opencode-zen"
+      cp package.json "$out/lib/omp-provider-opencode-zen/"
+      cp -r src "$out/lib/omp-provider-opencode-zen/"
+      runHook postInstall
+    '';
+
+    passthru.extensionPath = "lib/omp-provider-opencode-zen/src/index.ts";
+    meta = {
+      description = "OpenCode Zen free-model provider extension for Oh My Pi";
+      homepage = "https://opencode.ai/zen";
       platforms = prev.lib.platforms.all;
     };
   };
