@@ -25,9 +25,6 @@
   inputs.nix-vscode-extensions.url = "github:nix-community/nix-vscode-extensions";
   inputs.nix-vscode-extensions.inputs.nixpkgs.follows = "nixpkgs";
 
-  inputs.octelium-custom-client.url = "path:/data/project/homelab/octelium-custom-client";
-  inputs.octelium-custom-client.inputs.nixpkgs.follows = "nixpkgs";
-
   inputs.llm-agents = {
     url = "github:numtide/llm-agents.nix";
     inputs.nixpkgs.follows = "nixpkgs";

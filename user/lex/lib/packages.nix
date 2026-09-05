@@ -61,8 +61,6 @@
     ];
 
     networkingAndDiagnostics = [
-      octelium-custom-client
-      octelium-custom-cli
       nettools
       tcpdump
       traceroute
