@@ -84,4 +84,4 @@ Themes are discovered from `theme/<name>/default.nix`. Enable one with `modules.
 nix flake check path:.
 ```
 
-This runs all checks defined in the flake: evaluation of each host configuration, contract assertions (hostName, stateVersion, CPU vendor, theme), formatting with Alejandra, and import-tree hygiene (ensuring non-default Nix files are referenced or placed in a `lib/` helper directory). The top-level checks intentionally skip `host/homelab`, which is maintained as its own flake/subproject.
+This runs all checks defined in the flake: evaluation of each host configuration, contract assertions (hostName, stateVersion, CPU vendor, theme), formatting with Alejandra, and import-tree hygiene (ensuring non-default Nix files are referenced or placed in a `lib/` helper directory).
