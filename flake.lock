@@ -147,20 +147,6 @@
         "type": "github"
       }
     },
-    "multi-domain-patches": {
-      "flake": false,
-      "locked": {
-        "path": "../octelium-custom-ui",
-        "type": "path"
-      },
-      "original": {
-        "path": "../octelium-custom-ui",
-        "type": "path"
-      },
-      "parent": [
-        "octelium-custom-client"
-      ]
-    },
     "nix-cachyos-kernel": {
       "inputs": {
         "flake-compat": "flake-compat",
@@ -307,42 +293,6 @@
         "type": "github"
       }
     },
-    "octelium-custom-client": {
-      "inputs": {
-        "multi-domain-patches": "multi-domain-patches",
-        "nixpkgs": [
-          "nixpkgs"
-        ],
-        "octelium-source": "octelium-source"
-      },
-      "locked": {
-        "lastModified": 1785500254,
-        "narHash": "sha256-PESdyBdAbfsxJ5ncUCfp8N+FFyZjFTjt1l+BPHka0h4=",
-        "path": "/data/project/homelab/octelium-custom-client",
-        "type": "path"
-      },
-      "original": {
-        "path": "/data/project/homelab/octelium-custom-client",
-        "type": "path"
-      }
-    },
-    "octelium-source": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1783029972,
-        "narHash": "sha256-T93A2fx+/8NdKcx5IHOCylzHcGJ3fyAr7PZtU//+Yio=",
-        "owner": "octelium",
-        "repo": "octelium",
-        "rev": "cf9a08c093d31a36bfe38ed2e2dc39f170b317ae",
-        "type": "github"
-      },
-      "original": {
-        "owner": "octelium",
-        "ref": "v0.37.0",
-        "repo": "octelium",
-        "type": "github"
-      }
-    },
     "root": {
       "inputs": {
         "hjem": "hjem",
@@ -354,7 +304,6 @@
         "nix4vscode": "nix4vscode",
         "nixos-hardware": "nixos-hardware",
         "nixpkgs": "nixpkgs_2",
-        "octelium-custom-client": "octelium-custom-client",
         "spicetify-nix": "spicetify-nix"
       }
     },
