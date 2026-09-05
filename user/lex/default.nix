@@ -9,6 +9,15 @@
   activeTheme = config.modules.theme.active;
   lexPackages = import ./lib/packages.nix {inherit pkgs;};
   spicePkgs = inputs.spicetify-nix.legacyPackages.${pkgs.stdenv.hostPlatform.system};
+
+  ompExtensionNames = [
+    "omp-provider-surplus"
+    "omp-time-manager"
+    "omp-provider-openbroker"
+    "omp-provider-tokenrouter"
+    "omp-provider-cline"
+    "omp-provider-opencode-free"
+  ];
 in {
   imports = [
     inputs.spicetify-nix.nixosModules.spicetify
@@ -25,53 +34,26 @@ in {
     };
 
     hjem.users.lex = {
-      files = {
-        ".local/share/lutris/runners/proton/GE-Proton".source = pkgs.proton-ge-bin.steamcompattool;
-        ".omp/plugins/omp-plugins.lock.json" = {
-          clobber = true;
-          text = builtins.toJSON {
-            plugins = {
-              omp-provider-surplus = {
-                version = "0.8.2";
+      files =
+        {
+          ".local/share/lutris/runners/proton/GE-Proton".source = pkgs.proton-ge-bin.steamcompattool;
+          ".omp/plugins/omp-plugins.lock.json" = {
+            clobber = true;
+            text = builtins.toJSON {
+              plugins = lib.genAttrs ompExtensionNames (name: {
+                version = pkgs.${name}.version;
                 enabledFeatures = null;
                 enabled = true;
-              };
-              omp-time-manager = {
-                version = "0.1.3";
-                enabledFeatures = null;
-                enabled = true;
-              };
-              omp-provider-openbroker = {
-                version = "0.6.0";
-                enabledFeatures = null;
-                enabled = true;
-              };
-              omp-provider-tokenrouter = {
-                version = "0.1.0";
-                enabledFeatures = null;
-                enabled = true;
-              };
-              omp-provider-cline = {
-                version = "0.1.0";
-                enabledFeatures = null;
-                enabled = true;
-              };
-              omp-provider-opencode-free = {
-                version = "0.1.0";
-                enabledFeatures = null;
-                enabled = true;
-              };
+              });
+              settings = {};
             };
-            settings = {};
           };
-        };
-        ".omp/plugins/node_modules/omp-provider-surplus".source = pkgs.omp-provider-surplus + "/lib/omp-provider-surplus";
-        ".omp/plugins/node_modules/omp-time-manager".source = pkgs.omp-time-manager + "/lib/omp-time-manager";
-        ".omp/plugins/node_modules/omp-provider-openbroker".source = pkgs.omp-provider-openbroker + "/lib/omp-provider-openbroker";
-        ".omp/plugins/node_modules/omp-provider-tokenrouter".source = pkgs.omp-provider-tokenrouter + "/lib/omp-provider-tokenrouter";
-        ".omp/plugins/node_modules/omp-provider-cline".source = pkgs.omp-provider-cline + "/lib/omp-provider-cline";
-        ".omp/plugins/node_modules/omp-provider-opencode-free".source = pkgs.omp-provider-opencode-free + "/lib/omp-provider-opencode-free";
-      };
+        }
+        // lib.listToAttrs (map (name:
+          lib.nameValuePair ".omp/plugins/node_modules/${name}" {
+            source = pkgs.${name} + "/lib/${name}";
+          })
+        ompExtensionNames);
       packages =
         lexPackages.all
         ++ [
