@@ -24,9 +24,9 @@ final: prev:
       url = "https://github.com/can1357/oh-my-pi/releases/download/v18.0.8/omp-linux-x64";
       hash = "sha256-sVxxYqPMdImMKs52UkFYpKJOQ/nQhlAefacanzoYX4A=";
     };
-    nativeBuildInputs = [ prev.autoPatchelfHook ];
+    nativeBuildInputs = [prev.autoPatchelfHook];
     dontUnpack = true;
-    buildInputs = [ prev.glibc ];
+    buildInputs = [prev.glibc];
     dontStrip = true;
     installPhase = ''
       runHook preInstall
@@ -39,9 +39,9 @@ final: prev:
       homepage = "https://github.com/can1357/oh-my-pi";
       changelog = "https://github.com/can1357/oh-my-pi/releases/tag/v${version}";
       license = licenses.mit;
-      sourceProvenance = with sourceTypes; [ binaryNativeCode ];
+      sourceProvenance = with sourceTypes; [binaryNativeCode];
       mainProgram = "omp";
-      platforms = [ "x86_64-linux" ];
+      platforms = ["x86_64-linux"];
     };
   };
 }

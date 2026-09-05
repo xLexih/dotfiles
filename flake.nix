@@ -160,7 +160,6 @@
               cd ${self}
               find . \
                 -path ./.git -prune -o \
-                -path ./host/homelab -prune -o \
                 -type f -name '*.nix' -print0 \
                 | xargs -0 alejandra --check
               touch $out
@@ -174,7 +173,6 @@
               bad=0
               files="$(mktemp)"
               find module host user \
-                -path host/homelab -prune -o \
                 -path '*/.config' -prune -o \
                 -path '*/lib' -prune -o \
                 -type f -name '*.nix' -print | sort > "$files"
