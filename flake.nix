@@ -231,6 +231,10 @@
               printf 'parameterizedLeaks=%s\n' ${lib.escapeShellArg parameterizedOverlayLeaksText}
             } > $out
           '';
+
+          theme-apps-contract = pkgs.runCommand "theme-apps-contract" {} ''
+            printf '%s' ${lib.escapeShellArg (builtins.toJSON (lib.mapAttrs (_: t: t.apps) themeRegistry.themes))} > $out
+          '';
         }
     );
   };

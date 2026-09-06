@@ -31,7 +31,7 @@ in {
       kvantum = qt.kvantumTheme;
       colorScheme = qt.colorSchemeName;
     };
-    kitty = theme.kitty;
+    kitty = theme.apps.kitty;
   };
 
   paletteShell = lib.concatLines (
@@ -69,37 +69,7 @@ in {
     XCURSOR_SIZE = toString theme.cursor.size;
   };
 
-  kittyTheme = ''
-    background ${theme.kitty.background}
-    foreground ${theme.kitty.foreground}
-    cursor ${theme.kitty.cursor}
-    cursor_text_color ${theme.kitty.cursorText}
-    selection_background ${theme.kitty.selection}
-    selection_foreground ${theme.kitty.selectionFg}
-    url_color ${theme.kitty.url}
-
-    active_tab_background ${theme.kitty.tab.activeBg}
-    active_tab_foreground ${theme.kitty.tab.activeFg}
-    inactive_tab_background ${theme.kitty.tab.inactiveBg}
-    inactive_tab_foreground ${theme.kitty.tab.inactiveFg}
-
-    color0 ${theme.kitty.normal.black}
-    color1 ${theme.kitty.normal.red}
-    color2 ${theme.kitty.normal.green}
-    color3 ${theme.kitty.normal.yellow}
-    color4 ${theme.kitty.normal.blue}
-    color5 ${theme.kitty.normal.magenta}
-    color6 ${theme.kitty.normal.cyan}
-    color7 ${theme.kitty.normal.white}
-    color8 ${theme.kitty.bright.black}
-    color9 ${theme.kitty.bright.red}
-    color10 ${theme.kitty.bright.green}
-    color11 ${theme.kitty.bright.yellow}
-    color12 ${theme.kitty.bright.blue}
-    color13 ${theme.kitty.bright.magenta}
-    color14 ${theme.kitty.bright.cyan}
-    color15 ${theme.kitty.bright.white}
-  '';
+  kittyTheme = helpers.mkKittyTheme theme.apps.kitty;
 
   sharePickerQss = ''
     QWidget {
