@@ -21,6 +21,7 @@
     blue = "#b4befe";
     cyan = "#94e2d5";
   };
+  roles = helpers.mkThemeRoles {inherit ui;};
 
   theme = rec {
     name = "hexagon";
@@ -84,62 +85,10 @@
       colorScheme = "hexagon";
     };
 
-    inherit ui;
+    inherit ui roles;
 
-    roles = {
-      activeBg = ui.overlay;
-      activeFg = ui.fg;
-      accentFg = ui.bgDarker;
-      border = ui.overlay;
-      borderStrong = ui.accentAlt;
-      dangerFg = ui.bgDarker;
-      disabledFg = ui.fgMuted;
-      focus = ui.accentBright;
-      hoverBg = ui.surface;
-      inputBg = ui.bgDarker;
-      link = ui.accentAlt;
-      panelBg = ui.bg;
-      panelBgAlt = ui.bgDark;
-      selectionBg = ui.accent;
-      selectionFg = ui.bgDarker;
-      successFg = ui.bgDarker;
-      warningFg = ui.bgDarker;
-    };
-
-    kitty = {
-      background = ui.bg;
-      foreground = ui.fg;
-      cursor = ui.accent;
-      cursorText = ui.bg;
-      selection = ui.overlay;
-      selectionFg = ui.fg;
-      url = ui.accentAlt;
-      tab = {
-        activeBg = ui.accent;
-        activeFg = ui.bg;
-        inactiveBg = ui.surface;
-        inactiveFg = ui.fgMuted;
-      };
-      normal = {
-        black = ui.overlay;
-        red = ui.red;
-        green = ui.green;
-        yellow = ui.yellow;
-        blue = ui.blue;
-        magenta = ui.accent;
-        cyan = ui.cyan;
-        white = ui.fg;
-      };
-      bright = {
-        black = ui.fgMuted;
-        red = ui.red;
-        green = ui.green;
-        yellow = ui.yellow;
-        blue = ui.blue;
-        magenta = ui.accentBright;
-        cyan = ui.cyan;
-        white = "#ffffff";
-      };
+    apps = {
+      kitty = helpers.resolveAppSlots (import ../templates/kitty.nix {inherit ui roles;}) (import ./apps/kitty.nix {inherit ui roles;});
     };
 
     outputs = import ./outputs.nix {

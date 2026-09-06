@@ -58,6 +58,57 @@
 
   mkThemePalette = theme:
     theme.ui // mkThemeRoles theme;
+  unknownAppSlots = prefix: template: overrides:
+    lib.flatten (lib.mapAttrsToList (name: value: let
+      path = prefix ++ [name];
+    in
+      if !(builtins.hasAttr name template)
+      then [(lib.concatStringsSep "." path)]
+      else if lib.isAttrs value && lib.isAttrs template.${name}
+      then unknownAppSlots path template.${name} value
+      else if lib.isAttrs value != lib.isAttrs template.${name}
+      then [(lib.concatStringsSep "." path)]
+      else [])
+    overrides);
+
+  resolveAppSlots = template: overrides: let
+    unknown = unknownAppSlots [] template overrides;
+  in
+    if unknown != []
+    then throw "Unknown app theme slots: ${lib.concatStringsSep ", " unknown}"
+    else lib.recursiveUpdate template overrides;
+
+  mkKittyTheme = app: ''
+    background ${app.background}
+    foreground ${app.foreground}
+    cursor ${app.cursor}
+    cursor_text_color ${app.cursorText}
+    selection_background ${app.selection}
+    selection_foreground ${app.selectionFg}
+    url_color ${app.url}
+
+    active_tab_background ${app.tab.activeBg}
+    active_tab_foreground ${app.tab.activeFg}
+    inactive_tab_background ${app.tab.inactiveBg}
+    inactive_tab_foreground ${app.tab.inactiveFg}
+
+    color0 ${app.normal.black}
+    color1 ${app.normal.red}
+    color2 ${app.normal.green}
+    color3 ${app.normal.yellow}
+    color4 ${app.normal.blue}
+    color5 ${app.normal.magenta}
+    color6 ${app.normal.cyan}
+    color7 ${app.normal.white}
+    color8 ${app.bright.black}
+    color9 ${app.bright.red}
+    color10 ${app.bright.green}
+    color11 ${app.bright.yellow}
+    color12 ${app.bright.blue}
+    color13 ${app.bright.magenta}
+    color14 ${app.bright.cyan}
+    color15 ${app.bright.white}
+  '';
 
   uiTokenNames = {
     accent = "ACCENT";
@@ -1274,11 +1325,13 @@ in {
     hexToRgb
     mkFirefoxTheme
     mkGtkTheme
+    mkKittyTheme
     mkThemePalette
     mkThemeRoles
     mkQtTheme
     mkThemeTokens
     promptColorFor
+    resolveAppSlots
     rgbCsv
     stripHex
     ;

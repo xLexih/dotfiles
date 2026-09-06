@@ -58,6 +58,36 @@
       export QT_STYLE_OVERRIDE=Fusion
       exec ${picker} -stylesheet ${qss}
     '';
+  themeSwitchManifest = pkgs.writeText "theme-switch-manifest.json" (
+    builtins.toJSON (lib.mapAttrs (name: t: {
+        kitty = pkgs.writeText "kitty-theme-${name}.conf" t.outputs.kittyTheme;
+      })
+      themeRegistry.themes)
+  );
+
+  themeSwitch = pkgs.writeShellApplication {
+    name = "theme-switch";
+    runtimeInputs = [pkgs.jq pkgs.procps];
+    text = ''
+      set -eu
+      name="''${1:?usage: theme-switch <theme>}"
+      kitty_conf="$(jq -r --arg t "$name" '.[$t].kitty // empty' "${themeSwitchManifest}")"
+      if [ -z "$kitty_conf" ]; then
+        echo "unknown theme: $name (available: $(jq -r 'keys | join(" ")' "${themeSwitchManifest}"))" >&2
+        exit 1
+      fi
+      kitty_dest="''${XDG_CONFIG_HOME:-$HOME/.config}/kitty/theme.conf"
+      cp "$kitty_conf" "$kitty_dest"
+      chmod 644 "$kitty_dest"
+      if pkill -USR1 -x kitty 2>/dev/null; then
+        echo "kitty reloaded"
+      fi
+      state_dir="''${XDG_CONFIG_HOME:-$HOME/.config}/theme"
+      mkdir -p "$state_dir"
+      printf '%s\n' "$name" > "$state_dir/active"
+      echo "switched to $name (session-live; set modules.theme.name for persistence, restart gtk/qt/firefox apps to apply)"
+    '';
+  };
   themeTargets = import (inputs.self + "/theme/programs") {
     inherit lib pkgs sharePickerBinary;
     theme = activeTheme;
@@ -213,6 +243,7 @@ in {
 
     environment.systemPackages = with pkgs;
       [
+        themeSwitch
         glib
         gsettings-desktop-schemas
         gnome-themes-extra
