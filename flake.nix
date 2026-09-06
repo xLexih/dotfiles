@@ -235,6 +235,15 @@
           theme-apps-contract = pkgs.runCommand "theme-apps-contract" {} ''
             printf '%s' ${lib.escapeShellArg (builtins.toJSON (lib.mapAttrs (_: t: t.apps) themeRegistry.themes))} > $out
           '';
+
+          no-hardcoded-dri-nodes = pkgs.runCommand "no-hardcoded-dri-nodes" {} ''
+            cd ${self}
+            if grep -rn -E '/dev/dri/card[0-9]' .config host user module theme overlay lib; then
+              echo 'hardcoded /dev/dri/cardN node: use /dev/dri/by-path/ (card numbers shift across boots)' >&2
+              exit 1
+            fi
+            touch $out
+          '';
         }
     );
   };
