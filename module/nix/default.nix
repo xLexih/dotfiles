@@ -2,6 +2,7 @@
   config,
   inputs,
   lib,
+  pkgs,
   ...
 }: let
   cfg = config.modules.nix;
@@ -54,5 +55,34 @@ in {
 
     programs.nix-index-database.comma.enable = true;
     programs.nix-ld.enable = true;
+    # Runtime closure for unpatched third-party Chrome binaries — notably the
+    # stock Puppeteer Chrome omp downloads to ~/.omp/puppeteer and spawns as
+    # the omp.browser.headless / omp.browser.headed daemons. Without these,
+    # the loader fails on libglib etc. and both daemons die with exit 127.
+    # (Merges with the nixpkgs nix-ld defaults; list options concatenate.)
+    programs.nix-ld.libraries = with pkgs; [
+      alsa-lib
+      atk
+      at-spi2-atk
+      at-spi2-core
+      cairo
+      cups
+      dbus
+      expat
+      glib
+      libgbm
+      mesa
+      nspr
+      nss
+      pango
+      libxkbcommon
+      xorg.libX11
+      xorg.libXcomposite
+      xorg.libXdamage
+      xorg.libXext
+      xorg.libXfixes
+      xorg.libXrandr
+      xorg.libxcb
+    ];
   };
 }

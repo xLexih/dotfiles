@@ -10,8 +10,5 @@
   },
   "peerDependencies": {
     "@oh-my-pi/pi-coding-agent": ">=17.2.15"
-  },
-  "scripts": {
-    "test": "bun test"
   }
 }

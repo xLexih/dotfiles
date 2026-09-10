@@ -17,6 +17,8 @@
     "omp-provider-tokenrouter"
     "omp-provider-cline"
     "omp-provider-opencode-free"
+    "omp-provider-zen-router"
+    "omp-provider-glm"
   ];
 in {
   imports = [
