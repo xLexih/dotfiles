@@ -6,6 +6,8 @@ import {
 	isResponsesModel,
 	OPENCODE_FREE_BASE_URL,
 	OPENCODE_FREE_MODELS,
+	OPENCODE_FREE_SESSION_HEADER,
+	OPENCODE_FREE_SESSION_ID,
 	parseOpencodeFreeModels,
 	staticOpencodeFreeModels,
 } from "../src/catalog.ts";
@@ -123,5 +125,37 @@ describe("parseOpencodeFreeModels", () => {
 			data: [{id: 123}, {id: null}, {id: "big-pickle"}],
 		});
 		expect(models.map(m => m.id)).toEqual(["big-pickle"]);
+	});
+});
+
+describe("x-opencode-session header", () => {
+	it("uses the documented header name on every built model", () => {
+		// Zen's free tier returns 400 MissingSessionID without this header
+		// (dev.opencode.ai/docs/zen / docs/go). pi-ai copies `model.headers`
+		// onto every outbound request, so baking it in here is enough.
+		expect(OPENCODE_FREE_SESSION_HEADER).toBe("x-opencode-session");
+		for (const d of OPENCODE_FREE_MODELS) {
+			const m = buildOpencodeFreeModel(d);
+			expect(m.headers).toEqual({[OPENCODE_FREE_SESSION_HEADER]: OPENCODE_FREE_SESSION_ID});
+		}
+	});
+
+	it("uses one stable id across all built models (per-conversation affinity)", () => {
+		// A single id for the whole conversation preserves OpenCode's
+		// prompt-cache lineage; one UUID per model would defeat the cache,
+		// and a per-request UUID would too. OMP loads this extension once
+		// per agent process, so module-init generation = one id per
+		// agent session.
+		const ids = new Set(staticOpencodeFreeModels().map(m => m.headers?.[OPENCODE_FREE_SESSION_HEADER]));
+		expect(ids.size).toBe(1);
+		const [first] = [...ids];
+		expect(first).toMatch(/^omp-[0-9a-f-]{36}$/);
+	});
+
+	it("survives the dynamic-discovery parse path", () => {
+		const models = parseOpencodeFreeModels({data: [{id: "big-pickle"}, {id: "muse-spark-1.3-contributor-free"}]});
+		for (const m of models) {
+			expect(m.headers?.[OPENCODE_FREE_SESSION_HEADER]).toBe(OPENCODE_FREE_SESSION_ID);
+		}
 	});
 });

@@ -12,7 +12,9 @@ final: prev: let
       doCheck = true;
       checkPhase = ''
         runHook preCheck
-        bun test test
+        if [ -d test ]; then
+          bun test test
+        fi
         runHook postCheck
       '';
       installPhase = ''
@@ -70,5 +72,16 @@ in {
     version = "0.1.0";
     description = "OpenCode Zen free-models provider extension for Oh My Pi";
     homepage = "https://opencode.ai/docs/zen";
+  };
+
+  omp-provider-zen-router = mkOmpExtension {
+    pname = "omp-provider-zen-router";
+    version = "0.1.0";
+    description = "Local Zen key-pool router provider extension for Oh My Pi";
+  };
+  omp-provider-glm = mkOmpExtension {
+    pname = "omp-provider-glm";
+    version = "0.1.0";
+    description = "Local GLM bridge (Z.AI proxy API) provider extension for Oh My Pi";
   };
 }

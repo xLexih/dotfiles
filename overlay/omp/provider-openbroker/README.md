@@ -27,7 +27,8 @@ than native model-card limits:
 |---|---:|---:|
 | `MiniMaxAI/MiniMax-M2.7` | 204,800 | 16,384 |
 | `moonshotai/Kimi-K2.6` | 262,144 | 8,192 |
-| `deepseek-ai/DeepSeek-V4-Flash-0731` | 400,000 | 16,384 |
+| `deepseek-ai/DeepSeek-V4-Flash-0731` | 400,000 | 4,096 |
+DeepSeek's max output is deliberately lowered from the broker's advertised 16,384 to 4,096 as a verbosity brake: the full budget let mid-stream self-corrections spiral into 12k+ char rambles that hit `length` mid-thought.
 
 All three models are reasoning-capable. MiniMax always reasons, Kimi reasons by
 default but can be disabled, and DeepSeek reasoning is off by default but can be

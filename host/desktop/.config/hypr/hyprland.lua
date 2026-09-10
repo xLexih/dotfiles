@@ -3,5 +3,5 @@ hl.workspace_rule({ workspace = "0", monitor = "HDMI-A-2" })
 
 hl.monitor({ output = "HDMI-A-3", mode = "1920x1080@144.01", position = "0x0", scale = 1 })
 hl.monitor({ output = "HDMI-A-2", mode = "1280x1024@75.03", position = "1920x0", scale = 1 })
--- by-path: cardN minors shift across boots and silently break screencopy DMA. iGPU first.
-hl.env("AQ_DRM_DEVICES", "/dev/dri/by-path/pci-0000:16:0:0-card:/dev/dri/by-path/pci-0000:01:00.0-card")
+-- no AQ_DRM_DEVICES: by-path entries contain ':' which Aquamarine treats as a device separator
+-- and crashes Hyprland at initServer. Aquamarine auto-detects both GPUs.

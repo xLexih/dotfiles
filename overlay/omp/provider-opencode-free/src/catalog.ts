@@ -37,6 +37,27 @@ export const OPENCODE_FREE_BASE_URL = "https://opencode.ai/zen/v1";
 export const OPENCODE_FREE_MODELS_URL = `${OPENCODE_FREE_BASE_URL}/models`;
 
 /**
+ * Header Zen's free tier requires on every request. Zen's gateway returns
+ * `400 MissingSessionID` without it (the response also says "OpenCode's free
+ * tier can only be used in OpenCode" — the provider's own client sets the
+ * header so traffic from external agents can be distinguished and routed
+ * through the same prompt-cache lineage). See
+ * https://dev.opencode.ai/docs/zen and https://dev.opencode.ai/docs/go.
+ */
+export const OPENCODE_FREE_SESSION_HEADER = "x-opencode-session";
+
+/**
+ * Stable per-extension-load session id. OMP loads each extension once per
+ * agent process, so one UUID at module init is one session id for the
+ * entire conversation — preserves OpenCode's prompt-cache affinity
+ * without merging unrelated agents' lineages. See
+ * https://github.com/earendil-works/pi/issues/9237 on why a hardcoded
+ * provider-wide value (`"wsl"`, `"opencode-free"`, etc.) would defeat the
+ * cache and a per-request UUID would too.
+ */
+export const OPENCODE_FREE_SESSION_ID: string = `omp-${crypto.randomUUID()}`;
+
+/**
  * Curated free-tier catalog. Zen's `/v1/models` returns bare `{id}` entries
  * with no context/output metadata, so limits come from upstream model cards
  * and `fetchDynamicModels` intersects the live id list with this table.
@@ -185,6 +206,12 @@ export function buildOpencodeFreeModel(descriptor: OpencodeFreeModelDescriptor):
 		maxTokens: descriptor.maxTokens,
 		highContextWarnTokens: descriptor.highContextWarnTokens,
 		highContextHint: descriptor.highContextHint,
+		// Zen's free tier rejects requests without `x-opencode-session`
+		// (400 MissingSessionID). pi-ai's `resolveOpenAIRequestSetup`
+		// copies `model.headers` onto every outbound request, so baking
+		// it into each built model covers both the static fallback and
+		// the dynamic-discovery paths without touching the streamer.
+		headers: {[OPENCODE_FREE_SESSION_HEADER]: OPENCODE_FREE_SESSION_ID},
 	} as Model<OpencodeFreeApi>;
 }
 
