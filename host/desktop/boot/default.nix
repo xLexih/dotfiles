@@ -10,4 +10,7 @@
     "btrfs"
     "ntfs"
   ];
+  boot.kernelModules = [
+    "kvm_amd" # AMD virtualization
+  ];
 }
