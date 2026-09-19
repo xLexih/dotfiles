@@ -18,6 +18,7 @@
 
   modules.hardware.cpu.vendor = "amd";
   modules.hardware.kernel.kernelPackages = pkgs.cachyosKernels.linuxPackages-cachyos-bore-x86_64-v3;
+  modules.network.sshd.enable = true;
   modules.performance.enable = true;
   modules.theme = {
     enable = true;

@@ -43,7 +43,6 @@ in {
     # Redundant/on-demand services
     services.avahi.enable =
       lib.mkIf (!config.modules.software.sunshine.enable) (lib.mkForce false);
-    services.openssh.enable = lib.mkForce false;
     systemd.services.nscd.wantedBy = lib.mkForce [];
     systemd.services.wpa_supplicant.wantedBy = lib.mkForce [];
     systemd.services.fwupd.wantedBy = lib.mkForce [];
