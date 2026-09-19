@@ -7,7 +7,7 @@
       hybrid = {
         enable = true;
         igpuVendor = "amd";
-        igpuBusId = "PCI:16:0:0";
+        igpuBusId = "PCI:10:0:0";
         nvidiaBusId = "PCI:1:0:0";
       };
     };

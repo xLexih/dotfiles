@@ -5,9 +5,11 @@
 # is otherwise fine — this demotes exactly that diagnostic back to a warning
 # without touching source or downgrading OBS.
 final: prev: {
-  obs-studio-plugins = prev.obs-studio-plugins // {
-    obs-move-transition = prev.obs-studio-plugins.obs-move-transition.overrideAttrs (attrs: {
-      NIX_CFLAGS_COMPILE = (attrs.NIX_CFLAGS_COMPILE or "") + " -Wno-error=deprecated-declarations";
-    });
-  };
+  obs-studio-plugins =
+    prev.obs-studio-plugins
+    // {
+      obs-move-transition = prev.obs-studio-plugins.obs-move-transition.overrideAttrs (attrs: {
+        NIX_CFLAGS_COMPILE = (attrs.NIX_CFLAGS_COMPILE or "") + " -Wno-error=deprecated-declarations";
+      });
+    };
 }
