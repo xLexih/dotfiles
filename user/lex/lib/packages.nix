@@ -112,7 +112,7 @@
     ];
 
     sql = [
-      mysql-workbench
+      # mysql-workbench no1 likes msql workbencch anyway smh
     ];
   };
 

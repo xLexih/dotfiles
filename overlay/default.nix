@@ -2,6 +2,7 @@
   ignoredFiles = [
     "default.nix"
     "codium.nix"
+    "opencode.nix"
   ];
 
   overlayFiles = lib.sort builtins.lessThan (

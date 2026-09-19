@@ -22,13 +22,13 @@ in
               type
               == "regular"
               && lib.hasSuffix ".nix" name
-              && !(builtins.elem name ["default.nix" "codium.nix"])
+              && !(builtins.elem name ["default.nix" "codium.nix" "opencode.nix"])
           )
           (builtins.readDir (self + "/overlay"))
         )
       );
       overlayFilesText = lib.concatStringsSep "," overlayFiles;
-      parameterizedOverlayLeaks = lib.filter (name: builtins.elem name ["codium.nix"]) overlayFiles;
+      parameterizedOverlayLeaks = lib.filter (name: builtins.elem name ["codium.nix" "opencode.nix"]) overlayFiles;
       parameterizedOverlayLeaksText = lib.concatStringsSep "," parameterizedOverlayLeaks;
       discoveredThemeNames = builtins.attrNames themeRegistry.themes;
       discoveredThemeNamesText = lib.concatStringsSep "," discoveredThemeNames;

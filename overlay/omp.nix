@@ -69,7 +69,7 @@ in {
 
   omp-provider-opencode-free = mkOmpExtension {
     pname = "omp-provider-opencode-free";
-    version = "0.1.0";
+    version = "0.1.1";
     description = "OpenCode Zen free-models provider extension for Oh My Pi";
     homepage = "https://opencode.ai/docs/zen";
   };
@@ -78,6 +78,12 @@ in {
     pname = "omp-provider-zen-router";
     version = "0.1.0";
     description = "Local Zen key-pool router provider extension for Oh My Pi";
+  };
+
+  omp-provider-opencode-iprotate = mkOmpExtension {
+    pname = "omp-provider-opencode-iprotate";
+    version = "0.1.0";
+    description = "Zen free-models provider via local IP-rotating gateway for Oh My Pi";
   };
   omp-provider-glm = mkOmpExtension {
     pname = "omp-provider-glm";

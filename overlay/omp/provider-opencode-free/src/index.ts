@@ -10,6 +10,7 @@ import {
 	OPENCODE_FREE_BASE_URL,
 	OPENCODE_FREE_MODELS,
 	OPENCODE_FREE_MODELS_URL,
+	opencodeFreeHeaders,
 	parseOpencodeFreeModels,
 	staticOpencodeFreeModels,
 } from "./catalog.ts";
@@ -27,7 +28,7 @@ async function loginOpencodeFree(callbacks: OAuthLoginCallbacks): Promise<string
 	const fetchImpl = callbacks.fetch ?? fetch;
 	const response = await fetchImpl(OPENCODE_FREE_MODELS_URL, {
 		method: "GET",
-		headers: {Authorization: `Bearer ${apiKey}`, "Accept-Encoding": "identity"},
+		headers: {...opencodeFreeHeaders(), Authorization: `Bearer ${apiKey}`, "Accept-Encoding": "identity"},
 		signal: AbortSignal.timeout(15_000),
 	});
 	// NOTE: `GET /zen/v1/models` is public (200 without a key), so this only
@@ -45,16 +46,23 @@ function opencodeFreeStream(requested: Model, context: Context, options?: Simple
 	const outer = createAssistantMessageEventStream();
 	void (async () => {
 		try {
+			// `sessionId` is stable for the OMP conversation. Do not use the
+			// extension-load fallback when it is available: that would merge
+			// distinct conversations into one OpenCode routing/cache lineage.
+			const modelWithIdentity = {
+				...requested,
+				headers: {...requested.headers, ...opencodeFreeHeaders(options?.sessionId)},
+			};
 			if (isResponsesModel(requested.id)) {
 				const model = {
-					...requested,
+					...modelWithIdentity,
 					api: "openai-responses",
 					compat: requested.compat ?? opencodeFreeCompat("openai-responses"),
 				} as Model<"openai-responses">;
 				for await (const event of streamOpenAIResponses(model, context, options)) outer.push(event);
 			} else {
 				const model = {
-					...requested,
+					...modelWithIdentity,
 					api: "openai-completions",
 					compat: requested.compat ?? opencodeFreeCompat("openai-completions"),
 				} as Model<"openai-completions">;
@@ -87,7 +95,7 @@ const opencodeFreeProvider: ExtensionFactory = pi => {
 		authHeader: true,
 		oauth: {name: "OpenCode Free", login: loginOpencodeFree},
 		fetchDynamicModels: async apiKey => {
-			const headers: Record<string, string> = {"Accept-Encoding": "identity"};
+			const headers: Record<string, string> = {...opencodeFreeHeaders(), "Accept-Encoding": "identity"};
 			if (apiKey?.trim()) headers.Authorization = `Bearer ${apiKey}`;
 			const response = await fetch(OPENCODE_FREE_MODELS_URL, {
 				method: "GET",

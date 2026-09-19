@@ -8,6 +8,9 @@ import {
 	OPENCODE_FREE_MODELS,
 	OPENCODE_FREE_SESSION_HEADER,
 	OPENCODE_FREE_SESSION_ID,
+	OPENCODE_FREE_USER_AGENT,
+	OPENCODE_FREE_USER_AGENT_HEADER,
+	opencodeFreeHeaders,
 	parseOpencodeFreeModels,
 	staticOpencodeFreeModels,
 } from "../src/catalog.ts";
@@ -128,15 +131,16 @@ describe("parseOpencodeFreeModels", () => {
 	});
 });
 
-describe("x-opencode-session header", () => {
-	it("uses the documented header name on every built model", () => {
-		// Zen's free tier returns 400 MissingSessionID without this header
-		// (dev.opencode.ai/docs/zen / docs/go). pi-ai copies `model.headers`
-		// onto every outbound request, so baking it in here is enough.
+describe("OpenCode request identity", () => {
+	it("uses a specific User-Agent and the documented session header on every built model", () => {
+		// pi-ai merges `model.headers` after its generic User-Agent, so the
+		// model-level value is the one Zen receives.
+		expect(OPENCODE_FREE_USER_AGENT_HEADER).toBe("User-Agent");
+		expect(OPENCODE_FREE_USER_AGENT).toBe("oh-my-pi-opencode-free/0.1.1");
 		expect(OPENCODE_FREE_SESSION_HEADER).toBe("x-opencode-session");
 		for (const d of OPENCODE_FREE_MODELS) {
 			const m = buildOpencodeFreeModel(d);
-			expect(m.headers).toEqual({[OPENCODE_FREE_SESSION_HEADER]: OPENCODE_FREE_SESSION_ID});
+			expect(m.headers).toEqual(opencodeFreeHeaders());
 		}
 	});
 
@@ -152,10 +156,17 @@ describe("x-opencode-session header", () => {
 		expect(first).toMatch(/^omp-[0-9a-f-]{36}$/);
 	});
 
+	it("uses the OMP conversation id when a stream provides one", () => {
+		expect(opencodeFreeHeaders("conversation-123")).toEqual({
+			[OPENCODE_FREE_USER_AGENT_HEADER]: OPENCODE_FREE_USER_AGENT,
+			[OPENCODE_FREE_SESSION_HEADER]: "conversation-123",
+		});
+	});
+
 	it("survives the dynamic-discovery parse path", () => {
 		const models = parseOpencodeFreeModels({data: [{id: "big-pickle"}, {id: "muse-spark-1.3-contributor-free"}]});
 		for (const m of models) {
-			expect(m.headers?.[OPENCODE_FREE_SESSION_HEADER]).toBe(OPENCODE_FREE_SESSION_ID);
+			expect(m.headers).toEqual(opencodeFreeHeaders());
 		}
 	});
 });

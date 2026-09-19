@@ -64,6 +64,15 @@ reject encrypted-reasoning replay (stateless `store: false` likewise keeps
 no first-event watchdog accommodates long silent reasoning prefill on the
 free tier.
 
+## Client identity
+
+Every request identifies this coding-agent extension as
+`oh-my-pi-opencode-free/0.1.1`. Inference uses OMP's
+`SimpleStreamOptions.sessionId` as `x-opencode-session`, keeping routing and
+prompt caching stable within a conversation while isolating separate
+conversations. A per-extension UUID is only the fallback for calls without a
+conversation id.
+
 ## Why dynamic discovery, not a static catalog
 
 The static table above is the *fallback*. The primary path is

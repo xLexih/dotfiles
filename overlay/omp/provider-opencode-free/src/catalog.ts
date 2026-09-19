@@ -36,6 +36,10 @@ export interface OpencodeFreeModelDescriptor {
 export const OPENCODE_FREE_BASE_URL = "https://opencode.ai/zen/v1";
 export const OPENCODE_FREE_MODELS_URL = `${OPENCODE_FREE_BASE_URL}/models`;
 
+/** Identify this extension rather than pi-ai's generic host/OS User-Agent. */
+export const OPENCODE_FREE_USER_AGENT_HEADER = "User-Agent";
+export const OPENCODE_FREE_USER_AGENT = "oh-my-pi-opencode-free/0.1.1";
+
 /**
  * Header Zen's free tier requires on every request. Zen's gateway returns
  * `400 MissingSessionID` without it (the response also says "OpenCode's free
@@ -56,6 +60,18 @@ export const OPENCODE_FREE_SESSION_HEADER = "x-opencode-session";
  * cache and a per-request UUID would too.
  */
 export const OPENCODE_FREE_SESSION_ID: string = `omp-${crypto.randomUUID()}`;
+
+/**
+ * Build the required Zen client identity. `SimpleStreamOptions.sessionId`
+ * supplies OMP's actual conversation id; the extension-load UUID only
+ * covers callers that do not provide one.
+ */
+export function opencodeFreeHeaders(sessionId = OPENCODE_FREE_SESSION_ID): Record<string, string> {
+	return {
+		[OPENCODE_FREE_USER_AGENT_HEADER]: OPENCODE_FREE_USER_AGENT,
+		[OPENCODE_FREE_SESSION_HEADER]: sessionId,
+	};
+}
 
 /**
  * Curated free-tier catalog. Zen's `/v1/models` returns bare `{id}` entries
@@ -206,12 +222,9 @@ export function buildOpencodeFreeModel(descriptor: OpencodeFreeModelDescriptor):
 		maxTokens: descriptor.maxTokens,
 		highContextWarnTokens: descriptor.highContextWarnTokens,
 		highContextHint: descriptor.highContextHint,
-		// Zen's free tier rejects requests without `x-opencode-session`
-		// (400 MissingSessionID). pi-ai's `resolveOpenAIRequestSetup`
-		// copies `model.headers` onto every outbound request, so baking
-		// it into each built model covers both the static fallback and
-		// the dynamic-discovery paths without touching the streamer.
-		headers: {[OPENCODE_FREE_SESSION_HEADER]: OPENCODE_FREE_SESSION_ID},
+		// pi-ai copies model headers onto every outbound request. The stream
+		// replaces the fallback session id with its conversation id.
+		headers: opencodeFreeHeaders(),
 	} as Model<OpencodeFreeApi>;
 }
 

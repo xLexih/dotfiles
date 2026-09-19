@@ -18,6 +18,7 @@
     "omp-provider-cline"
     "omp-provider-opencode-free"
     "omp-provider-zen-router"
+    "omp-provider-opencode-iprotate"
     "omp-provider-glm"
   ];
 in {

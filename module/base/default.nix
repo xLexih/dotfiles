@@ -39,7 +39,7 @@
   services.fwupd.enable = true; # firmware updates
 
   services.dbus.packages = with pkgs; [
-    gcr
+    gcr_4
     gnome-keyring
   ];
 

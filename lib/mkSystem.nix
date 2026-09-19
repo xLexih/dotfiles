@@ -29,6 +29,7 @@ in
                 inputs.llm-agents.overlays.shared-nixpkgs
               ]
               ++ (import (inputs.self + "/overlay") {inherit (inputs.nixpkgs) lib;})
+              ++ [(import (inputs.self + "/overlay/opencode.nix") {inherit inputs;})]
               ++ [
                 inputs.nix4vscode.overlays.default
                 inputs.nix-vscode-extensions.overlays.default

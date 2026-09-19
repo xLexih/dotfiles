@@ -1,55 +1,40 @@
 import {describe, expect, it} from "bun:test";
-import {BROKER_MODELS_URL, fetchBrokerModels, OPENBROKER_MODELS, parseBrokerModels, validateOpenBrokerApiKey} from "../src/catalog.ts";
+import {BROKER_MODELS_URL, fetchBrokerModels, parseBrokerModels, validateOpenBrokerApiKey} from "../src/catalog.ts";
 
 const json = (body: unknown, status = 200): Response => new Response(JSON.stringify(body), {status, headers: {"Content-Type": "application/json"}});
 
 describe("OpenBroker catalog", () => {
-  it("contains only the documented active chat models", () => {
-    expect(OPENBROKER_MODELS.map(model => model.id)).toEqual([
-      "MiniMaxAI/MiniMax-M2.7",
-      "moonshotai/Kimi-K2.6",
-      "deepseek-ai/DeepSeek-V4-Flash-0731",
-    ]);
+  it("discovers new models without retaining models absent from the broker", () => {
+    const models = parseBrokerModels({data: [
+      {id: "vendor/new-model", name: "New Model", context_length: 131_072, max_output_length: 32_768, input_modalities: ["text"], output_modalities: ["text"], supported_features: ["reasoning", "tools"]},
+    ]});
+    expect(models.map(model => model.id)).toEqual(["vendor/new-model"]);
+    expect(models[0]).toMatchObject({name: "New Model", reasoning: true, contextWindow: 131_072, maxTokens: 32_768});
   });
 
-  it("uses explicit context limits and no fabricated USD cost", () => {
-    expect(OPENBROKER_MODELS.every(model => model.contextWindow > 0 && model.maxTokens > 0)).toBe(true);
-    expect(OPENBROKER_MODELS.every(model => Object.values(model.cost).every(cost => cost === 0))).toBe(true);
-  });
-
-  it("uses the broker-published context window but a verbosity-braked maxTokens for DeepSeek", () => {
-    expect(Object.fromEntries(OPENBROKER_MODELS.map(model => [model.id, [model.contextWindow, model.maxTokens]]))).toEqual({
-      "MiniMaxAI/MiniMax-M2.7": [204_800, 16_384],
-      "moonshotai/Kimi-K2.6": [262_144, 8_192],
-      // DeepSeek's maxTokens is intentionally 4,096 — well below the broker's
-      // advertised 16,384 — as a verbosity brake. The model can naturally
-      // finish shorter responses; 4k prevents the 12k ramble pattern that
-      // combined with the 18.0.6 retry wedge to produce 1260-iteration loops.
-      "deepseek-ai/DeepSeek-V4-Flash-0731": [400_000, 4_096],
+  it("uses broker metadata without model-specific overrides or fabricated USD costs", () => {
+    const [model] = parseBrokerModels({data: [{id: "deepseek-ai/DeepSeek-V4-Flash-0731", context_length: 400_000, max_output_length: 16_384, input_modalities: ["text", "image", "audio", "image"], supported_features: ["tools"], pricing: {input: 0.2}}]});
+    expect(model).toEqual({
+      id: "deepseek-ai/DeepSeek-V4-Flash-0731", name: "deepseek-ai/DeepSeek-V4-Flash-0731",
+      contextWindow: 400_000, maxTokens: 16_384, reasoning: false, input: ["text", "image"],
+      cost: {input: 0, output: 0, cacheRead: 0, cacheWrite: 0},
     });
   });
 
-  it("tags models with high-context warning thresholds and a recommended-for-large-context hint", () => {
-    const byId = Object.fromEntries(OPENBROKER_MODELS.map(model => [model.id, model]));
-    expect(byId["MiniMaxAI/MiniMax-M2.7"]?.highContextWarnTokens).toBe(150_000);
-    expect(byId["MiniMaxAI/MiniMax-M2.7"]?.highContextHint).toBe("acceptable");
-    expect(byId["moonshotai/Kimi-K2.6"]?.highContextHint).toBe("preferred");
-    expect(byId["deepseek-ai/DeepSeek-V4-Flash-0731"]?.highContextHint).toBe("acceptable");
+  it("rejects malformed catalogs, invalid limits, and non-chat models", () => {
+    for (const body of [null, [], {}, {data: null}, {data: {}}]) expect(parseBrokerModels(body)).toEqual([]);
+    const valid = {id: "vendor/model", context_length: 1000, max_output_length: 100};
+    expect(parseBrokerModels({data: [
+      null, [], "model", {...valid, id: " "}, {...valid, id: 1},
+      ...[0, -1, 1.5, Infinity, Number.MAX_SAFE_INTEGER + 1, "100", null].flatMap(limit => [
+        {...valid, context_length: limit}, {...valid, max_output_length: limit},
+      ]),
+      {...valid, output_modalities: ["embeddings"]}, {...valid, output_modalities: "text"},
+      {...valid, input_modalities: ["audio"]}, {...valid, input_modalities: null},
+    ]})).toEqual([]);
   });
 
-  it("marks all broker chat models as reasoning-capable", () => {
-    expect(OPENBROKER_MODELS.every(model => model.reasoning)).toBe(true);
-  });
-
-  it("uses full human-readable model names", () => {
-    expect(OPENBROKER_MODELS.map(model => model.name)).toEqual([
-      "MiniMax M2.7",
-      "Kimi K2.6",
-      "DeepSeek V4 Flash 0731",
-    ]);
-  });
-
-  it("accepts only valid limits for the known model IDs", () => {
+  it("deduplicates valid models without letting invalid duplicates overwrite them", () => {
     const models = parseBrokerModels({data: [
       {id: "MiniMaxAI/MiniMax-M2.7", context_length: 204_800, max_output_length: 16_384},
       {id: "moonshotai/Kimi-K2.6", context_length: 262_144, max_output_length: 8_192},
@@ -61,16 +46,28 @@ describe("OpenBroker catalog", () => {
       ["MiniMaxAI/MiniMax-M2.7", 204_800, 16_384],
       ["moonshotai/Kimi-K2.6", 262_144, 8_192],
       ["deepseek-ai/DeepSeek-V4-Flash-0731", 400_000, 16_384],
+      ["unknown/model", 1, 1],
     ]);
   });
 
-  it("refreshes limits from the public broker endpoint", async () => {
+  it("rejects failed, empty, and malformed discovery responses without a static fallback", async () => {
+    await expect(fetchBrokerModels((async () => json({}, 503)) as typeof fetch)).rejects.toThrow("(503)");
+    for (const body of [{data: []}, {}, {data: [{id: "incomplete"}]}]) {
+      await expect(fetchBrokerModels((async () => json(body)) as typeof fetch)).rejects.toThrow("no usable chat models");
+    }
+    await expect(fetchBrokerModels((async () => new Response("not json")) as typeof fetch)).rejects.toThrow();
+    await expect(fetchBrokerModels((async () => { throw new Error("network unavailable"); }) as typeof fetch)).rejects.toThrow("network unavailable");
+  });
+
+  it("discovers models from the public broker endpoint", async () => {
     let request: Request | undefined;
     const models = await fetchBrokerModels((async (input: RequestInfo | URL, init?: RequestInit) => {
       request = new Request(input, init);
       return json({data: [{id: "MiniMaxAI/MiniMax-M2.7", context_length: 200_000, max_output_length: 12_000}]});
     }) as typeof fetch);
     expect(request?.url).toBe(BROKER_MODELS_URL);
+    expect(request?.headers.has("Authorization")).toBe(false);
+    expect(models).toHaveLength(1);
     expect(models.find(model => model.id === "MiniMaxAI/MiniMax-M2.7")).toMatchObject({contextWindow: 200_000, maxTokens: 12_000});
   });
 });

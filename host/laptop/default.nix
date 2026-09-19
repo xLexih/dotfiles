@@ -23,4 +23,5 @@
     name = "hexagon";
   };
   modules.session.hyprland.enable = true;
+  modules.software.warp.enable = true;
 }

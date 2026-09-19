@@ -18,29 +18,27 @@ tries to reconstruct them from an empty environment variable.
 
 ## Models and startup
 
-OMP's provider API supports either static `models` or `fetchDynamicModels`; this
-extension uses the former. The effective limits below come from the public Gonka
-Broker `GET /v1/models` catalog and reflect broker/deployment caps, which can be lower
-than native model-card limits:
+The extension uses OMP's `fetchDynamicModels` to discover chat models from the public
+`https://proxy.gonkabroker.com/v1/models` catalog with a five-second request timeout.
+Model IDs, names, context windows, and maximum output lengths come from that response:
+there is no local allowlist, static fallback, or per-model limit override. New models
+are included and absent models are omitted on each successful discovery.
 
-| Model ID | Context | Max output |
-|---|---:|---:|
-| `MiniMaxAI/MiniMax-M2.7` | 204,800 | 16,384 |
-| `moonshotai/Kimi-K2.6` | 262,144 | 8,192 |
-| `deepseek-ai/DeepSeek-V4-Flash-0731` | 400,000 | 4,096 |
-DeepSeek's max output is deliberately lowered from the broker's advertised 16,384 to 4,096 as a verbosity brake: the full budget let mid-stream self-corrections spiral into 12k+ char rambles that hit `length` mid-thought.
+Entries require positive integer context/output limits and text input/output support
+when modalities are supplied. Embedding-only and malformed entries are skipped.
+Supported text/image inputs and the `reasoning` feature are read from broker metadata;
+missing reasoning metadata is treated as false, even for previously known models.
+Missing names fall back to the model ID, and missing modalities default to text.
 
-All three models are reasoning-capable. MiniMax always reasons, Kimi reasons by
-default but can be disabled, and DeepSeek reasoning is off by default but can be
-enabled with the broker's reasoning controls.
+OMP owns discovery scheduling; the extension no longer polls or re-registers on a timer.
+Failed or empty discovery raises an error rather than substituting hard-coded models;
+initial availability therefore depends on the catalog endpoint. Local high-context
+warnings and model recommendations have also been removed. Request compatibility
+handling remains unchanged.
 
-The extension performs a bounded, non-blocking refresh of these limits from the public
-broker model catalog at session start and every five minutes; when a change is observed,
-the provider re-registers so the new limits take effect. If that endpoint is
-unavailable, the verified static snapshot above remains active. There are no governance,
-CoinGecko, or balance requests on startup. OMP only has a USD-per-million-token cost
-field; until OpenBroker exposes an authoritative USD quote, models report no synthetic
-USD cost rather than incorrect cost totals.
+There are no governance, CoinGecko, or balance requests on startup. OMP only has a
+USD-per-million-token cost field; until OpenBroker exposes an authoritative USD quote,
+models report no synthetic USD cost rather than incorrect cost totals.
 
 ## Strict request compatibility
 

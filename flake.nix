@@ -1,6 +1,8 @@
 {
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
+  inputs.nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+
   inputs.import-tree.url = "github:denful/import-tree";
 
   inputs.hjem.url = "github:feel-co/hjem";
