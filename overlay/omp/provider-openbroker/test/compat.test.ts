@@ -41,7 +41,7 @@ describe("OpenBroker compat", () => {
   });
 
   it("reads thinking from the `reasoning` field the broker actually emits", () => {
-    // docs.gonkabroker.com: thinking arrives in `reasoning`
+    // openbroker.gonka.gg/docs: thinking arrives in `reasoning`
     // (`choices[].delta.reasoning`), never `reasoning_content`.
     expect(compatFor("deepseek-ai/DeepSeek-V4-Flash-0731").reasoningContentField).toBe("reasoning");
     expect(compatFor("moonshotai/Kimi-K2.6").reasoningContentField).toBe("reasoning");
@@ -79,5 +79,17 @@ describe("OpenBroker compat", () => {
 
   it("keeps tool_choice from silently disabling DeepSeek reasoning", () => {
     expect(compatFor("deepseek-ai/DeepSeek-V4-Flash-0731").disableReasoningOnToolChoice).toBe(false);
+  });
+
+  it("treats Qwen and GLM with the generic OpenAI policy", () => {
+    for (const id of ["Qwen/Qwen3-235B-A22B-Instruct-2507-FP8", "zai-org/GLM-5.3-Flash"]) {
+      const compat = compatFor(id);
+      expect(compat.reasoningDeltasMayBeCumulative).toBe(false);
+      expect(compat.streamIdleTimeoutMs).toBeUndefined();
+      expect(compat.streamFirstEventTimeoutMs).toBeUndefined();
+      expect(compat.reasoningContentField).toBe("reasoning");
+      expect(compat.omitReasoningEffort).toBe(false);
+      expect(compat.maxTokensField).toBe("max_tokens");
+    }
   });
 });

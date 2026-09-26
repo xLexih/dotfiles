@@ -1,92 +1,85 @@
-# OMP OpenCode Free provider
+# OMP Opencode Free provider
 
-This extension adds [OpenCode Zen's free models](https://opencode.ai/docs/zen/)
-as a provider for Oh My Pi behind a single login.
+`opencode-free/<id>` in OMP: the free-only view over
+[OpenCode Zen](https://opencode.ai/docs/zen/), found in the picker,
+`/model`, and roles config. The native `opencode-zen` provider owns
+routing/compat/credentials — this extension only adds the free-model list
+plus the two client-identity signals Zen's free tier gates on:
+
+| Signal | Value |
+|---|---|
+| `User-Agent` | `opencode/1.18.30` (any `opencode/*` passes the `429 FreeUsageLimitError` gate) |
+| `x-opencode-session` | `ses_` + 26 chars in opencode's own format (12 hex + 14 base62, e.g. `ses_f36bdb647ffeCD6SkW3nr4RoBL`), sha256-derived per OMP conversation |
 
 | Field | Value |
 |---|---|
 | Provider ID | `opencode-free` |
 | Base URL | `https://opencode.ai/zen/v1` |
-| Authentication | `Authorization: Bearer <zen-key>` |
-| Login | `/login opencode-free` (key from https://opencode.ai/auth) |
-| Environment | `OPENCODE_ZEN_API_KEY` |
+| Login | `/login opencode-zen` (key from https://opencode.ai/auth; streaming runs as the native entry) |
+| Select | `/model opencode-free/<id>` |
 
-## Models
+## Dynamic models
 
-Zen serves free models behind **two** endpoint families on the same host.
-This provider registers one `opencode-free` id and dispatches per model, so
-`/login opencode-free` unlocks all of them:
+`fetchDynamicModels` intersects the live `GET /zen/v1/models` id list
+(public, no key needed) with the free-chat rule (`big-pickle`/`*-free`,
+minus the `jev-*` judge family and SystemOne), so new free ids appear and
+retired ones drop out with no change here — this already picked up
+`mimo-v2.6-flash-free` (2026-09-22: 76 live models, 9 free chat ids). Known
+ids carry exact upstream-card windows (`src/models.ts`); unknown ids get
+conservative 128k/8k synthesized defaults. Thinking levels (`xhigh` et al.)
+are merged per id from models.dev's `opencode` slice at discovery time
+(`src/thinking.ts`, 24h TTL + ETag, never throws) as the runtime's
+`thinking: {mode: "effort", efforts: [...]}` shape — the field OMP 18.0.8's
+`/thinking` picker gates on (a `thinkingLevelMap`-only entry is stored
+without `xhigh`). So new reasoning scales appear with no code change —
+e.g. Muse Spark advertises `minimal`–`xhigh` there.
+A curated-only static list covers fetch failures (without thinking levels).
 
-| Model ID | Name | Endpoint | Context | Max output |
-|---|---|---|---:|---:|
-| `muse-spark-1.3-contributor-free` | Muse Spark 1.3 Contributor Free | `/responses` | 1,048,576 | 32,768 |
-| `muse-spark-1.2-contributor-free` | Muse Spark 1.2 Contributor Free | `/responses` | 1,048,576 | 32,768 |
-| `mimo-v2.5-free` | MiMo V2.5 Free | `/chat/completions` | 1,000,000 | 16,384 |
-| `ling-3.0-flash-fin-free` | Ling 3.0 Flash Fin Free | `/chat/completions` | 262,144 | 16,384 |
-| `nemotron-3-ultra-free` | Nemotron 3 Ultra Free | `/chat/completions` | 1,048,576 | 16,384 |
-| `nemotron-3.5-lightning-free` | Nemotron 3.5 Lightning Free | `/chat/completions` | 1,048,576 | 16,384 |
-| `deepseek-v4-flash-free` | DeepSeek V4 Flash Free | `/chat/completions` | 128,000 | 8,192 |
-| `big-pickle` | Big Pickle | `/chat/completions` | 128,000 | 8,192 |
+## How it works
 
-All entries are zero-cost. Context windows come from upstream model cards
-(Meta, Xiaomi, InclusionAI/HF, NVIDIA family); `deepseek-v4-flash-free` and
-`big-pickle` are conservative 128k defaults (marked `UNCONFIRMED` in
-`src/catalog.ts`) because neither has a public card. The 16,384/8,192 output
-caps are verbosity brakes, mirroring
-`overlay/omp/provider-openbroker/src/catalog.ts:32-33`.
+Each `opencode-free` entry dispatches through the provider's custom api into
+`opencodeFreeStream`, which re-executes the request as the matching native
+`opencode-zen` entry (same id, curated endpoint family, native compat,
+routing, and credentials) with a fetch wrapper setting the session header
+and UA on Zen inference paths only (`chat/completions`, `responses`,
+`messages`, `systemone`, Gemini `generateContent`/`streamGenerateContent`).
+Paid models never appear in the list. Discovery (`GET /v1/models`) is public
+and passes through untouched.
 
-`laguna-s-2.1-free` is intentionally excluded: Poolside Laguna has no
-tool-call support (same reason
-`overlay/omp/provider-cline/src/catalog.ts` skips `poolside/laguna*`), so an
-OMP coding agent cannot drive it.
+The `before_agent_start` hook applies the same shim to directly selected
+`opencode-zen/<free-id>` models, so the identity is consistent regardless of
+entry point.
 
-## Why the 500s on Muse Spark (and how this fixes them)
+The outer custom-API dispatch already holds the provider's concurrency
+slot, so the inner `streamSimple` passes `maxInFlightRequests: {}`.
 
-`muse-spark-*-contributor-free` is Responses-only
-(`https://opencode.ai/zen/v1/responses`, `@ai-sdk/openai`). Driving it with a
-Chat Completions request shape (`/chat/completions`) makes the Zen gateway
-return 500. This provider dispatches by curated model id: Spark ids go
-through pi-ai's `streamOpenAIResponses`, everything else through
-`streamOpenAICompletions`, both against the shared base URL
-`https://opencode.ai/zen/v1`.
+## Session ids
 
-## Request compatibility
+`src/session.ts:toZenSessionId` maps the OMP conversation id via sha256 to
+`ses_` + 12 lowercase hex + 14 base62 — the same shape as opencode's
+`Identifier.create("ses", "descending")`. Deterministic per conversation,
+so cache affinity survives restarts with no persisted state, and separate
+conversations never share a lineage.
 
-Plain OpenAI surface on both families — standard `tools`/`tool_calls`,
-standard `content: string | null`, no DSML/inband envelopes, no forced
-reasoning replay. The reasoning field is the OpenAI-standard `reasoning`.
-The compat policy mirrors TokenRouter's
-(`overlay/omp/provider-tokenrouter/src/compat.ts`), with one Responses-only
-difference: `includeEncryptedReasoning` is off, because pi-ai's
-endpoint-constraints doc warns third-party `/v1/responses` proxies may
-reject encrypted-reasoning replay (stateless `store: false` likewise keeps
-`previous_response_id` chaining off). A 5-minute inter-event watchdog with
-no first-event watchdog accommodates long silent reasoning prefill on the
-free tier.
+## `/zen-judge`
 
-## Client identity
+`/zen-judge {"state":"...", "questions":{"id":{"type":"noul","instructions":"..."}}}`
+judges with Jev 1.13 Free via the `typesafe` API through the same identity
+wrapper. Needs an omp whose pi-ai ships `@oh-my-pi/pi-ai/judgment`; on
+older runtimes it reports an error instead of breaking the shim.
 
-Every request identifies this coding-agent extension as
-`oh-my-pi-opencode-free/0.1.1`. Inference uses OMP's
-`SimpleStreamOptions.sessionId` as `x-opencode-session`, keeping routing and
-prompt caching stable within a conversation while isolating separate
-conversations. A per-extension UUID is only the fallback for calls without a
-conversation id.
+## Breaking change (v0.2.0)
 
-## Why dynamic discovery, not a static catalog
-
-The static table above is the *fallback*. The primary path is
-`fetchDynamicModels`, which asks Zen for the live model list (`GET
-/zen/v1/models`, public) and intersects it with the curated descriptors, so
-retired free models drop out and new `-free` ids become one-descriptor-row
-additions in `src/catalog.ts`. Note `GET /v1/models` is public, so login
-validation only proves reachability — a wrong key surfaces on first
-inference.
+The static catalog, compat table, and bespoke `OPENCODE_ZEN_API_KEY` login
+are gone: discovery is dynamic, streaming runs as the native entry
+(bring your own `/login opencode-zen`), and windows for unknown ids are
+conservative synthesized defaults rather than curated rows. `opencode-free/<id>`
+selection and the `default` model role keep working unchanged.
 
 ## Privacy
 
 Free/contributor models may train on your traffic: Meta's contributor tier
 uses prompts/completions to train future models
 (https://dev.meta.ai/docs/pricing-rate-limits#contributor-tier), and Zen
-marks Big Pickle / MiMo / Ling / Nemotron free endpoints as data-collecting
-during their free periods (https://opencode.ai/docs/zen/#privacy).
+marks free endpoints as data-collecting during their free periods
+(https://opencode.ai/docs/zen/#privacy).

@@ -48,7 +48,7 @@ in {
 
   omp-provider-openbroker = mkOmpExtension {
     pname = "omp-provider-openbroker";
-    version = "0.8.0";
+    version = "0.9.0";
     description = "OpenBroker Gonka inference provider extension for Oh My Pi";
     homepage = "https://openbroker.gonka.gg";
   };
@@ -62,29 +62,18 @@ in {
 
   omp-provider-cline = mkOmpExtension {
     pname = "omp-provider-cline";
-    version = "0.1.0";
+    version = "0.3.2";
     description = "Cline OpenAI-compatible provider extension for Oh My Pi";
     homepage = "https://app.cline.bot";
   };
 
   omp-provider-opencode-free = mkOmpExtension {
     pname = "omp-provider-opencode-free";
-    version = "0.1.1";
-    description = "OpenCode Zen free-models provider extension for Oh My Pi";
+    version = "0.2.0";
+    description = "Opencode-Zen free-tier identity shim for Oh My Pi";
     homepage = "https://opencode.ai/docs/zen";
   };
 
-  omp-provider-zen-router = mkOmpExtension {
-    pname = "omp-provider-zen-router";
-    version = "0.1.0";
-    description = "Local Zen key-pool router provider extension for Oh My Pi";
-  };
-
-  omp-provider-opencode-iprotate = mkOmpExtension {
-    pname = "omp-provider-opencode-iprotate";
-    version = "0.1.0";
-    description = "Zen free-models provider via local IP-rotating gateway for Oh My Pi";
-  };
   omp-provider-glm = mkOmpExtension {
     pname = "omp-provider-glm";
     version = "0.1.0";

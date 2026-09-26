@@ -63,6 +63,7 @@
       nettools
       tcpdump
       traceroute
+      dig
       mtr
       powertop
     ];

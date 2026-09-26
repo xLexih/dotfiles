@@ -4,9 +4,11 @@ import type {Model} from "@oh-my-pi/pi-ai";
  * Hand-built OpenAI-compat policy for the broker's served model families,
  * mirroring what the built-in catalog would derive if it recognized these ids.
  *
- * Authoritative source: docs.gonkabroker.com — "OpenAI API Compatibility" and
- * "Supported Models". OpenBroker is a normal OpenAI-compatible proxy over the
- * Gonka devshard network; it does NOT re-impose DeepSeek-native contracts.
+ * Authoritative source: openbroker.gonka.gg/docs — "API reference" and
+ * "Supported models". OpenBroker is a normal OpenAI-compatible proxy over the
+ * Gonka devshard network (`POST /v1/chat/completions` on
+ * `https://api.openbroker.gonka.gg/v1`); it does NOT re-impose DeepSeek-native
+ * contracts.
  * - Reasoning for thinking models arrives in the `reasoning` field
  *   (`choices[].delta.reasoning` streaming, before content), never
  *   `reasoning_content`.

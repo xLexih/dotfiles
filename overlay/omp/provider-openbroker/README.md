@@ -19,10 +19,14 @@ tries to reconstruct them from an empty environment variable.
 ## Models and startup
 
 The extension uses OMP's `fetchDynamicModels` to discover chat models from the public
-`https://proxy.gonkabroker.com/v1/models` catalog with a five-second request timeout.
-Model IDs, names, context windows, and maximum output lengths come from that response:
-there is no local allowlist, static fallback, or per-model limit override. New models
-are included and absent models are omitted on each successful discovery.
+`https://api.openbroker.gonka.gg/v1/models` catalog with a five-second request timeout.
+That endpoint returns bare `{id}` entries with no context/output metadata, so serving
+limits come from a curated table in `src/catalog.ts` (Gonka devshard serving profile
+for MiniMax/DeepSeek/GLM, upstream model card for Qwen), with conservative
+128k/16k defaults for unknown ids so new models register instead of disappearing.
+When the broker does publish rich `context_length`/`max_output_length` fields, those
+take precedence over the table. New models are included and absent models are omitted
+on each successful discovery.
 
 Entries require positive integer context/output limits and text input/output support
 when modalities are supplied. Embedding-only and malformed entries are skipped.

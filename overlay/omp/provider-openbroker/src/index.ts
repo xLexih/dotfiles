@@ -3,7 +3,7 @@ import type {ExtensionFactory} from "@oh-my-pi/pi-coding-agent";
 import {streamOpenAICompletions} from "@oh-my-pi/pi-ai/providers/openai-completions";
 import type {OAuthLoginCallbacks} from "@oh-my-pi/pi-ai/oauth/types";
 import {openBrokerCompat} from "./compat.ts";
-import {fetchBrokerModels, validateOpenBrokerApiKey} from "./catalog.ts";
+import {fetchBrokerModels, OPENBROKER_BASE_URL, validateOpenBrokerApiKey} from "./catalog.ts";
 import {normalizeAssistantContent} from "./normalize.ts";
 
 async function loginOpenBroker(callbacks: OAuthLoginCallbacks): Promise<string> {
@@ -42,7 +42,7 @@ function openBrokerStream(requested: Model, context: Context, options?: SimpleSt
 
 const openBrokerProvider: ExtensionFactory = pi => {
   const environmentKey = process.env.OPENBROKER_API_KEY?.trim();
-  const baseUrl = "https://api.openbroker.gonka.gg/v1";
+  const baseUrl = OPENBROKER_BASE_URL;
   pi.registerProvider("openbroker", {
     baseUrl,
     api: "openbroker-completions",

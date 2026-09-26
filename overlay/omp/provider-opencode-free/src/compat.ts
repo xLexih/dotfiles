@@ -1,8 +1,14 @@
 import type {Model} from "@oh-my-pi/pi-ai";
-import type {OpencodeFreeApi} from "./catalog.ts";
+import type {FreeModelApi} from "./models.ts";
 
 /**
- * OpenAI-compat policy for Zen's free routes.
+ * OpenAI-compat policy for Zen's free routes (pure, no runtime imports).
+ *
+ * pi-ai dereferences `compat` unconditionally at stream time
+ * (`resolveOpenAICompatPolicy`: `options.compat ?? model.compat`), so every
+ * registry entry we emit must carry one — omitting it crashes with
+ * `undefined is not an object (evaluating
+ * 's.disableReasoningOnForcedToolChoice')`.
  *
  * Zen is a plain OpenAI gateway (no DSML/inband tool envelopes, standard
  * `tool_calls`), so the chat policy mirrors the proven TokenRouter surface
@@ -15,7 +21,7 @@ import type {OpencodeFreeApi} from "./catalog.ts";
  * the Responses branch omits it (stateless `store: false` likewise keeps
  * chaining off — the Responses default for non-OpenAI hosts).
  */
-export function opencodeFreeCompat(api: OpencodeFreeApi): Model<"openai-completions">["compat"] {
+export function opencodeFreeCompat(api: FreeModelApi): Model<"openai-completions">["compat"] {
 	return {
 		supportsStore: false,
 		supportsDeveloperRole: false,
