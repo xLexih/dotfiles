@@ -20,8 +20,12 @@ set.
 Parameterized overlays stay explicit. `codium.nix` needs the active theme, so
 `theme/module.nix` imports it directly after the theme is resolved.
 
-OMP provider extensions share one helper in `overlay/omp.nix`
+`overlay/omp.nix`
 (`mkOmpExtension`); each provider is a name, version, description, and
 homepage. Versions are read back from the derivations by
 `user/lex/default.nix` to generate the plugin lock and symlinks, so a
 version is written exactly once.
+
+`overlay/omp-look.nix` wraps `omp` with `makeWrapper` so every invocation
+loads the visual-only `overlay/omp-look.yml` via `--config`. The live
+`~/.omp/agent/config.yml` keeps owning all logic settings and stays mutable.
