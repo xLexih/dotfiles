@@ -37,6 +37,10 @@ in {
     hjem.users.lex = {
       files =
         {
+          ".omp/agent/config.yml" = {
+            clobber = true;
+            source = ./lib/omp-config.yml;
+          };
           ".local/share/lutris/runners/proton/GE-Proton".source = pkgs.proton-ge-bin.steamcompattool;
           ".omp/plugins/omp-plugins.lock.json" = {
             clobber = true;
