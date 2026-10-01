@@ -134,9 +134,9 @@ with no limits and unplugging selects power-saver:
 
 | Profile | CPU | Screen and effects |
 | --- | --- | --- |
-| performance | all cores, turbo, performance EPP | 240 Hz, blur, shadows, animations |
-| balanced | all cores, turbo, balance_power EPP | 144 Hz |
-| power-saver | E-cores only, no turbo, power EPP, iGPU capped at 900 MHz | 60 Hz, no blur, shadows or animations |
+| performance | turbo, performance EPP | 240 Hz, blur, shadows, animations |
+| balanced | turbo, balance_power EPP | 144 Hz |
+| power-saver | no turbo, power EPP, iGPU capped at 900 MHz | 60 Hz, no blur, shadows or animations |
 
 On battery the ethernet controller is unbound and NVIDIA Dynamic Boost is
 stopped. The refresh rate and effects come from a user service in

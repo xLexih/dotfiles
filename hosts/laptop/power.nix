@@ -1,11 +1,13 @@
-# Battery and power profiles for this machine (i9-14900HX: P-cores are CPUs
-# 0-15, E-cores 16-31; yt6801 ethernet at 3a:00.0).
+# Battery and power profiles for this machine (i9-14900HX, yt6801 ethernet at
+# 3a:00.0, Uniwill chassis without charge-limit support).
 #
 # TLP applies one of three profiles, switchable from the bar's battery icon:
 #   performance  (plugged in)  no limits
-#   balanced     (manual)      all cores, turbo, balance_power EPP, 144 Hz
-#   power-saver  (unplugged)   E-cores only, no turbo, iGPU capped, 60 Hz,
+#   balanced     (manual)      turbo, balance_power EPP, 144 Hz
+#   power-saver  (unplugged)   no turbo, power EPP, iGPU capped, 60 Hz,
 #                              no blur/shadows/animations
+# Turbo is what costs energy on battery: a fixed CPU job took 2.7x the energy
+# with turbo, while idle and light load barely change between profiles.
 # Plugging in or unplugging always selects the profile for the new power
 # source. Refresh rate and effects are set by the Hyprland session (see
 # modules/desktop/hyprland.nix); the rest is TLP and the hook below.
@@ -17,20 +19,12 @@
 }: let
   ethernet = "0000:3a:00.0";
 
-  # TLP writes "<profile> <power source>" to /run/tlp/last_pwr whenever it
-  # applies a profile: 0 performance, 1 balanced, 2 power-saver.
+  # Runs whenever TLP applies a profile (it rewrites /run/tlp/last_pwr).
   profileHook = pkgs.writeShellApplication {
     name = "power-profile-hook";
     runtimeInputs = [pkgs.coreutils pkgs.iproute2 config.systemd.package];
     text = ''
-      read -r profile _ < /run/tlp/last_pwr
       ac=$(cat /sys/class/power_supply/AC0/online 2>/dev/null || echo 1)
-
-      online=1
-      [ "$profile" = 2 ] && online=0
-      for cpu in $(seq 1 15); do
-        echo "$online" > "/sys/devices/system/cpu/cpu$cpu/online" 2>/dev/null || true
-      done
 
       if [ "$ac" = 1 ]; then
         echo ${ethernet} > /sys/bus/pci/drivers/yt6801/bind 2>/dev/null || true
@@ -50,7 +44,6 @@ in {
 
   boot.kernelParams = [
     "pcie_aspm=powersupersave"
-    "nvme_core.default_ps_max_latency_us=5500"
     "snd_hda_intel.power_save=10"
     "snd_hda_intel.power_save_controller=Y"
     "cpuidle.governor=teo"
@@ -95,6 +88,8 @@ in {
 
       PCIE_ASPM_ON_AC = "default";
       PCIE_ASPM_ON_BAT = "powersupersave";
+      # TLP's own default for _SAV is "default", not the _BAT value.
+      PCIE_ASPM_ON_SAV = "powersupersave";
       RUNTIME_PM_ON_AC = "auto";
       RUNTIME_PM_ON_BAT = "auto";
       WIFI_PWR_ON_AC = "off";
@@ -102,14 +97,14 @@ in {
       USB_AUTOSUSPEND = 1;
       USB_EXCLUDE_AUDIO = 1;
       USB_EXCLUDE_BTUSB = 0;
-
-      START_CHARGE_THRESH_BAT0 = 75;
-      STOP_CHARGE_THRESH_BAT0 = 85;
+      # TLP keeps HID devices awake; the ITE keyboard lighting controller is
+      # safe to suspend (the keyboard itself, 048d:7001, is not).
+      USB_ALLOWLIST = "048d:600b";
     };
   };
 
   systemd.paths.power-profile-hook = {
-    description = "Apply core, NIC and Dynamic Boost settings for the TLP profile";
+    description = "Apply ethernet and Dynamic Boost settings for the TLP profile";
     wantedBy = ["multi-user.target"];
     pathConfig.PathChanged = "/run/tlp/last_pwr";
   };
@@ -124,12 +119,4 @@ in {
     "vm.dirty_expire_centisecs" = 6000;
     "kernel.watchdog" = 0;
   };
-
-  services.udev.extraRules = ''
-    ACTION=="add", SUBSYSTEM=="pci", ATTR{power/control}="auto"
-    ACTION=="add", SUBSYSTEM=="usb", ATTR{power/control}="auto"
-    # ITE keyboard controllers block package C-states unless autosuspended.
-    ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="048d", ATTR{idProduct}=="8291", ATTR{power/control}="auto"
-    ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="048d", ATTR{idProduct}=="8233", ATTR{power/control}="auto"
-  '';
 }
