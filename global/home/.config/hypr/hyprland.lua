@@ -5,12 +5,6 @@ local mainMod = "SUPER"
 
 hl.monitor({ output = "", mode = "preferred", position = "auto", scale = 1 })
 
-hl.env("XCURSOR_THEME", "{{theme.cursor}}")
-hl.env("XCURSOR_SIZE", "{{theme.cursor.size}}")
-hl.env("HYPRCURSOR_THEME", "{{theme.cursor}}")
-hl.env("HYPRCURSOR_SIZE", "{{theme.cursor.size}}")
-hl.env("QT_QPA_PLATFORMTHEME", "{{theme.qt.platformTheme}}")
-hl.env("QT_STYLE_OVERRIDE", "{{theme.qt.style}}")
 hl.env("XDG_SESSION_TYPE", "wayland")
 
 hl.on("hyprland.start", function()
@@ -23,10 +17,6 @@ hl.config({
         gaps_in = 3,
         gaps_out = 3,
         border_size = 2,
-        col = {
-            active_border = { colors = { "rgba({{theme.accent.hex}}ee)", "rgba({{theme.accentBright.hex}}ee)" }, angle = 45 },
-            inactive_border = "rgba({{theme.overlay.hex}}aa)",
-        },
         resize_on_border = true,
         allow_tearing = false,
         layout = "dwindle",
@@ -35,7 +25,7 @@ hl.config({
         rounding = 10,
         active_opacity = 1.0,
         inactive_opacity = 1.0,
-        shadow = { enabled = true, range = 4, render_power = 3, color = "rgba({{theme.shadow.hex}}ee)" },
+        shadow = { enabled = true, range = 4, render_power = 3 },
         blur = { enabled = true, size = 3, passes = 1, vibrancy = 0.1696 },
     },
     animations = { enabled = true },
@@ -192,3 +182,6 @@ bind("N", hl.dsp.exec_cmd("night-light"))
 bind("F", hl.dsp.window.fullscreen())
 bind("Space", hl.dsp.window.float())
 bind("Space", hl.dsp.window.center())
+
+-- Border colors and cursor of the current theme, written by `theme`.
+pcall(dofile, os.getenv("HOME") .. "/.config/hypr/theme.lua")

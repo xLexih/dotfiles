@@ -186,8 +186,11 @@ Scope {
                 tooltip: tooltip
             }
 
+            // The gear switches themes: left click next, right click previous.
             Rectangle {
                 id: gearCollision
+                readonly property string tooltipText: "Theme: " + Asset.Theme.name
+
                 x: 0
                 y: visualPanel.height - root.sidebarWidth
                 width: root.sidebarWidth
@@ -199,6 +202,15 @@ Scope {
                     anchors.centerIn: parent
                     from_color: Qt.lighter(Asset.Theme.primary, 1.2)
                     to_color: Asset.Theme.secondaryBright
+                }
+
+                HoverHandler {
+                    onHoveredChanged: hovered ? tooltip.show(gearCollision) : tooltip.hide(gearCollision)
+                }
+
+                TapHandler {
+                    acceptedButtons: Qt.LeftButton | Qt.RightButton
+                    onTapped: (_, button) => Quickshell.execDetached(["theme", button === Qt.RightButton ? "prev" : "next"])
                 }
             }
 

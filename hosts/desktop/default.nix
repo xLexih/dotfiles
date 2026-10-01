@@ -8,6 +8,6 @@
     desktop.hyprland.enable = true;
     services.ssh.enable = true;
     performance.enable = true;
-    theme.name = "hexagon";
+    theme.default = "hexagon";
   };
 }

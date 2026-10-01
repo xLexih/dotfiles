@@ -2,7 +2,7 @@
 #
 # Every file under global/home, hosts/<host>/home and users/<user>/home is
 # copied into that user's $HOME at the same relative path. Generated files from
-# `dotfiles.files` (theme output) sit below those layers. Layers are combined
+# `dotfiles.files` (from modules) sit below those layers. Layers are combined
 # from the least to the most specific: text is concatenated, `.json` objects are
 # merged recursively (lists are replaced), and formats that can't be combined
 # take the most specific layer only. The copies are writable and get reset on

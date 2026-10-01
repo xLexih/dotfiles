@@ -15,7 +15,7 @@ users/<user>/        account, packages, programs
   home/              user dotfile layer
 modules/             opt-in NixOS modules (modules.*) and the dotfile layering
 theme/
-  base/              theme options, program targets, theme-switch
+  base/              theme options, program targets, the `theme` command
   <name>.nix         named themes
 overlays/            changes to nixpkgs packages
 pkgs/                packages defined here (pkgs/<name>/package.nix)
@@ -38,7 +38,7 @@ nixosConfigurations = lib.mapAttrs mkHost {
 ```
 
 A host turns modules on in `hosts/<host>/default.nix`
-(`modules.desktop.hyprland.enable`, `modules.theme.name`, ...). A user can do
+(`modules.desktop.hyprland.enable`, `modules.theme.default`, ...). A user can do
 the same for things that follow the person rather than the machine, such as
 `modules.software.gaming.enable` in `users/lex/default.nix`.
 
@@ -49,7 +49,7 @@ A file at `global/home/.config/kitty/kitty.conf` ends up at
 layers, merged from least to most specific:
 
 ```
-theme output  ->  global/home  ->  hosts/<host>/home  ->  users/<user>/home
+generated (dotfiles.files)  ->  global/home  ->  hosts/<host>/home  ->  users/<user>/home
 ```
 
 - Text files (`.conf`, `.lua`, `.css`, `.ini`, shell files, ...) are
@@ -67,11 +67,10 @@ Files are copied rather than symlinked, so programs can write to them. Every
 rebuild resets them to what the repo says; files that support comments get a
 first line saying so. Port changes you want to keep back into the repo.
 
-Theme targets generate some files (GTK CSS, Firefox `userChrome.css`, ...).
-Those are the lowest layer: putting a file at the same path in a `home/`
-directory appends to it (or replaces it, for the formats above). That is how
-`users/lex/home/.mozilla/.../userChrome.css` hides the tab bar on top of the
-themed Firefox.
+Modules can generate files too (`dotfiles.files`, e.g. Hyprland's portal
+config). Those are the lowest layer, so a `home/` file at the same path
+appends to them or replaces them. Theme files (kitty colors, GTK CSS, ...)
+are not dotfiles: the `theme` command owns them, see below.
 
 ### Placeholders
 
@@ -79,10 +78,7 @@ Layered files can use `{{name}}`, filled in at build time:
 
 | Placeholder | Value |
 | --- | --- |
-| `{{theme.accent}}`, `{{theme.selectionBg}}`, ... | any palette or role color, `#rrggbb` |
-| `{{theme.accent.hex}}` | the same color without `#` |
-| `{{theme.cursor}}`, `{{theme.cursor.size}}`, `{{theme.gtk}}`, `{{theme.icons}}`, `{{theme.font.mono}}` | theme settings |
-| `{{theme.vscode}}` | name of the generated VSCode color theme |
+| `{{qml.importPaths}}` | Quickshell's QML import paths, for qmllint |
 | `{{pkgs.<attr>}}` | store path of a package, e.g. `{{pkgs.nix-direnv}}` |
 | `{{host}}`, `{{flake}}` | host name, store path of this flake |
 
@@ -92,11 +88,14 @@ Modules add their own with `dotfiles.vars."name" = "value";`.
 ## Themes
 
 A named theme is a small file in `theme/` that sets colors; `theme/base`
-turns them into program configuration. Pick one per host with
-`modules.theme.name`. See [docs/themes.md](docs/themes.md).
+turns them into program configuration. See [docs/themes.md](docs/themes.md).
 
-`theme-switch <name>` swaps kitty's colors without rebuilding. The next
-rebuild restores the configured theme.
+Themes switch at runtime, without a rebuild: click the gear at the bottom of
+the bar (right click goes back), or run `theme next`, `theme set <name>`,
+`theme list`. Kitty, Hyprland borders, the bar, Firefox, VSCodium, the volume
+popup and the GTK dark/light preference change right away; GTK and Qt colors
+apply to apps started afterwards. The choice is kept per user across rebuilds;
+`modules.theme.default` is the theme before anyone picks one.
 
 ## Desktop
 
@@ -111,6 +110,7 @@ frame is the bar, top to bottom:
 | Volume | output and level | left: mute, right: pwvucontrol | 5% steps, up to 150% |
 | Network | connection | left: nmtui, right: Wi-Fi on/off | |
 | Battery (laptops), power profile icon (desktop) | level, time left, power profile | cycle power profile | |
+| Gear (bottom) | current theme | left: next theme, right: previous | |
 | Dot in the bottom-right corner | | notes popup | |
 
 Keys beyond the usual window management (`global/home/.config/hypr/hyprland.lua`

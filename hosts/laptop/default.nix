@@ -9,6 +9,6 @@
     services.ssh.enable = true;
     software.warp.enable = true;
     performance.enable = true;
-    theme.name = "hexagon";
+    theme.default = "hexagon";
   };
 }

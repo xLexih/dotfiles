@@ -1,7 +1,16 @@
 # Theme base. Each theme/<name>.nix is a named theme: a module evaluated against
 # options.nix, so it only sets the colors and settings it wants to change.
-# The selected theme is handed to the targets, which apply it to programs, and
-# exposed to layered dotfiles as {{theme.*}} placeholders.
+#
+# Targets (targets/*.nix) turn a theme into program configuration:
+#   modules.theme.render.<target>   theme -> { "<path in $HOME>" = text; }
+#   modules.theme.metadata.<key>    theme -> value, added to theme.json
+#   modules.theme.reload.<target>   shell run after a switch so running
+#                                   programs pick up the new files
+# Every theme is rendered into /etc/themes/<name>. The `theme` command (also
+# behind the gear in the bar) copies one into $HOME, remembers it in
+# ~/.local/state/theme/name and runs the reload hooks. The choice survives
+# rebuilds: every rebuild and login applies it again, which also resets edits
+# to theme files like other managed dotfiles.
 {
   config,
   inputs,
@@ -25,73 +34,157 @@
 
   themes = lib.mapAttrs' (file: _: lib.nameValuePair (lib.removeSuffix ".nix" file) (evalTheme file)) themeFiles;
 
-  theme = cfg.active;
-  colors = theme.palette // theme.roles;
+  describe = theme:
+    {
+      inherit (theme) name variant palette roles terminal fonts;
+      cursor = {inherit (theme.cursor) name size;};
+    }
+    // lib.mapAttrs (_: value: value theme) cfg.metadata;
 
-  # theme-switch copies these pre-rendered files over the live ones.
-  switchManifest = pkgs.writeText "theme-switch.json" (builtins.toJSON (lib.mapAttrs (name: t:
-    lib.mapAttrs (path: render: pkgs.writeText "${name}-${baseNameOf path}" (render t)) cfg.live)
-  themes));
+  renderFiles = theme: lib.foldlAttrs (files: _: render: files // render theme) {} cfg.render;
 
-  themeSwitch = pkgs.writeShellApplication {
-    name = "theme-switch";
-    runtimeInputs = [pkgs.jq pkgs.procps];
+  themeDir = name: theme:
+    pkgs.linkFarm "theme-${name}" (
+      {"theme.json" = pkgs.writeText "theme-${name}.json" (builtins.toJSON (describe theme));}
+      // lib.mapAttrs' (path: text:
+        lib.nameValuePair "home/${path}" (pkgs.writeText "theme-${name}-${lib.strings.sanitizeDerivationName (baseNameOf path)}" text))
+      (renderFiles theme)
+    );
+
+  themeCommand = pkgs.writeShellApplication {
+    name = "theme";
+    runtimeInputs = with pkgs; [coreutils findutils jq];
     text = ''
-      name="''${1:?usage: theme-switch <theme>}"
-      if ! jq -e --arg t "$name" 'has($t)' ${switchManifest} >/dev/null; then
-        echo "unknown theme: $name (available: $(jq -r 'keys | join(" ")' ${switchManifest}))" >&2
+      themes=/etc/themes
+      state="''${XDG_STATE_HOME:-$HOME/.local/state}/theme"
+
+      usage() {
+        echo "usage: theme [current | list | set <name> | next | prev | apply]" >&2
         exit 1
-      fi
-      jq -r --arg t "$name" '.[$t] | to_entries[] | "\(.key)\t\(.value)"' ${switchManifest} |
-        while IFS=$'\t' read -r path file; do
-          install -Dm644 "$file" "$HOME/$path"
+      }
+
+      names() {
+        for dir in "$themes"/*; do basename "$dir"; done
+      }
+
+      current() {
+        name=$(cat "$state/name" 2>/dev/null || true)
+        if [ -z "$name" ] || [ ! -d "$themes/$name" ]; then
+          name=${lib.escapeShellArg cfg.default}
+        fi
+        echo "$name"
+      }
+
+      theme_get() {
+        jq -r "$1" "$THEME_DIR/theme.json"
+      }
+
+      apply() {
+        THEME_DIR="$themes/$1"
+        if [ ! -d "$THEME_DIR" ]; then
+          echo "unknown theme: $1 (available: $(names | tr '\n' ' '))" >&2
+          exit 1
+        fi
+
+        # Replace each file in one step, so programs watching it (the bar)
+        # never read a half-written one.
+        (cd "$THEME_DIR/home" && find -L . -type f) | while read -r path; do
+          target="$HOME/''${path#./}"
+          mkdir -p "$(dirname "$target")"
+          tmp=$(mktemp "$target.XXXXXX")
+          cat "$THEME_DIR/home/$path" > "$tmp"
+          chmod 644 "$tmp"
+          mv -f "$tmp" "$target"
         done
-      pkill -USR1 -x kitty || true
-      echo "switched to $name until the next rebuild (set modules.theme.name to keep it)"
+
+        mkdir -p "$state"
+        echo "$1" > "$state/name"
+
+        ${lib.concatStrings (lib.mapAttrsToList (target: script: ''
+          # ${target}
+          (
+            set +e
+            ${script}
+          ) >/dev/null 2>&1 || true
+        '')
+        cfg.reload)}
+      }
+
+      step() {
+        mapfile -t list < <(names)
+        now=$(current)
+        index=0
+        for i in "''${!list[@]}"; do
+          [ "''${list[i]}" = "$now" ] && index=$i
+        done
+        apply "''${list[(index + $1 + ''${#list[@]}) % ''${#list[@]}]}"
+      }
+
+      case "''${1:-current}" in
+        current) current ;;
+        list) names ;;
+        set) [ -n "''${2:-}" ] || usage; apply "$2" ;;
+        next) step 1 ;;
+        prev) step -1 ;;
+        apply) apply "$(current)" ;;
+        *) usage ;;
+      esac
     '';
   };
 in {
   imports = [(inputs.import-tree ./targets)];
 
   options.modules.theme = {
-    name = lib.mkOption {
+    default = lib.mkOption {
       type = lib.types.enum (lib.attrNames themes);
       default = "hexagon";
-      description = "Named theme from theme/<name>.nix.";
+      description = "Theme used until a user picks one with `theme set` or the bar's gear.";
     };
-    active = lib.mkOption {
+    themes = lib.mkOption {
       type = lib.types.raw;
       readOnly = true;
-      default = themes.${cfg.name};
-      description = "The selected theme with every option resolved.";
+      default = themes;
+      description = "Every named theme with all options resolved.";
     };
-    live = lib.mkOption {
-      type = with lib.types; attrsOf (functionTo str);
+    describe = lib.mkOption {
+      type = lib.types.raw;
+      readOnly = true;
+      default = describe;
+      description = "Function returning a theme's JSON description (theme.json, ~/.config/theme/palette.json).";
+    };
+    render = lib.mkOption {
+      type = with lib.types; attrsOf (functionTo (attrsOf str));
       default = {};
-      internal = true;
-      description = "Renderers for files, relative to $HOME, that theme-switch swaps without a rebuild.";
+      description = "Per target, a function from a theme to the files it writes, relative to $HOME.";
+    };
+    metadata = lib.mkOption {
+      type = with lib.types; attrsOf (functionTo anything);
+      default = {};
+      description = "Extra values in theme.json, for reload hooks (`theme_get .<key>`).";
+    };
+    reload = lib.mkOption {
+      type = with lib.types; attrsOf lines;
+      default = {};
+      description = "Per target, shell run after a switch. THEME_DIR and `theme_get <jq filter>` describe the new theme; failures are ignored.";
     };
   };
 
   config = {
-    environment.systemPackages = [themeSwitch];
+    environment.systemPackages = [themeCommand];
+    environment.etc.themes.source = pkgs.linkFarm "themes" (lib.mapAttrs themeDir themes);
 
-    dotfiles.vars =
-      {
-        "theme.name" = theme.name;
-        "theme.variant" = theme.variant;
-        "theme.gtk" = theme.gtk.name;
-        "theme.icons" = theme.icons.name;
-        "theme.cursor" = theme.cursor.name;
-        "theme.cursor.size" = toString theme.cursor.size;
-        "theme.font.sans" = theme.fonts.sans;
-        "theme.font.document" = theme.fonts.document;
-        "theme.font.mono" = theme.fonts.mono;
-      }
-      // lib.concatMapAttrs (name: value: {
-        "theme.${name}" = value;
-        "theme.${name}.hex" = lib.removePrefix "#" value;
+    # Runs as each user on login and after every rebuild.
+    system.userActivationScripts.theme = "${lib.getExe themeCommand} apply";
+
+    assertions = let
+      themePaths = lib.attrNames (renderFiles themes.${cfg.default});
+    in
+      lib.mapAttrsToList (user: hjem: let
+        clashes = lib.intersectLists themePaths (lib.attrNames hjem.files);
+      in {
+        assertion = clashes == [];
+        message = "Theme files can't also be dotfiles of ${user}: ${lib.concatStringsSep ", " clashes}";
       })
-      colors;
+      config.hjem.users;
   };
 }

@@ -1,5 +1,7 @@
-# Colors and userChrome come from theme/base/targets/firefox.nix; the tab bar
-# hiding for Sidebery is in home/.mozilla/firefox/default/chrome/userChrome.css.
+# Colors come from the theme (theme/base/targets/firefox.nix). The profile
+# lives at ~/.mozilla/firefox/default (home/.mozilla/firefox/profiles.ini) so
+# home/.mozilla/firefox/default/chrome/userChrome.css can hide the tab bar
+# for Sidebery.
 let
   forceInstall = slug: {
     installation_mode = "force_installed";
@@ -17,6 +19,7 @@ in {
       NoDefaultBookmarks = true;
 
       Preferences = {
+        "toolkit.legacyUserProfileCustomizations.stylesheets" = true;
         "accessibility.force_disabled" = 1;
         "browser.aboutConfig.showWarning" = false;
         "browser.formfill.enable" = false;

@@ -1,24 +1,32 @@
 pragma Singleton
 
 import Quickshell
+import Quickshell.Io
 import QtQuick
 
-// Colors are filled in from the active NixOS theme.
+// Colors of the current theme, read from ~/.config/theme/palette.json. The
+// file is watched, so the bar recolors as soon as `theme` switches.
 Singleton {
-    readonly property color background: "{{theme.bg}}"
-    readonly property color backgroundDark: "{{theme.bgDark}}"
-    readonly property color backgroundDarker: "{{theme.bgDarker}}"
-    readonly property color surface: "{{theme.surface}}"
-    readonly property color border: "{{theme.border}}"
-    readonly property color text: "{{theme.fg}}"
-    readonly property color muted: "{{theme.fgMuted}}"
-    readonly property color accent: "{{theme.accent}}"
-    readonly property color accentAlt: "{{theme.accentAlt}}"
-    readonly property color accentBright: "{{theme.accentBright}}"
-    readonly property color selection: "{{theme.selectionBg}}"
-    readonly property color selectionText: "{{theme.selectionFg}}"
-    readonly property color danger: "{{theme.red}}"
-    readonly property color warning: "{{theme.yellow}}"
+    id: root
+
+    readonly property string name: adapter.name
+    readonly property var palette: adapter.palette
+    readonly property var roles: adapter.roles
+
+    readonly property color background: palette.bg ?? "#1a1024"
+    readonly property color backgroundDark: palette.bgDark ?? "#130c1b"
+    readonly property color backgroundDarker: palette.bgDarker ?? "#0d0812"
+    readonly property color surface: palette.surface ?? "#251735"
+    readonly property color border: roles.border ?? "#38274d"
+    readonly property color text: palette.fg ?? "#eee6f8"
+    readonly property color muted: palette.fgMuted ?? "#b0a4c8"
+    readonly property color accent: palette.accent ?? "#c6a0ff"
+    readonly property color accentAlt: palette.accentAlt ?? "#8bd5ca"
+    readonly property color accentBright: palette.accentBright ?? "#e2c7ff"
+    readonly property color selection: roles.selectionBg ?? "#c6a0ff"
+    readonly property color selectionText: roles.selectionFg ?? "#0d0812"
+    readonly property color danger: palette.red ?? "#f38ba8"
+    readonly property color warning: palette.yellow ?? "#f9e2af"
 
     readonly property string iconFont: "Material Symbols Rounded"
 
@@ -30,4 +38,18 @@ Singleton {
     readonly property int innerCornerRadius: 14
     readonly property int outlineThickness: 5
     readonly property int sidebarWidth: 28
+
+    FileView {
+        path: Quickshell.env("HOME") + "/.config/theme/palette.json"
+        watchChanges: true
+        onFileChanged: reload()
+
+        JsonAdapter {
+            id: adapter
+
+            property string name: ""
+            property var palette: ({})
+            property var roles: ({})
+        }
+    }
 }

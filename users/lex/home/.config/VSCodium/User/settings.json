@@ -1,5 +1,4 @@
 {
-  "workbench.colorTheme": "{{theme.vscode}}",
   "workbench.view.showQuietly": {
     "workbench.panel.output": true
   },

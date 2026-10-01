@@ -6,7 +6,8 @@
   pkgs,
   ...
 }: let
-  theme = config.modules.theme.active;
+  # Spicetify patches Spotify at build time, so Spotify keeps the default theme.
+  theme = config.modules.theme.themes.${config.modules.theme.default};
 
   colorIni = lib.generators.toINI {} {
     ${theme.name} = lib.mapAttrs (_: lib.removePrefix "#") theme.spicetify;
