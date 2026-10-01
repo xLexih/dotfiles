@@ -1,7 +1,4 @@
 providers:
-  webSearchOrder:
-    []
-  memoryModel: online
   kimiApiFormat: auto
 modelRoles:
   advisor: opencode-free/muse-spark-1.3-contributor-free:xhigh
@@ -28,8 +25,6 @@ tui:
   textSizing: false
   renderMermaid: true
   codexResetFireworks: false
-  tight: true
-  scrollbackRebuild: false
   titleState: true
 display:
   shimmer: classic

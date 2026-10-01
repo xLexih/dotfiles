@@ -3,7 +3,7 @@ final: prev: {
   # A wrapper (not hjem-managed config.yml) keeps the live
   # ~/.omp/agent/config.yml user-mutable: `omp config set` keeps working
   # because the base file stays a regular file, while look keys win at
-  # runtime via --config overlay merge. Sorts after omp-18.0.8.nix, so
+  # runtime via --config overlay merge. Sorts after omp-18.4.3.nix, so
   # prev.omp is the pinned binary.
   omp = prev.omp.overrideAttrs (old: {
     nativeBuildInputs = (old.nativeBuildInputs or []) ++ [prev.makeWrapper];

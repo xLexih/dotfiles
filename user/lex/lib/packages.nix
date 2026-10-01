@@ -40,7 +40,7 @@
 
     development = [
       android-tools
-      claude-code
+      pkgs.llm-agents.claude-code
       pkgs.llm-agents.codex
       codium-custom
       git-private

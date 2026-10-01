@@ -4,10 +4,7 @@
 # Merges over ~/.omp/agent/config.yml at runtime; the live file keeps owning
 # modelRoles, memory, and all other logic, and stays user-mutable.
 #
-# Floor: omp 18.0.8 (pinned in overlay/omp-18.0.8.nix). Two source keys are
-# omitted because this binary's schema does not know them yet
-# (`omp config list` has no entry; re-add after the pin moves past 18.2):
-#   composer.tokenRate, read.readLineNumbers
+# Floor: omp 18.4.3 (pinned in overlay/omp-18.4.3.nix).
 # `personality` is deliberately excluded: behavioral, not look
 # (live config uses `pragmatic`, source used `none`).
 theme:
@@ -16,6 +13,7 @@ theme:
 symbolPreset: nerd
 composer:
   shape: claude
+  tokenRate: true
 statusLine:
   preset: custom
   separator: powerline
@@ -74,4 +72,5 @@ display:
 read:
   renderMarkdown: true
   toolResultPreview: true
+readLineNumbers: true
 emojiAutocomplete: false

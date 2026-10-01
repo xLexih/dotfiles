@@ -1,15 +1,9 @@
 final: prev:
-# Override `omp` (oh-my-pi) with the v18.0.8 prebuilt release binary.
+# Override `omp` (oh-my-pi) with the v18.4.3 prebuilt release binary.
 #
-# Upstream numtide/llm-agents.nix pins omp at 18.0.6, but v18.0.7+ contain a
-# critical fix for the agent retry/compaction wedge:
-#
-#   PR #9530 (commits 39ce9b85bc + 7b185d1) — "fix(agent): resumed maintenance
-#   after speculative handoff". Without it, `AgentSession.#processAgentEvent`
-#   skipped post-turn maintenance while a speculative handoff was running, so a
-#   `length`-stopped turn plus a `lastRole: custom` compaction-miss would loop
-#   the agent in a tight retry storm (identical request → identical truncated
-#   response → identical retry) with no path to recovery.
+# Upstream is moving fast; nixpkgs carries 18.1.21 and
+# numtide/llm-agents.nix carries 18.3.2, so keep the explicit pin ahead of
+# both. Re-evaluate when either overtakes the pin.
 #
 # Rather than rebuild the Rust + Bun toolchain from source, use the canonical
 # prebuilt release asset the upstream install script uses
@@ -19,10 +13,10 @@ final: prev:
 {
   omp = prev.stdenvNoCC.mkDerivation {
     pname = "omp";
-    version = "18.0.8";
+    version = "18.4.3";
     src = prev.fetchurl {
-      url = "https://github.com/can1357/oh-my-pi/releases/download/v18.0.8/omp-linux-x64";
-      hash = "sha256-sVxxYqPMdImMKs52UkFYpKJOQ/nQhlAefacanzoYX4A=";
+      url = "https://github.com/can1357/oh-my-pi/releases/download/v18.4.3/omp-linux-x64";
+      hash = "sha256-r87N/x9CHzyI+xcUxAezcAiZtN4+0APNg2n1KubKh94=";
     };
     nativeBuildInputs = [prev.autoPatchelfHook];
     dontUnpack = true;

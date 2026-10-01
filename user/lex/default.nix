@@ -38,11 +38,16 @@ in {
       files =
         {
           ".omp/agent/config.yml" = {
+            # Copy (not symlink): stays a regular file so `omp config set`
+            # works live; hjem re-copies (clobber) on rebuild.
+            type = "copy";
             clobber = true;
             source = ./lib/omp-config.yml;
           };
           ".local/share/lutris/runners/proton/GE-Proton".source = pkgs.proton-ge-bin.steamcompattool;
           ".omp/plugins/omp-plugins.lock.json" = {
+            # Copy (not symlink): mutable live; regen from nix versions on rebuild.
+            type = "copy";
             clobber = true;
             text = builtins.toJSON {
               plugins = lib.genAttrs ompExtensionNames (name: {
@@ -108,7 +113,6 @@ in {
         hidePodcasts
         groupSession
         copyToClipboard
-        betterGenres
         shuffle
       ];
     };
