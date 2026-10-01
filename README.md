@@ -107,7 +107,6 @@ frame is the bar, top to bottom:
 | --- | --- | --- | --- |
 | Clock | date | | |
 | Workspace pills (this monitor) | | switch | step through |
-| Tray icons | app tooltip | left: activate, middle: secondary, right: menu | app-defined |
 | Brightness (laptops) | percentage | | 5% steps |
 | Volume | output and level | left: mute, right: pwvucontrol | 5% steps, up to 150% |
 | Network | connection | left: nmtui, right: Wi-Fi on/off | |

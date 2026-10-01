@@ -179,19 +179,11 @@ Scope {
                 screen: visualPanel.modelData
             }
 
-            Column {
+            Widget.Status {
                 x: 0
                 anchors.bottom: gearCollision.top
                 anchors.bottomMargin: 10
-                spacing: 12
-
-                Widget.Tray {
-                    tooltip: tooltip
-                }
-
-                Widget.Status {
-                    tooltip: tooltip
-                }
+                tooltip: tooltip
             }
 
             Rectangle {
