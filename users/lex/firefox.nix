@@ -43,12 +43,13 @@ in {
         "media.hardware-video-decoding.force-enabled" = true;
         "widget.dmabuf.force-enabled" = true;
 
-        # cache in memory only
-        "browser.cache.disk.enable" = false;
-        "browser.cache.disk.smart_size.enabled" = false;
-        "browser.cache.memory.capacity" = 1048576;
-        "browser.cache.memory.enable" = true;
-        "browser.cache.memory.max_entry_size" = -1;
+        # Disk cache (in ~/.cache) and memory cache stay at Firefox's
+        # automatic sizes. The previous 1 GB memory-only cache lived in the
+        # main process and was lost on every restart.
+
+        # Built-in tab unloading under memory pressure, which replaced the
+        # Auto Tab Discard extension.
+        "browser.tabs.unloadOnLowMemory" = true;
 
         # address bar: search only, no suggestions
         "browser.urlbar.placeholderName" = "me";
@@ -72,7 +73,12 @@ in {
         "{3c078156-979c-498b-8990-85f7987dd929}" = forceInstall "sidebery";
         "78272b6fa58f4a1abaac99321d503a20@proton.me" = forceInstall "proton-pass";
         "{a6c4a591-f1b2-4f03-b3ff-767e5bedf4e7}" = forceInstall "user-agent-string-switcher";
-        "{c2c003ee-bd69-42a2-b0e9-6f34222cb046}" = forceInstall "auto-tab-discard";
+
+        # Blocked, which also uninstalls them from the profile: dropping a
+        # force-installed extension from this list leaves it installed.
+        "{c2c003ee-bd69-42a2-b0e9-6f34222cb046}".installation_mode = "blocked"; # Auto Tab Discard
+        "webextension@metamask.io".installation_mode = "blocked";
+        "keplr-extension@keplr.app".installation_mode = "blocked";
       };
     };
   };
