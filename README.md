@@ -97,6 +97,11 @@ popup and the GTK dark/light preference change right away; GTK and Qt colors
 apply to apps started afterwards. The choice is kept per user across rebuilds;
 `modules.theme.default` is the theme before anyone picks one.
 
+`dynamic` takes its colors from the wallpaper. Set one with
+`theme wallpaper <image>`; from then on `dynamic` shows up in the cycle, and
+while it's active every new wallpaper recolors the desktop. Dark or light
+follows the image.
+
 ## Desktop
 
 Hyprland with a Quickshell frame around the screen. The left side of the

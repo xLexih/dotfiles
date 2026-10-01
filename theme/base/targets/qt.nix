@@ -53,7 +53,7 @@
         placeholderText
       ];
 
-    qtctColors = pkgs.writeText "${scheme}.conf" ''
+    qtctColors = ''
       [ColorScheme]
       active_colors=${paletteRow {
         text = t.fg;
@@ -77,7 +77,7 @@
 
     qtctConfig = ''
       [Appearance]
-      color_scheme_path=${qtctColors}
+      color_scheme_path=@HOME@/.config/qt6ct/colors/theme.conf
       custom_palette=true
       icon_theme=${theme.icons.name}
       standard_dialogs=xdgdesktopportal
@@ -222,6 +222,7 @@
       theme=${theme.qt.kvantum}
     '';
     ".config/qt5ct/qt5ct.conf" = qtctConfig;
+    ".config/qt6ct/colors/theme.conf" = qtctColors;
     ".config/qt6ct/qt6ct.conf" = qtctConfig;
     ".config/kdeglobals" = kdeGlobals;
     ".config/kdedefaults/kdeglobals" = kdeGlobals;

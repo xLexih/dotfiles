@@ -1,11 +1,7 @@
 # VSCodium and its extensions. Settings are in
-# home/.config/VSCodium/User/settings.json, the color theme comes from the
-# active system theme.
-{
-  config,
-  pkgs,
-  ...
-}: let
+# home/.config/VSCodium/User/settings.json; `theme` adds the colors of the
+# current theme there.
+{pkgs, ...}: let
   market = pkgs.vscode-marketplace;
   universal = pkgs.vscode-marketplace-universal;
   openvsx = pkgs.open-vsx-release;
@@ -88,7 +84,6 @@
       universal.biomejs.biome
       openvsx.webfreak.code-d
       openvsx.charliermarsh.ruff
-      config.modules.theme.vscodeExtension
     ];
 in {
   hjem.users.lex.packages = [

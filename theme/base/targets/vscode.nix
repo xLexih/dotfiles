@@ -1,46 +1,22 @@
-# One VSCode extension contributing every named theme as a color theme. Add
-# `config.modules.theme.vscodeExtension` to the editor's extensions; `theme`
-# sets "workbench.colorTheme" in VSCodium's settings.json on a switch, which
-# the editor applies right away.
+# VSCodium: the theme's colors go into settings.json as
+# workbench.colorCustomizations and editor.tokenColorCustomizations on top of
+# the built-in Default Dark/Light Modern theme. The editor applies settings
+# changes right away, and the dynamic theme works the same way as named ones.
 {
-  config,
   lib,
   pkgs,
   ...
 }: let
-  publisher = "lexih";
-  extensionName = "themes";
   settings = "$HOME/.config/VSCodium/User/settings.json";
-
-  label = theme: lib.concatMapStringsSep " " (word: lib.toUpper (lib.substring 0 1 word) + lib.substring 1 (-1) word) (lib.splitString "-" theme.name);
-
-  themes = lib.attrValues config.modules.theme.themes;
-
-  manifest = {
-    name = extensionName;
-    displayName = "Dotfiles themes";
-    version = "1.0.0";
-    inherit publisher;
-    engines.vscode = "^1.85.0";
-    categories = ["Themes"];
-    contributes.themes =
-      map (theme: {
-        label = label theme;
-        uiTheme =
-          if theme.variant == "dark"
-          then "vs-dark"
-          else "vs";
-        path = "./${theme.name}.json";
-      })
-      themes;
-  };
 
   colorTheme = theme: let
     t = theme.palette // theme.roles;
     term = theme.terminal;
   in {
-    name = label theme;
-    type = theme.variant;
+    base =
+      if theme.variant == "dark"
+      then "Default Dark Modern"
+      else "Default Light Modern";
     colors = {
       "foreground" = t.fg;
       "descriptionForeground" = t.fgMuted;
@@ -271,38 +247,19 @@
       (token ["markup.inline.raw"] {foreground = t.cyan;})
     ];
   };
-
-  extension =
-    pkgs.runCommand "vscode-extension-${publisher}-${extensionName}" {
-      inherit (manifest) version;
-      passthru = {
-        vscodeExtPublisher = publisher;
-        vscodeExtName = extensionName;
-        vscodeExtUniqueId = "${publisher}.${extensionName}";
-      };
-    } ''
-      dir=$out/share/vscode/extensions/${publisher}.${extensionName}
-      mkdir -p $dir
-      cp ${pkgs.writeText "package.json" (builtins.toJSON manifest)} $dir/package.json
-      ${lib.concatMapStrings (theme: ''
-          cp ${pkgs.writeText "${theme.name}.json" (builtins.toJSON (colorTheme theme))} $dir/${theme.name}.json
-        '')
-        themes}
-    '';
 in {
-  options.modules.theme.vscodeExtension = lib.mkOption {
-    type = lib.types.package;
-    readOnly = true;
-    default = extension;
-    description = "VSCode extension containing every named theme.";
-  };
-
-  config.modules.theme = {
-    metadata.vscode = label;
+  modules.theme = {
+    metadata.vscode = colorTheme;
     reload.vscode = ''
       if [ -f "${settings}" ]; then
         tmp=$(mktemp "${settings}.XXXXXX")
-        ${lib.getExe pkgs.jq} --arg theme "$(theme_get .vscode)" '.["workbench.colorTheme"] = $theme' "${settings}" > "$tmp"
+        ${lib.getExe pkgs.jq} --slurpfile theme "$THEME_DIR/theme.json" '
+          ($theme[0].vscode) as $vscode
+          | .["workbench.colorTheme"] = $vscode.base
+          | .["workbench.colorCustomizations"] = $vscode.colors
+          | .["editor.tokenColorCustomizations"] = {textMateRules: $vscode.tokenColors}
+          | .["editor.semanticHighlighting.enabled"] = false
+        ' "${settings}" >"$tmp"
         mv -f "$tmp" "${settings}"
       fi
     '';

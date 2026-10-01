@@ -6,6 +6,7 @@ theme/
     default.nix     finds the named themes, renders each into /etc/themes, the `theme` command
     options.nix     every value a theme can set, with defaults
     lib.nix         color helpers (hex, rgb, Qt formats)
+    dynamic.nix     template and scheme mapping of the wallpaper-derived theme
     targets/        one file per program that gets themed
   hexagon.nix       named themes
   hexagon-light.nix
@@ -80,11 +81,37 @@ Every theme is rendered at build time into `/etc/themes/<name>/`: a
 `theme.json` describing it and a `home/` tree of files. `theme set <name>`
 (or `next`/`prev`, which the gear runs) copies that tree into `$HOME`, saves
 the name in `~/.local/state/theme/name` and runs each target's reload hook.
-The command also runs on login and after every rebuild (`theme apply`), so
-the choice persists and edited theme files get reset like other dotfiles.
+After every rebuild a `theme-<user>` service re-applies each user's choice
+once hjem has updated the dotfiles, so it persists and edited theme files get
+reset like other dotfiles. Hyprland runs `theme reload` (the hooks only) at
+login. Rendered files can use `@HOME@` for the user's home directory.
 
 Theme files belong to the `theme` command. A `home/` dotfile at the same path
 fails the build with an assertion.
+
+## Dynamic theme
+
+`dynamic` derives its palette from the wallpaper (`theme wallpaper <image>`
+sets it through awww and remembers it). `dynamic.nix` is rendered like a
+named theme, once dark and once light, with a sentinel color in each palette
+slot (`#e1e210` to `#e1e21f`). On a switch, `theme`:
+
+1. runs [matugen](https://github.com/InioX/matugen) on the wallpaper for a
+   Material You scheme. It picks dark or light from the image and harmonizes
+   the default theme's green, yellow, blue and cyan toward the wallpaper,
+   since Material has no such colors.
+2. maps scheme roles onto the palette (`roles` in `dynamic.nix`: surfaces to
+   `bg`/`surface`, `primary` to `accent`, `tertiary` to `accentAlt`, ...).
+3. copies the matching template to `~/.cache/theme/dynamic` and replaces each
+   sentinel in every format targets write it (`#rrggbb`, `rrggbb`, `r,g,b`,
+   `r;g;b`), then fails if any sentinel is left.
+4. picks the closest GNOME accent by hue and applies the result like any
+   other theme.
+
+Because roles, terminal colors and every target derive from the palette,
+targets need nothing extra to support it, as long as they only reformat
+palette colors. A target that computes new colors (mixing, lightening) has
+to do it at runtime (CSS `color-mix()`, `alpha()`) instead.
 
 ## Targets
 
@@ -106,7 +133,7 @@ Each file in `theme/base/targets/` handles one program. A target can set:
 | `hyprland.nix` | `~/.config/hypr/theme.lua` (borders, shadow, cursor), share-picker stylesheet | re-runs `theme.lua`, sets the cursor |
 | `palette.nix` | `~/.config/theme/palette.json`, `palette.sh` | the bar watches the JSON; new shells source the script |
 | `firefox.nix` | `~/.cache/wal/colors.json` | Pywalfox recolors Firefox through its theme API |
-| `vscode.nix` | one extension with every theme (`modules.theme.vscodeExtension`) | sets `workbench.colorTheme` in VSCodium's settings |
+| `vscode.nix` | colors and token rules in `theme.json` | writes them to VSCodium's `settings.json` as color customizations over Default Dark/Light Modern |
 | `swayosd.nix` | volume/brightness popup CSS | restarts the popup service |
 | `satty.nix` | annotation palette and font | next screenshot |
 | `spicetify/` | Spotify `color.ini` and `user.css` | nothing: Spicetify patches Spotify at build time, so Spotify keeps `modules.theme.default` |

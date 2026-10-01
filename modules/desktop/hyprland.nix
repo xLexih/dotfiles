@@ -121,6 +121,8 @@ in {
     };
 
     systemd.user.services = {
+      # Restores the last wallpaper by itself; `theme wallpaper <image>` sets one.
+      awww = sessionService "Wallpaper" "${pkgs.awww}/bin/awww-daemon";
       swayosd = sessionService "Volume and brightness OSD" "${pkgs.swayosd}/bin/swayosd-server --style %h/.config/swayosd/style.css";
       hyprsunset = sessionService "Blue-light filter" (lib.getExe pkgs.hyprsunset);
       power-profile-session = sessionService "Display settings for the power profile" (lib.getExe powerProfileSession);
@@ -130,7 +132,7 @@ in {
     services.udev.packages = [pkgs.swayosd];
 
     environment.systemPackages = with pkgs; [
-      awww # wallpaper daemon
+      awww
       brightnessctl
       cliphist
       dunst
