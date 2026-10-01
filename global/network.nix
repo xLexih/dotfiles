@@ -12,14 +12,16 @@
       dhcp = "internal";
       wifi.powersave = false;
       wifi.macAddress = "random";
-      connectionConfig = {
-        "connection.mdns" = 2;
-        "ipv6.ip6-privacy" = 2;
-      };
+      connectionConfig."ipv6.ip6-privacy" = 2;
     };
   };
 
-  services.resolved.enable = true;
+  # Avahi answers and resolves .local names (Sunshine needs it). A second
+  # mDNS stack in resolved made lookups unreliable.
+  services.resolved = {
+    enable = true;
+    settings.Resolve.MulticastDNS = false;
+  };
 
   services.avahi = {
     enable = true;

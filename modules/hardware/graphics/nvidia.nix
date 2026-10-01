@@ -128,9 +128,12 @@ in {
         modesetting.enable = true;
         nvidiaSettings = true;
         package = config.boot.kernelPackages.nvidiaPackages.production;
+        # Laptop-only: desktop cards support neither (no runtime D3, and
+        # nvidia-powerd quits on them).
         dynamicBoost.enable = hybrid.enable;
         powerManagement = {
-          enable = hybrid.enable;
+          # Saves video memory across suspend.
+          enable = true;
           finegrained = hybrid.enable;
         };
         prime = lib.mkIf hybrid.enable (
@@ -150,7 +153,6 @@ in {
         "nvidia_drm.modeset=1"
         "nvidia_drm.fbdev=1"
         "nvidia.NVreg_UsePageAttributeTable=1"
-        "nvidia.NVreg_DynamicPowerManagement=0x02"
         "nvidia.NVreg_PreserveVideoMemoryAllocations=1"
         # Skips zeroing system memory the driver allocates (CachyOS default).
         "nvidia.NVreg_InitializeSystemMemoryAllocations=0"
@@ -171,6 +173,8 @@ in {
 
     (lib.mkIf hybrid.enable {
       environment.systemPackages = [nvidiaOffload];
+      # Lets the GPU power off when idle (runtime D3).
+      boot.kernelParams = ["nvidia.NVreg_DynamicPowerManagement=0x02"];
     })
 
     # With the audio function bound, the GPU's PCIe slot can't reach D3cold.

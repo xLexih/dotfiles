@@ -42,9 +42,14 @@ export PS1="\n\[\033[$PROMPT_COLOR\][\u@\h:\w]\\$\[\033[0m\] "
 
 alias publicip="dig +short myip.opendns.com @resolver1.opendns.com"
 
-alias ls="eza --icons --git --group-directories-first"
-alias l="eza -la --icons --git --group-directories-first"
-alias tree="eza --tree --icons --git --group-directories-first"
+EZA_BASE="--icons --git --group-directories-first"
+alias ls="eza $EZA_BASE"
+alias l="eza -la $EZA_BASE"
+alias ll="eza -l $EZA_BASE --time-style=relative"
+alias la="eza -a $EZA_BASE"
+alias lt="eza -la --icons --git --time-style=relative --sort modified"
+alias ltr="eza -la --icons --git --time-style=relative --sort modified --reverse"
+alias tree="eza --tree $EZA_BASE"
 
 gpu () {
     __NV_PRIME_RENDER_OFFLOAD=1 \

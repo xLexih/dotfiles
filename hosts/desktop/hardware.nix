@@ -1,4 +1,5 @@
 {
+  config,
   inputs,
   modulesPath,
   ...
@@ -22,7 +23,13 @@
       timeout = 0; # hold space for the menu
     };
     supportedFilesystems = ["btrfs" "ntfs"];
-    kernelModules = ["kvm_amd"];
+    kernelModules = [
+      "kvm_amd"
+      "nct6687" # fan and voltage sensors of the board's Nuvoton Super I/O
+    ];
+    extraModulePackages = [config.boot.kernelPackages.nct6687d];
+    # On ethernet only; Bluetooth on the same card has its own driver.
+    blacklistedKernelModules = ["mt7921e"];
   };
 
   fileSystems = {
@@ -46,15 +53,9 @@
   modules.hardware.graphics = {
     enable = true;
     amd.enable = true;
-    nvidia = {
-      enable = true;
-      hybrid = {
-        enable = true;
-        igpuVendor = "amd";
-        igpuBusId = "PCI:10:0:0";
-        nvidiaBusId = "PCI:1:0:0";
-      };
-    };
+    # Both monitors are on the NVIDIA card, which renders the desktop; the
+    # iGPU only serves compute (ROCm).
+    nvidia.enable = true;
     vaapi = {
       enable = true;
       firefox.enable = true;

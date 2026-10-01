@@ -15,7 +15,7 @@ Hardware of the `desktop` host, read over SSH from the running system on
 | Storage | Crucial P3 2 TB NVMe; Kingston A400 240 GB SATA (unused) |
 | Displays | ASUS VG249 (1920×1080, 144 Hz), Philips 190C (1280×1024, 75 Hz) |
 | Ethernet | Realtek RTL8125, 2.5 Gbit (in use) |
-| Wi-Fi / Bluetooth | MediaTek MT7922 (Wi-Fi 6E, unused) |
+| Wi-Fi / Bluetooth | MediaTek MT7922 (Wi-Fi 6E disabled, Bluetooth on) |
 | Firmware | AMI UEFI, BIOS 1.80 (2023-12-15), Secure Boot off, TPM 2.0 |
 
 ## CPU
@@ -42,7 +42,8 @@ Hardware of the `desktop` host, read over SSH from the running system on
 
 The desktop RTX 3070 Ti supports neither runtime D3 (the driver reports "Not
 supported") nor Dynamic Boost (`nvidia-powerd` exits with "unsupported
-system"); both are laptop features.
+system"); both are laptop features, so the config doesn't enable PRIME
+offload, fine-grained power management or Dynamic Boost here.
 
 ## Displays
 
@@ -83,16 +84,16 @@ NixOS doesn't mount, apparently from an earlier install. `/` is 72% full.
 | Device | ID / driver |
 | --- | --- |
 | Ethernet | Realtek RTL8125 2.5GbE, 10ec:8125, `r8169`, `enp12s0` |
-| Wi-Fi | MediaTek MT7922, 14c3:0616, `mt7921e`, `wlp13s0` (down) |
+| Wi-Fi | MediaTek MT7922, 14c3:0616, `mt7921e` blacklisted |
 | Bluetooth | MediaTek MT7922 (USB) |
 | USB | AMD 600-series chipset USB 3.2 and Raphael USB 3.1/2.0 controllers |
 | SATA | AMD 600-series chipset controller |
 | Audio | Realtek ALC897 (board audio), NVIDIA and AMD HDMI audio |
 
 Sensors: CPU (`k10temp`), iGPU, NVMe, memory (`spd5118`), Wi-Fi, ethernet
-PHY. Fan speeds aren't exposed: the mainline `nct6775` driver finds no chip.
-MSI's AM5 boards use a Nuvoton NCT6687, which needs the out-of-tree `nct6687`
-driver (not verified on this board).
+PHY. The mainline `nct6775` driver finds no Super I/O chip; MSI's AM5 boards
+use a Nuvoton NCT6687, so the config loads the out-of-tree `nct6687` driver
+for fan speeds and voltages.
 
 ## Boot
 
