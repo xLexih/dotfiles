@@ -110,7 +110,7 @@ frame is the bar, top to bottom:
 | Brightness (laptops) | percentage | | 5% steps |
 | Volume | output and level | left: mute, right: pwvucontrol | 5% steps, up to 150% |
 | Network | connection | left: nmtui, right: Wi-Fi on/off | |
-| Battery (laptops) | level and time left | | |
+| Battery (laptops), power profile icon (desktop) | level, time left, power profile | cycle power profile | |
 | Dot in the bottom-right corner | | notes popup | |
 
 Keys beyond the usual window management (`global/home/.config/hypr/hyprland.lua`
@@ -122,6 +122,32 @@ and `users/lex/home/.config/hypr/hyprland.lua`):
 | `SUPER + N` | night light on/off; it also follows the schedule in `global/home/.config/hypr/hyprsunset.conf` (4500 K from 21:00 to 07:00) |
 | `SUPER + Print` | region screenshot to the clipboard |
 | `SUPER + SHIFT + Print` | region screenshot into satty for annotation (Enter copies) |
+
+## Power
+
+Every host has three power profiles (performance, balanced, power-saver),
+switched by clicking the battery or profile icon in the bar. The laptop uses
+TLP for them, other hosts power-profiles-daemon (`global/power.nix`).
+
+On the laptop (`hosts/laptop/power.nix`), plugging in selects performance
+with no limits and unplugging selects power-saver:
+
+| Profile | CPU | Screen and effects |
+| --- | --- | --- |
+| performance | all cores, turbo, performance EPP | 240 Hz, blur, shadows, animations |
+| balanced | all cores, turbo, balance_power EPP | 144 Hz |
+| power-saver | E-cores only, no turbo, power EPP, iGPU capped at 900 MHz | 60 Hz, no blur, shadows or animations |
+
+On battery the ethernet controller is unbound and NVIDIA Dynamic Boost is
+stopped. The refresh rate and effects come from a user service in
+`modules/desktop/hyprland.nix`, so they apply to any host with a laptop panel.
+
+The laptop's NVIDIA GPU stays powered off unless something asks for it
+(`modules.hardware.graphics.nvidia.hybrid.offloadOnly`): desktop programs
+only see the Intel GPU. Steam, Heroic, Lutris and Prism Launcher run on the
+NVIDIA GPU; anything else can with `nvidia-offload <command>`. Check whether
+it is powered off with
+`cat /sys/bus/pci/devices/0000:01:00.0/power/runtime_status` (`suspended`).
 
 ## Packages
 

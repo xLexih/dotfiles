@@ -7,8 +7,8 @@ import Quickshell.Services.UPower
 import QtQuick
 import "../asset" as Asset
 
-// Brightness, volume, network and battery. Each icon hides itself when the
-// hardware or service isn't there (no backlight, no battery).
+// Brightness (hidden without a backlight), volume, network, and battery or,
+// without one, the power profile.
 Column {
     id: root
 
@@ -111,26 +111,47 @@ Column {
         }
     }
 
-    // Battery, from UPower's combined display device.
+    // Battery on laptops, the power profile elsewhere. Clicking cycles the
+    // power profile; plugging in or unplugging selects one automatically.
     readonly property UPowerDevice battery: UPower.displayDevice
+    readonly property var profiles: PowerProfiles.hasPerformanceProfile ? [PowerProfile.PowerSaver, PowerProfile.Balanced, PowerProfile.Performance] : [PowerProfile.PowerSaver, PowerProfile.Balanced]
+    readonly property string profileName: ({
+            [PowerProfile.PowerSaver]: "power saver",
+            [PowerProfile.Balanced]: "balanced",
+            [PowerProfile.Performance]: "performance"
+        })[PowerProfiles.profile] ?? ""
 
     StatusIcon {
+        readonly property bool hasBattery: root.battery.ready && root.battery.isLaptopBattery
         readonly property real level: root.battery.percentage
         readonly property bool charging: root.battery.state === UPowerDeviceState.Charging || root.battery.state === UPowerDeviceState.FullyCharged || root.battery.state === UPowerDeviceState.PendingCharge
+        readonly property bool saving: PowerProfiles.profile === PowerProfile.PowerSaver
 
-        visible: root.battery.ready && root.battery.isLaptopBattery
         tooltip: root.tooltip
-        icon: charging ? "battery_charging_full" : level >= 0.95 ? "battery_full" : "battery_" + Math.min(6, Math.floor(level * 7)) + "_bar"
-        color: !charging && level < 0.15 ? Asset.Theme.danger : Asset.Theme.secondary
+        icon: {
+            if (!hasBattery)
+                return saving ? "eco" : PowerProfiles.profile === PowerProfile.Performance ? "speed" : "balance";
+            if (charging)
+                return "battery_charging_full";
+            return level >= 0.95 ? "battery_full" : "battery_" + Math.min(6, Math.floor(level * 7)) + "_bar";
+        }
+        color: hasBattery && !charging && level < 0.15 ? Asset.Theme.danger : saving ? Asset.Theme.accentAlt : Asset.Theme.secondary
         tooltipText: {
-            const percent = "Battery " + Math.round(level * 100) + "%";
+            const profile = "Power profile: " + root.profileName;
+            if (!hasBattery)
+                return profile;
+            let battery = "Battery " + Math.round(level * 100) + "%";
             if (root.battery.state === UPowerDeviceState.FullyCharged)
-                return percent + ", full";
-            if (charging && root.battery.timeToFull > 0)
-                return percent + ", full in " + root.duration(root.battery.timeToFull);
-            if (!charging && root.battery.timeToEmpty > 0)
-                return percent + ", " + root.duration(root.battery.timeToEmpty) + " left";
-            return percent;
+                battery += ", full";
+            else if (charging && root.battery.timeToFull > 0)
+                battery += ", full in " + root.duration(root.battery.timeToFull);
+            else if (!charging && root.battery.timeToEmpty > 0)
+                battery += ", " + root.duration(root.battery.timeToEmpty) + " left";
+            return battery + "\n" + profile;
+        }
+        onClicked: {
+            const next = (root.profiles.indexOf(PowerProfiles.profile) + 1) % root.profiles.length;
+            PowerProfiles.profile = root.profiles[next];
         }
     }
 }

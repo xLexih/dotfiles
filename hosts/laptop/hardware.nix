@@ -41,12 +41,12 @@
     "/" = {
       device = "/dev/disk/by-label/ROOT";
       fsType = "ext4";
-      options = ["noatime" "nodiratime" "discard"];
+      options = ["noatime"];
     };
     "/boot" = {
       device = "/dev/disk/by-uuid/6B36-A50E";
       fsType = "vfat";
-      options = ["fmask=0077" "dmask=0077" "noatime" "nodiratime"];
+      options = ["fmask=0077" "dmask=0077" "noatime"];
     };
     "/data" = {
       device = "/dev/disk/by-label/DATA";
@@ -65,6 +65,8 @@
         igpuVendor = "intel";
         igpuBusId = "PCI:0:2:0";
         nvidiaBusId = "PCI:1:0:0";
+        # The NVIDIA GPU powers off unless a game or `nvidia-offload` uses it.
+        offloadOnly = true;
       };
     };
     vaapi = {

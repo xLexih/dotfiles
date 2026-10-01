@@ -5,6 +5,7 @@
   ...
 }: let
   cfg = config.modules.software.gaming;
+  nvidia = config.modules.hardware.graphics.nvidia;
 in {
   options.modules.software.gaming = {
     enable = lib.mkEnableOption "gaming compatibility stack";
@@ -33,8 +34,12 @@ in {
         keyutils
         proton-ge-bin
       ];
+      # Games run on the NVIDIA GPU on hybrid laptops (no-op elsewhere).
       package = pkgs.steam.override {
-        extraProfile = "unset DRI_PRIME";
+        extraProfile = ''
+          unset DRI_PRIME
+          ${nvidia.offloadShell}
+        '';
       };
       protontricks.enable = true;
     };
@@ -48,7 +53,7 @@ in {
 
     environment.systemPackages = with pkgs; [
       goverlay
-      heroic
+      (nvidia.offload heroic)
       mangohud
       protonup-qt
       umu-launcher

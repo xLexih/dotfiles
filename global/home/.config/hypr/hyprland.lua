@@ -56,6 +56,8 @@ hl.config({
         focus_on_activate = true,
         force_default_wallpaper = -1,
     },
+    -- Fullscreen games skip compositing: one frame less latency.
+    render = { direct_scanout = 2 },
     input = {
         kb_layout = "us",
         kb_variant = "",

@@ -1,80 +1,50 @@
-# TLP plus an AC/battery switch tuned for this machine: P-cores 1-15, the
-# iGPU on card1, the yt6801 NIC and the 240 Hz eDP panel.
+# Battery and power profiles for this machine (i9-14900HX: P-cores are CPUs
+# 0-15, E-cores 16-31; yt6801 ethernet at 3a:00.0).
+#
+# TLP applies one of three profiles, switchable from the bar's battery icon:
+#   performance  (plugged in)  no limits
+#   balanced     (manual)      all cores, turbo, balance_power EPP, 144 Hz
+#   power-saver  (unplugged)   E-cores only, no turbo, iGPU capped, 60 Hz,
+#                              no blur/shadows/animations
+# Plugging in or unplugging always selects the profile for the new power
+# source. Refresh rate and effects are set by the Hyprland session (see
+# modules/desktop/hyprland.nix); the rest is TLP and the hook below.
 {
+  config,
   lib,
   pkgs,
   ...
 }: let
-  powerSwitchScript = pkgs.writeShellScript "power-profile-switch" ''
-    AC_STATE=$(${pkgs.coreutils}/bin/cat /sys/class/power_supply/AC0/online 2>/dev/null || echo "1")
+  ethernet = "0000:3a:00.0";
 
-    # HWP dynamic boost
-    echo 1 > /sys/devices/system/cpu/intel_pstate/hwp_dynamic_boost 2>/dev/null || true
+  # TLP writes "<profile> <power source>" to /run/tlp/last_pwr whenever it
+  # applies a profile: 0 performance, 1 balanced, 2 power-saver.
+  profileHook = pkgs.writeShellApplication {
+    name = "power-profile-hook";
+    runtimeInputs = [pkgs.coreutils pkgs.iproute2 config.systemd.package];
+    text = ''
+      read -r profile _ < /run/tlp/last_pwr
+      ac=$(cat /sys/class/power_supply/AC0/online 2>/dev/null || echo 1)
 
-    # P-cores (0-15) off on battery, E-cores (16-31) stay
-    if [ "$AC_STATE" = "1" ]; then
-      for cpu in $(${pkgs.coreutils}/bin/seq 1 15); do
-        echo 1 > /sys/devices/system/cpu/cpu$cpu/online 2>/dev/null || true
+      online=1
+      [ "$profile" = 2 ] && online=0
+      for cpu in $(seq 1 15); do
+        echo "$online" > "/sys/devices/system/cpu/cpu$cpu/online" 2>/dev/null || true
       done
-      # iGPU: full clock on AC
-      echo 1650 > /sys/class/drm/card1/gt_max_freq_mhz 2>/dev/null || true
-      echo 1650 > /sys/class/drm/card1/gt_boost_freq_mhz 2>/dev/null || true
-    else
-      for cpu in $(${pkgs.coreutils}/bin/seq 1 15); do
-        echo 0 > /sys/devices/system/cpu/cpu$cpu/online 2>/dev/null || true
-      done
-      # iGPU: cap at 900MHz on battery
-      echo 900 > /sys/class/drm/card1/gt_max_freq_mhz 2>/dev/null || true
-      echo 900 > /sys/class/drm/card1/gt_boost_freq_mhz 2>/dev/null || true
-    fi
 
-    # Find the active Hyprland session via /run/user/*/hypr/
-    HYPR_SOCKET=$(${pkgs.findutils}/bin/find /run/user -name ".socket.sock" -path "*/hypr/*" 2>/dev/null | ${pkgs.coreutils}/bin/head -1)
-
-    if [ -n "$HYPR_SOCKET" ]; then
-      INSTANCE_DIR=$(${pkgs.coreutils}/bin/dirname "$HYPR_SOCKET")
-      export HYPRLAND_INSTANCE_SIGNATURE=$(${pkgs.coreutils}/bin/basename "$INSTANCE_DIR")
-      HYPR_UID=$(${pkgs.coreutils}/bin/stat -c '%u' "$HYPR_SOCKET")
-      export XDG_RUNTIME_DIR="/run/user/$HYPR_UID"
-      HYPRCTL="${pkgs.hyprland}/bin/hyprctl"
-
-      MONITOR_JSON=$($HYPRCTL monitors -j 2>/dev/null)
-      if [ -n "$MONITOR_JSON" ]; then
-        if [ "$AC_STATE" = "1" ]; then
-          TARGET_RATE="240"
-        else
-          TARGET_RATE="60"
-        fi
-
-        echo "$MONITOR_JSON" | ${pkgs.jq}/bin/jq --arg targetRate "$TARGET_RATE" -r '
-          .[]
-          | select(.name | startswith("eDP"))
-          | "hl.monitor({ output = \(.name | @json), mode = \(("\(.width)x\(.height)@" + $targetRate) | @json), position = \(("\(.x)x\(.y)") | @json), scale = \(.scale) })"
-        ' | while read -r luaMonitor; do
-          $HYPRCTL eval "$luaMonitor" 2>/dev/null
-        done
-
-        if [ "$AC_STATE" = "1" ]; then
-          LUA_CONFIG='hl.config({ decoration = { blur = { enabled = true }, shadow = { enabled = true } }, animations = { enabled = true }, render = { direct_scanout = false } })'
-        else
-          LUA_CONFIG='hl.config({ decoration = { blur = { enabled = false }, shadow = { enabled = false } }, animations = { enabled = false }, render = { direct_scanout = true } })'
-        fi
-        $HYPRCTL eval "$LUA_CONFIG" 2>/dev/null
+      if [ "$ac" = 1 ]; then
+        echo ${ethernet} > /sys/bus/pci/drivers/yt6801/bind 2>/dev/null || true
+        systemctl start nvidia-powerd.service || true
+      else
+        # Unbound, the NIC can reach D3cold. Dynamic Boost only matters for
+        # gaming on AC and keeps the NVIDIA GPU busy.
+        ip link set enp58s0 down 2>/dev/null || true
+        echo ${ethernet} > /sys/bus/pci/drivers/yt6801/unbind 2>/dev/null || true
+        systemctl stop nvidia-powerd.service || true
       fi
-    fi
-
-    # yt6801: unbind on battery for PCI D3cold
-    if [ "$AC_STATE" = "1" ]; then
-      echo "0000:3a:00.0" > /sys/bus/pci/drivers/yt6801/bind 2>/dev/null || true
-      ${pkgs.systemd}/bin/systemctl start nvidia-powerd.service 2>/dev/null || true
-    else
-      ${pkgs.iproute2}/bin/ip link set enp58s0 down 2>/dev/null || true
-      echo "0000:3a:00.0" > /sys/bus/pci/drivers/yt6801/unbind 2>/dev/null || true
-      ${pkgs.systemd}/bin/systemctl stop nvidia-powerd.service 2>/dev/null || true
-    fi
-  '';
+    '';
+  };
 in {
-  services.power-profiles-daemon.enable = false;
   services.upower.enable = true;
   services.thermald.enable = true;
 
@@ -98,37 +68,37 @@ in {
 
   services.tlp = {
     enable = true;
+    # _SAV values fall back to _BAT when unset.
     settings = {
+      TLP_AUTO_SWITCH = 1;
+      TLP_PROFILE_AC = "PRF";
+      TLP_PROFILE_BAT = "SAV";
+
       CPU_SCALING_GOVERNOR_ON_AC = "performance";
       CPU_SCALING_GOVERNOR_ON_BAT = "powersave";
       CPU_ENERGY_PERF_POLICY_ON_AC = "performance";
-      CPU_ENERGY_PERF_POLICY_ON_BAT = "power";
-
+      CPU_ENERGY_PERF_POLICY_ON_BAT = "balance_power";
+      CPU_ENERGY_PERF_POLICY_ON_SAV = "power";
       CPU_BOOST_ON_AC = 1;
-      CPU_BOOST_ON_BAT = 0;
+      CPU_BOOST_ON_BAT = 1;
+      CPU_BOOST_ON_SAV = 0;
       CPU_HWP_DYN_BOOST_ON_AC = 1;
       CPU_HWP_DYN_BOOST_ON_BAT = 1;
+      CPU_HWP_DYN_BOOST_ON_SAV = 0;
 
-      PLATFORM_PROFILE_ON_AC = "performance";
-      PLATFORM_PROFILE_ON_BAT = "low-power";
-
-      SCHED_POWERSAVE_ON_BAT = 1;
-      RUNTIME_PM_ON_AC = "auto";
-      RUNTIME_PM_ON_BAT = "auto";
-      RUNTIME_PM_DRIVER_PM_ON_BAT = "auto";
-      RUNTIME_PM_DRIVER_PM_ALL = 1;
-
-      WIFI_PWR_ON_AC = "off";
-      WIFI_PWR_ON_BAT = "on";
-
-      SATA_LINKPWR_ON_AC = "med_power_with_dipm";
-      SATA_LINKPWR_ON_BAT = "med_power_with_dipm";
-      AHCI_RUNTIME_PM_ON_AC = "on";
-      AHCI_RUNTIME_PM_ON_BAT = "auto";
+      INTEL_GPU_MAX_FREQ_ON_AC = 1650;
+      INTEL_GPU_MAX_FREQ_ON_BAT = 1650;
+      INTEL_GPU_MAX_FREQ_ON_SAV = 900;
+      INTEL_GPU_BOOST_FREQ_ON_AC = 1650;
+      INTEL_GPU_BOOST_FREQ_ON_BAT = 1650;
+      INTEL_GPU_BOOST_FREQ_ON_SAV = 900;
 
       PCIE_ASPM_ON_AC = "default";
       PCIE_ASPM_ON_BAT = "powersupersave";
-
+      RUNTIME_PM_ON_AC = "auto";
+      RUNTIME_PM_ON_BAT = "auto";
+      WIFI_PWR_ON_AC = "off";
+      WIFI_PWR_ON_BAT = "on";
       USB_AUTOSUSPEND = 1;
       USB_EXCLUDE_AUDIO = 1;
       USB_EXCLUDE_BTUSB = 0;
@@ -138,6 +108,16 @@ in {
     };
   };
 
+  systemd.paths.power-profile-hook = {
+    description = "Apply core, NIC and Dynamic Boost settings for the TLP profile";
+    wantedBy = ["multi-user.target"];
+    pathConfig.PathChanged = "/run/tlp/last_pwr";
+  };
+  systemd.services.power-profile-hook.serviceConfig = {
+    Type = "oneshot";
+    ExecStart = lib.getExe profileHook;
+  };
+
   boot.kernel.sysctl = {
     "vm.laptop_mode" = 5;
     "vm.dirty_writeback_centisecs" = 6000;
@@ -145,24 +125,11 @@ in {
     "kernel.watchdog" = 0;
   };
 
-  systemd.tmpfiles.rules = [
-    "w /sys/kernel/mm/transparent_hugepage/enabled - - - - madvise"
-  ];
-
-  systemd.services.power-profile-switch = {
-    description = "Switch power profile on AC/battery change";
-    serviceConfig = {
-      Type = "oneshot";
-      ExecStart = powerSwitchScript;
-    };
-  };
-
   services.udev.extraRules = ''
     ACTION=="add", SUBSYSTEM=="pci", ATTR{power/control}="auto"
     ACTION=="add", SUBSYSTEM=="usb", ATTR{power/control}="auto"
-    # ITE keyboard controllers: force autosuspend (prevents package C-state blocking)
+    # ITE keyboard controllers block package C-states unless autosuspended.
     ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="048d", ATTR{idProduct}=="8291", ATTR{power/control}="auto"
     ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="048d", ATTR{idProduct}=="8233", ATTR{power/control}="auto"
-    SUBSYSTEM=="power_supply", ATTR{type}=="Mains", RUN+="${pkgs.systemd}/bin/systemctl start power-profile-switch.service"
   '';
 }

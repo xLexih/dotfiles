@@ -23,5 +23,9 @@ in {
     };
 
     hardware.nvidia-container-toolkit.enable = cfg.nvidia.enable;
+
+    # Generate the CDI spec when Docker starts (it requires the unit) instead
+    # of at boot, where it delays login and wakes the NVIDIA GPU.
+    systemd.services.nvidia-container-toolkit-cdi-generator.wantedBy = lib.mkIf cfg.nvidia.enable (lib.mkForce []);
   };
 }

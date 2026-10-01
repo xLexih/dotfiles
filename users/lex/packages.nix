@@ -1,4 +1,10 @@
-{pkgs, ...}: {
+{
+  config,
+  pkgs,
+  ...
+}: let
+  inherit (config.modules.hardware.graphics.nvidia) offload;
+in {
   hjem.users.lex.packages = with pkgs; [
     # terminal and shell
     atuin
@@ -60,9 +66,9 @@
     tcpdump
     traceroute
 
-    # gaming
-    lutris-custom
-    prismlauncher
+    # gaming, on the NVIDIA GPU
+    (offload lutris-custom)
+    (offload prismlauncher)
 
     # c / c++ / qt
     clang
