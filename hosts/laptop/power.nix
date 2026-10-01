@@ -19,7 +19,8 @@
 }: let
   ethernet = "0000:3a:00.0";
 
-  # Runs whenever TLP applies a profile (it rewrites /run/tlp/last_pwr).
+  # Runs at boot and whenever TLP applies a profile (it rewrites
+  # /run/tlp/last_pwr).
   profileHook = pkgs.writeShellApplication {
     name = "power-profile-hook";
     runtimeInputs = [pkgs.coreutils pkgs.iproute2 config.systemd.package];
@@ -28,10 +29,11 @@
 
       if [ "$ac" = 1 ]; then
         echo ${ethernet} > /sys/bus/pci/drivers/yt6801/bind 2>/dev/null || true
-        systemctl start nvidia-powerd.service || true
+        # In the background: it takes about 2 s to come up.
+        systemctl start --no-block nvidia-powerd.service || true
       else
-        # Unbound, the NIC can reach D3cold. Dynamic Boost only matters for
-        # gaming on AC and keeps the NVIDIA GPU busy.
+        # Unbound, the NIC can reach D3cold. Dynamic Boost (more GPU power
+        # under load; measured 115 -> 120 W) only applies on AC anyway.
         ip link set enp58s0 down 2>/dev/null || true
         echo ${ethernet} > /sys/bus/pci/drivers/yt6801/unbind 2>/dev/null || true
         systemctl stop nvidia-powerd.service || true
@@ -109,10 +111,17 @@ in {
     wantedBy = ["multi-user.target"];
     pathConfig.PathChanged = "/run/tlp/last_pwr";
   };
-  systemd.services.power-profile-hook.serviceConfig = {
-    Type = "oneshot";
-    ExecStart = lib.getExe profileHook;
+  systemd.services.power-profile-hook = {
+    wantedBy = ["multi-user.target"];
+    after = ["tlp.service"];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = lib.getExe profileHook;
+    };
   };
+
+  # Started by the hook on AC instead of holding up boot (it took 2.3 s).
+  systemd.services.nvidia-powerd.wantedBy = lib.mkForce [];
 
   boot.kernel.sysctl = {
     "vm.dirty_writeback_centisecs" = 6000;

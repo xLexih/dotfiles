@@ -25,7 +25,10 @@
     kernelModules = [
       "kvm_intel"
       "yt6801" # Motorcomm ethernet
-      "tuxedo-keyboard"
+      # Fails its compatibility check on this chassis and unloads. The lightbar
+      # LED (ite_8291_lb, from tuxedo-drivers below) loads by device ID, and
+      # hid-send writes to /dev/hidraw directly, so neither needs it.
+      # "tuxedo-keyboard"
     ];
     blacklistedKernelModules = ["ite_8291"];
     extraModulePackages = with config.boot.kernelPackages; [
