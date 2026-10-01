@@ -1,7 +1,7 @@
 # Screenshot annotation (satty): the theme's colors as the quick palette.
 {lib, ...}: {
   modules.theme.render.satty = theme: let
-    p = theme.palette;
+    p = theme.colors;
     font = (import ../lib.nix {inherit lib;}).parseFont theme.fonts.sans;
     palette = map (color: ''"${color}ff"'') [p.accent p.red p.yellow p.green p.cyan p.blue p.fg];
   in {

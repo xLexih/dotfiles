@@ -3,14 +3,16 @@
 # stylesheet of the screen-share picker, read each time it opens.
 {
   config,
+  lib,
   pkgs,
   ...
 }: let
+  inherit (import ../lib.nix {inherit lib;}) hex;
   hyprctl = "${config.programs.hyprland.package}/bin/hyprctl";
-  rgba = alpha: color: "rgba(${builtins.substring 1 6 color}${alpha})";
+  rgba = alpha: color: "rgba(${hex color}${alpha})";
 
   render = theme: let
-    t = theme.palette // theme.roles;
+    t = theme.colors;
   in {
     ".config/hypr/theme.lua" = ''
       hl.env("XCURSOR_THEME", "${theme.cursor.name}")

@@ -1,5 +1,5 @@
-# Colors come from the theme (theme/base/targets/firefox.nix). The profile
-# lives at ~/.mozilla/firefox/default (home/.mozilla/firefox/profiles.ini) so
+# Colors come from the theme (theme/base/targets/firefox). The profile lives
+# at ~/.mozilla/firefox/default (home/.mozilla/firefox/profiles.ini) so
 # home/.mozilla/firefox/default/chrome/userChrome.css can hide the tab bar
 # for Sidebery.
 let

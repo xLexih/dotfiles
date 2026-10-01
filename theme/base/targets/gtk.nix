@@ -13,7 +13,7 @@
   cfg = config.modules.theme;
 
   namedColors = theme: let
-    t = theme.palette // theme.roles;
+    t = theme.colors;
   in {
     accent-color = t.accent;
     accent-bg-color = t.selectionBg;

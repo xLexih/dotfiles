@@ -87,17 +87,37 @@
         '';
       }
       // lib.concatMapAttrs (host: cfg: let
-        hypr = lib.mapAttrs (_: user: user.files.".config/hypr/hyprland.lua".text or null) cfg.config.hjem.users;
+        users = cfg.config.hjem.users;
+        hypr = lib.mapAttrs (_: user: user.files.".config/hypr/hyprland.lua".text or null) users;
+        quickshell = lib.mapAttrs (_: user: lib.filterAttrs (path: _: lib.hasPrefix ".config/quickshell/" path) user.files) users;
       in
         {
           "eval-${host}" = pkgs.writeText "eval-${host}" (builtins.unsafeDiscardStringContext cfg.config.system.build.toplevel.drvPath);
+          # Checks modules add to the system build (e.g. theme-check).
+          "system-${host}" = pkgs.linkFarmFromDrvs "system-checks-${host}" cfg.config.system.checks;
         }
         // lib.mapAttrs' (user: text:
           lib.nameValuePair "hyprland-${host}-${user}" (pkgs.runCommand "hyprland-${host}-${user}" {} ''
             ${pkgs.lua}/bin/luac -p ${pkgs.writeText "hyprland.lua" (builtins.unsafeDiscardStringContext text)}
             touch $out
           ''))
-        (lib.filterAttrs (_: text: text != null) hypr))
+        (lib.filterAttrs (_: text: text != null) hypr)
+        # The bar's QML as installed: syntax errors and imports that don't
+        # resolve fail; style warnings don't.
+        // lib.mapAttrs' (user: files:
+          lib.nameValuePair "quickshell-${host}-${user}" (pkgs.runCommand "quickshell-${host}-${user}" {
+              config = pkgs.linkFarm "quickshell-${user}" (lib.mapAttrs' (path: file:
+                lib.nameValuePair (lib.removePrefix ".config/quickshell/" path) (pkgs.writeText (baseNameOf path) file.text))
+              files);
+            } ''
+              cp -rL $config qml
+              cd qml
+              imports=$(sed -n 's/^AdditionalImportPaths=//p' .qmllint.ini | tr -d ' ' | tr ',' '\n' | sed 's/^/-I/')
+              ${cfg.pkgs.qt6.qtdeclarative}/bin/qmllint $imports $(find -L . -name '*.qml') >$TMPDIR/lint 2>&1 || { cat $TMPDIR/lint; exit 1; }
+              if grep '\[import\]' $TMPDIR/lint; then exit 1; fi
+              touch $out
+            ''))
+        (lib.filterAttrs (_: files: files != {}) quickshell))
       self.nixosConfigurations;
   };
 }

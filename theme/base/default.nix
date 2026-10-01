@@ -2,18 +2,17 @@
 # options.nix, so it only sets the colors and settings it wants to change.
 # The dynamic theme (dynamic.nix) derives its palette from the wallpaper.
 #
-# Targets (targets/*.nix) turn a theme into program configuration:
+# Targets (targets/) turn a theme into program configuration:
 #   modules.theme.render.<target>   theme -> { "<path in $HOME>" = text; }
 #   modules.theme.metadata.<key>    theme -> value, added to theme.json
 #   modules.theme.reload.<target>   shell run after a switch so running
 #                                   programs pick up the new files
 # Every theme is rendered into /etc/themes/<name> (the dynamic one as a dark
-# and a light template). The `theme` command (also behind the gear in the
-# bar) copies one into $HOME, remembers it in ~/.local/state/theme/name and
-# runs the reload hooks. The choice survives rebuilds: every rebuild applies it
-# again (after hjem), which also resets edits to theme files like other
-# managed dotfiles, and Hyprland runs the hooks at login (`theme reload`).
-# Rendered files may use @HOME@ for the user's home directory.
+# and a light template). The `theme` command (theme.sh, also behind the gear
+# in the bar) installs one into $HOME, removes files of the previous one and
+# runs the reload hooks. The choice survives rebuilds: a service re-applies it
+# after hjem, and Hyprland runs the hooks at login (`theme reload`). Rendered
+# files may use @HOME@ for the user's home directory.
 {
   config,
   inputs,
@@ -42,7 +41,7 @@
 
   describe = theme:
     {
-      inherit (theme) name variant palette roles terminal fonts;
+      inherit (theme) name label variant colors terminal fonts;
       cursor = {inherit (theme.cursor) name size;};
     }
     // lib.mapAttrs (_: value: value theme) cfg.metadata;
@@ -75,199 +74,78 @@
       [templates]
     '';
 
-  themeCommand = pkgs.writeShellApplication {
-    name = "theme";
-    runtimeInputs = with pkgs; [awww coreutils findutils gawk gnused jq matugen];
-    text = ''
-      themes=/etc/themes
-      state="''${XDG_STATE_HOME:-$HOME/.local/state}/theme"
-      cache="''${XDG_CACHE_HOME:-$HOME/.cache}/theme"
+  reloadHooks = pkgs.writeShellScript "theme-reload" ''
+    theme_get() {
+      ${lib.getExe pkgs.jq} -r "$1" "$THEME_DIR/theme.json"
+    }
 
-      # Outside the session (the activation service) find the user's session
-      # bus and newest Hyprland instance, so reload hooks reach them.
-      export XDG_RUNTIME_DIR="''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
-      export DBUS_SESSION_BUS_ADDRESS="''${DBUS_SESSION_BUS_ADDRESS:-unix:path=$XDG_RUNTIME_DIR/bus}"
-      if [ -z "''${HYPRLAND_INSTANCE_SIGNATURE:-}" ] && [ -d "$XDG_RUNTIME_DIR/hypr" ]; then
-        HYPRLAND_INSTANCE_SIGNATURE=$(find "$XDG_RUNTIME_DIR/hypr" -mindepth 1 -maxdepth 1 -type d -printf '%T@ %f\n' |
-          sort -n | tail -1 | cut -d' ' -f2)
-        export HYPRLAND_INSTANCE_SIGNATURE
-      fi
+    ${lib.concatStrings (lib.mapAttrsToList (target: script: ''
+        # ${target}
+        (
+          ${script}
+        ) >/dev/null 2>&1 || true
+      '')
+      cfg.reload)}
+  '';
 
-      usage() {
-        echo "usage: theme [current | list | set <name> | next | prev | apply | reload | wallpaper <image>]" >&2
-        exit 1
-      }
+  mkThemeCommand = themes:
+    pkgs.writeShellApplication {
+      name = "theme";
+      runtimeInputs = with pkgs; [awww coreutils findutils gawk gnugrep gnused jq matugen];
+      text = ''
+        themes=${themes}
+        default_theme=${lib.escapeShellArg cfg.default}
+        matugen_config=${matugenConfig}
+        dynamic_roles=${pkgs.writeText "dynamic-roles.json" (builtins.toJSON dynamic.roles)}
+        sentinels=${pkgs.writeText "dynamic-sentinels.json" (builtins.toJSON dynamic.sentinels)}
+        reload_hooks=${reloadHooks}
 
-      names() {
-        for dir in "$themes"/*; do
-          name=$(basename "$dir")
-          # Without a wallpaper there is nothing to derive colors from.
-          if [ "$name" != dynamic ] || [ -f "$(cat "$state/wallpaper" 2>/dev/null)" ]; then
-            echo "$name"
-          fi
-        done
-      }
+        ${builtins.readFile ./theme.sh}
+      '';
+    };
 
-      current() {
-        name=$(cat "$state/name" 2>/dev/null || true)
-        if [ -z "$name" ] || [ ! -d "$themes/$name" ]; then
-          name=${lib.escapeShellArg cfg.default}
-        fi
-        echo "$name"
-      }
+  themeCommand = mkThemeCommand themesDir;
 
-      theme_get() {
-        jq -r "$1" "$THEME_DIR/theme.json"
-      }
+  # Switches through every theme and the dynamic one (dark and light test
+  # wallpapers) in an empty home: no placeholder survives, each switch
+  # installs the right theme.json, and switching back leaves no stale files.
+  check =
+    pkgs.runCommand "theme-check" {
+      nativeBuildInputs = [themeCommand pkgs.imagemagick pkgs.jq];
+    } ''
+      export HOME=$TMPDIR/home XDG_RUNTIME_DIR=$TMPDIR/run
+      mkdir -p $HOME $XDG_RUNTIME_DIR
 
-      # Closest GNOME accent preset to a color, by hue.
-      gnome_accent() {
-        awk -v hex="''${1#\#}" 'BEGIN {
-          r = strtonum("0x" substr(hex, 1, 2)) / 255
-          g = strtonum("0x" substr(hex, 3, 2)) / 255
-          b = strtonum("0x" substr(hex, 5, 2)) / 255
-          max = r; if (g > max) max = g; if (b > max) max = b
-          min = r; if (g < min) min = g; if (b < min) min = b
-          if (max - min < 0.1) { print "slate"; exit }
-          if (max == r) h = 60 * ((g - b) / (max - min))
-          else if (max == g) h = 60 * ((b - r) / (max - min) + 2)
-          else h = 60 * ((r - g) / (max - min) + 4)
-          if (h < 0) h += 360
-          if (h < 15 || h >= 345) print "red"
-          else if (h < 45) print "orange"
-          else if (h < 70) print "yellow"
-          else if (h < 160) print "green"
-          else if (h < 195) print "teal"
-          else if (h < 255) print "blue"
-          else if (h < 290) print "purple"
-          else print "pink"
-        }'
-      }
-
-      # Renders the dynamic theme for the current wallpaper into the cache
-      # and points THEME_DIR at it.
-      render_dynamic() {
-        wallpaper=$(cat "$state/wallpaper" 2>/dev/null || true)
-        if [ ! -f "$wallpaper" ]; then
-          echo "the dynamic theme needs a wallpaper: theme wallpaper <image>" >&2
+      verify() {
+        name=$(jq -r .name $HOME/.config/theme/theme.json)
+        [ "$name" = "$1" ] || { echo "theme.json says $name after switching to $1"; exit 1; }
+        if grep -rliE 'e1e21[0-9a-f]|225[,;]226[,;]|@HOME@' --exclude-dir=.cache $HOME; then
+          echo "placeholders left after switching to $1"
           exit 1
         fi
-
-        scheme=$(matugen image "$wallpaper" --dry-run --json hex --mode smart --prefer saturation \
-          --config ${matugenConfig} 2>/dev/null)
-        mode=$(jq -r .mode <<<"$scheme")
-        palette=$(jq -c --argjson roles ${lib.escapeShellArg (builtins.toJSON dynamic.roles)} --arg mode "$mode" \
-          '. as $scheme | $roles[$mode] | map_values($scheme.colors[.].default.color | ascii_downcase)' <<<"$scheme")
-
-        THEME_DIR="$cache/dynamic"
-        rm -rf "$THEME_DIR"
-        mkdir -p "$THEME_DIR"
-        cp -rL "$themes/dynamic/$mode/." "$THEME_DIR"
-        chmod -R u+w "$THEME_DIR"
-
-        jq -r --argjson palette "$palette" 'to_entries[] | "\(.value) \($palette[.key])"' \
-          <<<${lib.escapeShellArg (builtins.toJSON dynamic.sentinels)} |
-          while read -r sentinel color; do
-            hex=''${color#\#}
-            from=$((16#''${sentinel:4:2}))
-            r=$((16#''${hex:0:2}))
-            g=$((16#''${hex:2:2}))
-            b=$((16#''${hex:4:2}))
-            printf 's/%s/%s/g\n' "$sentinel" "$hex"
-            printf 's/\\<225,226,%d\\>/%d,%d,%d/g\n' "$from" "$r" "$g" "$b"
-            printf 's/225;226;%d/%d;%d;%d/g\n' "$from" "$r" "$g" "$b"
-          done >"$cache/dynamic.sed"
-        find "$THEME_DIR" -type f -exec sed -i -f "$cache/dynamic.sed" {} +
-
-        if grep -rqE 'e1e21[0-9a-f]|225[,;]226[,;]' "$THEME_DIR"; then
-          echo "dynamic theme: some colors weren't replaced" >&2
-          exit 1
-        fi
-
-        accent=$(gnome_accent "$(jq -r .accent <<<"$palette")")
-        tmp=$(mktemp)
-        jq --arg accent "'$accent'" --arg wallpaper "$wallpaper" \
-          '.gtk["accent-color"] = $accent | .wallpaper = $wallpaper' "$THEME_DIR/theme.json" >"$tmp"
-        mv -f "$tmp" "$THEME_DIR/theme.json"
       }
 
-      apply() {
-        if [ "$1" = dynamic ]; then
-          render_dynamic
-        else
-          THEME_DIR="$themes/$1"
-          if [ -z "$1" ] || [ ! -d "$THEME_DIR" ]; then
-            echo "unknown theme: $1 (available: $(names | tr '\n' ' '))" >&2
-            exit 1
-          fi
-        fi
+      for name in $(theme list); do
+        theme set $name
+        verify $name
+      done
 
-        # Replace each file in one step, so programs watching it (the bar)
-        # never read a half-written one.
-        (cd "$THEME_DIR/home" && find -L . -type f) | while read -r path; do
-          target="$HOME/''${path#./}"
-          mkdir -p "$(dirname "$target")"
-          tmp=$(mktemp "$target.XXXXXX")
-          sed "s|@HOME@|$HOME|g" "$THEME_DIR/home/$path" >"$tmp"
-          chmod 644 "$tmp"
-          mv -f "$tmp" "$target"
-        done
+      magick -size 64x64 gradient:'#10301c'-'#2f8f5f' dark.png
+      magick -size 64x64 gradient:'#fbf3e6'-'#e9c9a0' light.png
+      theme wallpaper dark.png
+      theme set dynamic
+      verify dynamic
+      [ "$(jq -r .variant $HOME/.config/theme/theme.json)" = dark ]
+      theme wallpaper light.png
+      verify dynamic
+      [ "$(jq -r .variant $HOME/.config/theme/theme.json)" = light ]
 
-        mkdir -p "$state"
-        echo "$1" >"$state/name"
-        reload
-      }
+      theme set ${cfg.default}
+      installed=$(cd $HOME && find . -path ./.local/state -prune -o -path ./.cache -prune -o -type f -print | wc -l)
+      [ "$installed" = "$(wc -l < $HOME/.local/state/theme/files)" ] || { echo "stale theme files left behind"; exit 1; }
 
-      # Runs the reload hooks for THEME_DIR.
-      reload() {
-        ${lib.concatStrings (lib.mapAttrsToList (target: script: ''
-          # ${target}
-          (
-            set +e
-            ${script}
-          ) >/dev/null 2>&1 || true
-        '')
-        cfg.reload)}
-      }
-
-      step() {
-        mapfile -t list < <(names)
-        now=$(current)
-        index=0
-        for i in "''${!list[@]}"; do
-          [ "''${list[i]}" = "$now" ] && index=$i
-        done
-        apply "''${list[(index + $1 + ''${#list[@]}) % ''${#list[@]}]}"
-      }
-
-      wallpaper() {
-        file=$(realpath -e "$1")
-        mkdir -p "$state"
-        echo "$file" >"$state/wallpaper"
-        awww img --transition-type fade --transition-duration 1 "$file" || true
-        if [ "$(current)" = dynamic ]; then
-          apply dynamic
-        fi
-      }
-
-      case "''${1:-current}" in
-        current) current ;;
-        list) names ;;
-        set) apply "''${2:-}" ;;
-        next) step 1 ;;
-        prev) step -1 ;;
-        apply) apply "$(current)" ;;
-        reload)
-          name=$(current)
-          THEME_DIR="$themes/$name"
-          [ "$name" = dynamic ] && THEME_DIR="$cache/dynamic"
-          reload
-          ;;
-        wallpaper) [ -n "''${2:-}" ] || usage; wallpaper "$2" ;;
-        *) usage ;;
-      esac
+      touch $out
     '';
-  };
 in {
   imports = [(inputs.import-tree ./targets)];
 
@@ -282,12 +160,6 @@ in {
       readOnly = true;
       default = themes;
       description = "Every named theme with all options resolved.";
-    };
-    describe = lib.mkOption {
-      type = lib.types.raw;
-      readOnly = true;
-      default = describe;
-      description = "Function returning a theme's JSON description (theme.json, ~/.config/theme/palette.json).";
     };
     render = lib.mkOption {
       type = with lib.types; attrsOf (functionTo (attrsOf str));
@@ -309,6 +181,7 @@ in {
   config = {
     environment.systemPackages = [themeCommand];
     environment.etc.themes.source = themesDir;
+    system.checks = [check];
 
     # Re-applies each user's theme after every rebuild, once hjem has updated
     # their dotfiles (so files moving between hjem and `theme` don't clash).
@@ -327,7 +200,7 @@ in {
     config.hjem.users;
 
     assertions = let
-      themePaths = lib.attrNames (renderFiles themes.${cfg.default});
+      themePaths = [".config/theme/theme.json"] ++ lib.attrNames (renderFiles themes.${cfg.default});
     in
       lib.mapAttrsToList (user: hjem: let
         clashes = lib.intersectLists themePaths (lib.attrNames hjem.files);

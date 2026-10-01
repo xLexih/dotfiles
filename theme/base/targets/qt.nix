@@ -8,7 +8,7 @@
   inherit (import ../lib.nix {inherit lib;}) argb argbAlpha qtFont rgbCsv;
 
   render = theme: let
-    t = theme.palette // theme.roles;
+    t = theme.colors;
     scheme = theme.qt.colorScheme;
     dark = theme.variant == "dark";
 

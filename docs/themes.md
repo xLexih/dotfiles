@@ -3,11 +3,12 @@
 ```
 theme/
   base/
-    default.nix     finds the named themes, renders each into /etc/themes, the `theme` command
+    default.nix     finds the named themes, renders each into /etc/themes, builds the `theme` command and its check
+    theme.sh        the `theme` command
     options.nix     every value a theme can set, with defaults
-    lib.nix         color helpers (hex, rgb, Qt formats)
+    lib.nix         color, name and font helpers
     dynamic.nix     template and scheme mapping of the wallpaper-derived theme
-    targets/        one file per program that gets themed
+    targets/        one file or directory per program that gets themed
   hexagon.nix       named themes
   hexagon-light.nix
 ```
@@ -72,15 +73,21 @@ To reference your own palette in an override, take `config`:
 }
 ```
 
+Targets read `colors` (`palette` and `roles` merged) and `label` (the title-
+cased name); both are derived and can't be set.
+
 `hexagon.nix` is a full example; `hexagon-light.nix` is the same idea with
 `variant = "light"`.
 
 ## Switching
 
 Every theme is rendered at build time into `/etc/themes/<name>/`: a
-`theme.json` describing it and a `home/` tree of files. `theme set <name>`
-(or `next`/`prev`, which the gear runs) copies that tree into `$HOME`, saves
-the name in `~/.local/state/theme/name` and runs each target's reload hook.
+`theme.json` describing it (name, label, variant, colors, terminal, fonts,
+cursor and target metadata) and a `home/` tree of files. `theme set <name>`
+(or `next`/`prev`, which the gear runs) copies that tree and `theme.json`
+(to `~/.config/theme/theme.json`) into `$HOME`, deletes files the previous
+theme installed that this one doesn't, saves the name in
+`~/.local/state/theme/name` and runs each target's reload hook.
 After every rebuild a `theme-<user>` service re-applies each user's choice
 once hjem has updated the dotfiles, so it persists and edited theme files get
 reset like other dotfiles. Hyprland runs `theme reload` (the hooks only) at
@@ -88,6 +95,11 @@ login. Rendered files can use `@HOME@` for the user's home directory.
 
 Theme files belong to the `theme` command. A `home/` dotfile at the same path
 fails the build with an assertion.
+
+The system build runs `theme-check` (`system.checks`): it switches through
+every theme and the dynamic one (from a dark and a light test image) in an
+empty home, and fails if a placeholder survives, `theme.json` names the wrong
+theme, or switching back leaves files behind.
 
 ## Dynamic theme
 
@@ -131,19 +143,26 @@ Each file in `theme/base/targets/` handles one program. A target can set:
 | `qt.nix` | qt5ct/qt6ct, Kvantum, kdeglobals, KDE color scheme | newly started Qt apps |
 | `kitty.nix` | `~/.config/kitty/theme.conf` | every kitty window reloads |
 | `hyprland.nix` | `~/.config/hypr/theme.lua` (borders, shadow, cursor), share-picker stylesheet | re-runs `theme.lua`, sets the cursor |
-| `palette.nix` | `~/.config/theme/palette.json`, `palette.sh` | the bar watches the JSON; new shells source the script |
-| `firefox.nix` | `~/.cache/wal/colors.json` | Pywalfox recolors Firefox through its theme API |
+| `palette.nix` | `~/.config/theme/palette.sh` | new shells source it; the bar watches `theme.json` |
+| `firefox/` | `~/.config/theme/firefox.css` | Firefox reloads it within a second |
 | `vscode.nix` | colors and token rules in `theme.json` | writes them to VSCodium's `settings.json` as color customizations over Default Dark/Light Modern |
-| `swayosd.nix` | volume/brightness popup CSS | restarts the popup service |
+| `swayosd/` | popup style sheet | restarts the popup service |
 | `satty.nix` | annotation palette and font | next screenshot |
 | `spicetify/` | Spotify `color.ini` and `user.css` | nothing: Spicetify patches Spotify at build time, so Spotify keeps `modules.theme.default` |
 
-Firefox uses [Pywalfox](https://github.com/Frewacom/pywalfox) (installed by
-policy, with its native host): signed Firefox builds can't load a local
-extension, and the theme API is the only way to recolor Firefox without a
-restart. Pywalfox maps a 16-color pywal palette onto the browser theme, so
-`firefox.nix` decides which theme colors land on the indices its dark and
-light templates read.
+Where a program reads a real style sheet, the rules live in a static file
+(`firefox/theme.css`, `swayosd/style.css`) that uses variables, and the
+target only writes the theme's colors above it (`cssVariables` and
+`gtkColors` in `lib.nix`). The sheet stays readable as CSS, and every theme,
+the dynamic one included, shares it.
+
+Firefox only reads `userChrome.css` and `userContent.css` at startup, and a
+custom WebExtension theme would need Mozilla's signature. Instead an
+AutoConfig script (`firefox/default.nix`, run by Firefox at startup with
+full privileges) registers `~/.config/theme/firefox.css` as a user style
+sheet, checks the file once a second and swaps the sheet when `theme`
+replaces it. One sheet covers the browser window, menus and panels, `about:`
+pages and Sidebery, scoped with `@-moz-document`.
 
 Adding a program means adding one file to `targets/`. If the program needs a
 color nobody has a name for yet, add a role or a target-specific option to

@@ -1,0 +1,313 @@
+/* Firefox theme, loaded as a user style sheet by the AutoConfig script in
+   firefox.nix and swapped live when `theme` writes a new file. The theme's
+   colors arrive as --theme-* variables, written above this file. */
+
+:root {
+  --theme-accent-strong: color-mix(in srgb, var(--theme-accent) 93%, transparent);
+  --theme-field-bg: color-mix(in oklab, var(--theme-bg), black 20%);
+}
+
+::selection {
+  background-color: var(--theme-selection-bg);
+  color: var(--theme-selection-fg);
+}
+
+/* Browser window, menus and panels */
+@-moz-document url-prefix("chrome://") {
+  :root {
+    --chrome-selection-color: var(--theme-selection-fg) !important;
+    --chrome-selection-background-color: var(--theme-selection-bg) !important;
+    --toolbar-bgcolor: var(--theme-bg) !important;
+    --lwt-accent-color: var(--theme-bg) !important;
+    --lwt-text-color: var(--theme-fg) !important;
+    --lwt-toolbar-field-background-color: var(--theme-field-bg) !important;
+    --lwt-toolbar-field-color: var(--theme-fg) !important;
+    --lwt-toolbar-field-focus-color: var(--theme-fg) !important;
+    --lwt-toolbar-field-border-color: var(--theme-border) !important;
+    --lwt-toolbar-field-highlight: var(--theme-selection-bg) !important;
+    --lwt-toolbar-field-highlight-text: var(--theme-selection-fg) !important;
+    --color-accent-primary: var(--theme-accent-strong) !important;
+    --color-accent-primary-hover: var(--theme-accent-strong) !important;
+    --color-accent-primary-active: var(--theme-accent-strong) !important;
+    --focus-outline-color: var(--color-accent-primary) !important;
+    --border-color-selected: var(--color-accent-primary) !important;
+    --toolbar-color: var(--color-accent-primary) !important;
+    --toolbar-background-color: var(--theme-bg) !important;
+    --toolbox-background-color: var(--theme-bg) !important;
+    --toolbox-text-color: var(--color-accent-primary) !important;
+    --toolbox-text-color-inactive: color-mix(in oklab, var(--color-accent-primary), transparent 35%) !important;
+    --toolbarbutton-icon-fill: var(--color-accent-primary) !important;
+    --toolbarbutton-icon-fill-attention: var(--color-accent-primary) !important;
+    --toolbarbutton-background-color-hover: color-mix(in oklab, var(--color-accent-primary), transparent 88%) !important;
+    --toolbarbutton-background-color-active: color-mix(in oklab, var(--color-accent-primary), transparent 75%) !important;
+    --toolbarbutton-outline-color-hover: color-mix(in oklab, var(--color-accent-primary), transparent 45%) !important;
+    --toolbarbutton-outline-color-active: var(--color-accent-primary) !important;
+    --toolbarbutton-outline-color-selected: var(--color-accent-primary) !important;
+    --toolbar-field-background-color: var(--theme-field-bg) !important;
+    --toolbar-field-focus-background-color: var(--theme-field-bg) !important;
+    --toolbar-field-border-color: var(--theme-border) !important;
+    --toolbar-field-border-color-focus: var(--color-accent-primary) !important;
+    --toolbar-field-color: var(--theme-fg) !important;
+    --toolbar-field-focus-color: var(--theme-fg) !important;
+    --toolbar-field-text-color: var(--theme-fg) !important;
+    --toolbar-field-text-color-focus: var(--theme-fg) !important;
+    --urlbar-box-background-color: var(--theme-field-bg) !important;
+    --urlbar-box-background-color-focus: var(--theme-field-bg) !important;
+    --urlbar-box-background-color-hover: var(--theme-hover-bg) !important;
+    --urlbar-box-background-color-active: var(--theme-active-bg) !important;
+    --urlbar-box-text-color: var(--theme-fg) !important;
+    --urlbar-box-text-color-hover: var(--theme-fg) !important;
+    --urlbar-box-bgcolor: var(--theme-field-bg) !important;
+    --urlbarview-background-color-hover: color-mix(in oklab, var(--color-accent-primary), transparent 80%) !important;
+    --urlbarview-background-color-selected: color-mix(in oklab, var(--color-accent-primary), transparent 50%) !important;
+    --urlbarview-text-color-selected: var(--theme-selection-fg) !important;
+    --urlbarview-text-color-action: var(--color-accent-primary) !important;
+    --urlbarview-separator-color: var(--theme-border) !important;
+    --urlbarView-secondary-text-color: color-mix(in oklab, var(--color-accent-primary), transparent 35%) !important;
+    --link-color: var(--theme-link) !important;
+    --chrome-content-separator-color: var(--color-accent-primary) !important;
+    --arrowpanel-border-color: var(--color-accent-primary) !important;
+    --arrowpanel-background: var(--theme-bg) !important;
+    --arrowpanel-color: var(--theme-fg) !important;
+    --arrowpanel-dimmed: var(--theme-hover-bg) !important;
+    --arrowpanel-dimmed-further: var(--theme-active-bg) !important;
+    --panel-background: var(--theme-bg) !important;
+    --panel-background-color: var(--theme-bg) !important;
+    --panel-color: var(--theme-fg) !important;
+    --panel-text-color: var(--theme-fg) !important;
+    --panel-border-color: var(--theme-border) !important;
+    --panel-separator-color: var(--theme-border) !important;
+    --panel-description-color: color-mix(in oklab, var(--theme-fg), transparent 30%) !important;
+    --panel-item-hover-bgcolor: var(--theme-hover-bg) !important;
+    --panel-item-active-bgcolor: var(--theme-active-bg) !important;
+    --panel-item-hover-color: var(--theme-fg) !important;
+    --panel-item-active-color: var(--theme-fg) !important;
+    --menu-background-color: var(--theme-bg) !important;
+    --menu-color: var(--theme-fg) !important;
+    --menuitem-hover-background-color: var(--theme-hover-bg) !important;
+    --menuitem-disabled-hover-background-color: transparent !important;
+    --menuitem-icon-fill: var(--color-accent-primary) !important;
+    --text-color-disabled: color-mix(in oklab, var(--theme-fg), transparent 55%) !important;
+    --button-background-color: var(--theme-surface) !important;
+    --button-background-color-hover: var(--theme-active-bg) !important;
+    --button-background-color-active: color-mix(in oklab, var(--color-accent-primary), transparent 70%) !important;
+    --button-text-color: var(--theme-fg) !important;
+    --button-text-color-primary: var(--theme-selection-fg) !important;
+    --input-bgcolor: var(--theme-field-bg) !important;
+    --input-color: var(--theme-fg) !important;
+    --input-border-color: var(--theme-border) !important;
+    --sidebar-background-color: var(--theme-bg) !important;
+    --sidebar-text-color: var(--theme-fg) !important;
+    --sidebar-border-color: var(--theme-bg) !important;
+    --toolbarbutton-special-border-radius: 0px 0px 15px 15px / 15px !important;
+
+    --s-frame-bg: var(--theme-bg) !important;
+    --s-border: var(--theme-bg) !important;
+    --s-notification-bg: var(--theme-bg) !important;
+    --s-ctx-menu-bg: var(--theme-bg) !important;
+    --s-ctx-menu-separator: var(--theme-bg) !important;
+    --s-popup-bg: var(--theme-bg) !important;
+    --s-toolbar-bg: var(--theme-bg) !important;
+    --s-tabs-activated-bg: color-mix(in oklab, var(--color-accent-primary), transparent 75%) !important;
+  }
+
+  #navigator-toolbox,
+  #titlebar,
+  #toolbar-menubar,
+  #TabsToolbar,
+  #nav-bar,
+  #PersonalToolbar,
+  toolbar.browser-toolbar {
+    background-color: var(--theme-bg) !important;
+    background-image: none !important;
+    color: var(--theme-fg) !important;
+  }
+
+  .urlbar-icon,
+  .toolbarbutton-icon,
+  .searchbar-engine-one-off-item :is(image, .button-icon),
+  .urlbarView-button,
+  .urlbarView-action-btn {
+    fill: var(--color-accent-primary) !important;
+    -moz-context-properties: fill, fill-opacity !important;
+  }
+
+  .urlbar-input {
+    color: var(--theme-fg) !important;
+  }
+
+  .urlbar-background,
+  #urlbar:is([focused], [open]) > .urlbar-background,
+  #searchbar,
+  #searchbar:focus-within,
+  #searchbar-new > .urlbar-background {
+    background-color: var(--theme-field-bg) !important;
+    border-color: var(--toolbar-field-border-color-focus) !important;
+    box-shadow: none !important;
+  }
+
+  #urlbar:is([focused], [open]) > .urlbar-input-container,
+  #searchbar:focus-within,
+  #searchbar-new:is([focused], [open]) > .urlbar-input-container {
+    color: var(--theme-fg) !important;
+  }
+
+  .urlbarView-row:is([selected], [row-selectable]:hover),
+  .urlbarView-realtime-root:not([selectable]) > .urlbarView-realtime-item:hover,
+  .urlbarView-realtime-item[selected] {
+    background-color: color-mix(in oklab, var(--theme-selection-bg), transparent 35%) !important;
+  }
+
+  .urlbarView-row:is([selected], [row-selectable]:hover) :is(
+    .urlbarView-title,
+    .urlbarView-url,
+    .urlbarView-action,
+    .urlbarView-explanation,
+    .urlbarView-row-body-description,
+    .urlbarView-row-body-bottom,
+    .urlbarView-overflowable
+  ),
+  .urlbarView-realtime-item:is(:hover, [selected]) :is(
+    .urlbarView-realtime-description-top,
+    .urlbarView-realtime-description-bottom
+  ) {
+    color: var(--theme-selection-fg) !important;
+  }
+
+  #urlbar:is([focused], [open])[breakout-extend] > .urlbar-background {
+    border-radius: var(--toolbarbutton-special-border-radius) !important;
+  }
+
+  #statuspanel-label {
+    background-color: var(--color-accent-primary) !important;
+    color: var(--theme-selection-fg) !important;
+  }
+
+  menupopup,
+  panel {
+    --panel-background: var(--theme-bg) !important;
+    --panel-background-color: var(--theme-bg) !important;
+    --panel-color: var(--theme-fg) !important;
+    --panel-text-color: var(--theme-fg) !important;
+    --panel-border-color: var(--theme-border) !important;
+    --panel-separator-color: var(--theme-border) !important;
+    --panel-box-shadow: 0 4px 14px var(--theme-shadow) !important;
+    --menuitem-icon-fill: var(--color-accent-primary) !important;
+    --menuitem-border-radius: 4px !important;
+    --menuitem-padding: 0.45em 0.85em !important;
+  }
+
+  menupopup {
+    --background-color-canvas: var(--theme-bg) !important;
+    appearance: none !important;
+    background: var(--theme-bg) !important;
+    background-color: var(--theme-bg) !important;
+    color: var(--theme-fg) !important;
+    border: 1px solid var(--theme-border) !important;
+    box-shadow: 0 4px 12px var(--theme-shadow) !important;
+  }
+
+  menupopup::part(content),
+  panel::part(content) {
+    background: var(--theme-bg) !important;
+    background-color: var(--theme-bg) !important;
+    color: var(--theme-fg) !important;
+    border-color: var(--theme-border) !important;
+    box-shadow: 0 4px 14px var(--theme-shadow) !important;
+  }
+
+  menuitem,
+  menu,
+  menucaption {
+    appearance: none !important;
+    background-color: transparent !important;
+    color: var(--theme-fg) !important;
+    fill: var(--color-accent-primary) !important;
+  }
+
+  :is(menuitem, menu):is(:hover, [_moz-menuactive="true"], [selected="true"]):not([disabled="true"]) {
+    appearance: none !important;
+    background-color: var(--theme-hover-bg) !important;
+    color: var(--theme-fg) !important;
+  }
+
+  :is(menuitem, menu)[disabled="true"],
+  :is(menuitem, menu)[disabled="true"] > :is(.menu-text, .menu-accel) {
+    color: color-mix(in oklab, var(--theme-fg), transparent 55%) !important;
+  }
+
+  .menu-icon,
+  .menu-accel,
+  menupopup > menu::after {
+    fill: var(--color-accent-primary) !important;
+    color: var(--color-accent-primary) !important;
+  }
+
+  menuseparator,
+  toolbarseparator {
+    border-color: var(--theme-border) !important;
+  }
+
+}
+
+/* about: pages and the new tab page */
+@-moz-document url-prefix("about:"), url-prefix("chrome://browser/content/") {
+  :root {
+    --in-content-page-background: var(--theme-bg) !important;
+    --in-content-page-color: var(--theme-fg) !important;
+    --in-content-primary-button-background: var(--theme-selection-bg) !important;
+    --in-content-primary-button-text-color: var(--theme-selection-fg) !important;
+    --in-content-accent-color: var(--theme-accent) !important;
+    --in-content-box-background: var(--theme-bg-dark) !important;
+    --in-content-box-border-color: var(--theme-border) !important;
+    --in-content-border-color: var(--theme-border) !important;
+    --in-content-link-color: var(--theme-link) !important;
+    --in-content-table-background: var(--theme-bg-dark) !important;
+    --in-content-item-hover: var(--theme-hover-bg) !important;
+    --in-content-item-selected: var(--theme-active-bg) !important;
+    --newtab-background-color: var(--theme-bg) !important;
+    --newtab-background-color-secondary: var(--theme-bg-dark) !important;
+    --newtab-background-card: var(--theme-surface) !important;
+    --newtab-text-primary-color: var(--theme-fg) !important;
+    --newtab-primary-action-background: var(--theme-selection-bg) !important;
+  }
+}
+
+/* Sidebery (its color scheme reads these variables) */
+@-moz-document url-prefix("moz-extension://") {
+  #root {
+    --color-accent-primary: var(--theme-accent-strong) !important;
+    --frame-bg: var(--theme-bg) !important;
+    --frame-fg: var(--color-accent-primary) !important;
+    --toolbar-fg: var(--frame-fg) !important;
+    --toolbar-fg-active: var(--color-accent-primary) !important;
+    --border: var(--theme-bg) !important;
+    --notification-bg: var(--theme-bg) !important;
+    --notification-fg: var(--theme-fg) !important;
+    --ctx-menu-bg: var(--theme-bg) !important;
+    --ctx-menu-fg: var(--color-accent-primary) !important;
+    --ctx-menu-separator: var(--theme-border) !important;
+    --popup-bg: var(--theme-bg) !important;
+    --popup-fg: var(--theme-fg) !important;
+    --tabs-normal-fg: color-mix(in oklab, var(--theme-accent-strong), transparent 35%) !important;
+    --tabs-normal-bg: transparent !important;
+    --tabs-activated-fg: var(--color-accent-primary) !important;
+    --tabs-activated-bg: color-mix(in oklab, var(--theme-accent-strong), transparent 75%) !important;
+    --tabs-progress-bg: var(--color-accent-primary) !important;
+    --toolbar-bg: var(--theme-bg) !important;
+    --nav-btn-accent: var(--color-accent-primary) !important;
+
+    --s-accent: var(--color-accent-primary) !important;
+    --s-frame-bg: var(--theme-bg) !important;
+    --s-frame-fg: var(--color-accent-primary) !important;
+    --s-toolbar-bg: var(--theme-bg) !important;
+    --s-toolbar-fg: var(--color-accent-primary) !important;
+    --s-toolbar-border: var(--theme-bg) !important;
+    --s-popup-bg: var(--theme-bg) !important;
+    --s-popup-fg: var(--theme-fg) !important;
+    --s-popup-border: var(--theme-border) !important;
+    --s-act-el-bg: color-mix(in oklab, var(--theme-accent-strong), transparent 75%) !important;
+    --s-act-el-fg: var(--color-accent-primary) !important;
+    --s-act-el-border: var(--color-accent-primary) !important;
+  }
+}

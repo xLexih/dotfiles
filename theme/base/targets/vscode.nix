@@ -10,7 +10,7 @@
   settings = "$HOME/.config/VSCodium/User/settings.json";
 
   colorTheme = theme: let
-    t = theme.palette // theme.roles;
+    t = theme.colors;
     term = theme.terminal;
   in {
     base =

@@ -7,6 +7,7 @@
   ...
 }: let
   inherit (lib) mkOption types;
+  inherit (import ./lib.nix {inherit lib;}) titleCase;
 
   color = types.strMatching "#[0-9a-fA-F]{6}";
   mkColor = default:
@@ -24,6 +25,13 @@ in {
     name = mkOption {
       type = types.str;
       description = "Theme name. Set from the file name.";
+    };
+
+    label = mkOption {
+      type = types.str;
+      readOnly = true;
+      default = titleCase config.name;
+      description = "Display name, e.g. \"Hexagon Light\".";
     };
 
     variant = mkOption {
@@ -50,6 +58,13 @@ in {
       "blue"
       "cyan"
     ] (_: mkOption {type = color;});
+
+    colors = mkOption {
+      type = types.attrsOf color;
+      readOnly = true;
+      default = p // r;
+      description = "`palette` and `roles` in one set, which is what targets use.";
+    };
 
     # What a color is used for.
     roles = mkDefaults {
@@ -246,7 +261,7 @@ in {
       };
       colorScheme = mkOption {
         type = types.str;
-        default = lib.concatMapStrings (word: lib.toUpper (lib.substring 0 1 word) + lib.substring 1 (-1) word) (lib.splitString "-" config.name);
+        default = lib.replaceStrings [" "] [""] config.label;
         description = "Name of the generated KDE/qtct color scheme.";
       };
     };
