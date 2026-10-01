@@ -1,0 +1,4 @@
+source "{{pkgs.bash-preexec}}/share/bash/bash-preexec.sh"
+eval "$(atuin init bash --disable-up-arrow)"
+alias history="atuin history list"
+alias kilo="kilocode"

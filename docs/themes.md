@@ -1,71 +1,99 @@
 # Themes
 
-Named themes live in `theme/<name>/`. Discovery requires only
-`theme/<name>/default.nix`; `programs` and `template(s)` are skipped, as are
-`_`-prefixed directories.
-
-## Layers
-
-| Layer | Path | Content |
-| --- | --- | --- |
-| Palette | `theme/<name>/default.nix` (`ui`) | Raw hex colors, no semantics |
-| Roles | derived via `helpers.mkThemeRoles` | Semantic aliases (`panelBg`, `focus`, …). Omit `roles` to use defaults; the helper merges explicit entries over derived ones |
-| Template | `theme/templates/<app>.nix` | Full slot map for one program, bound to `ui`/`roles`. Shared by all themes |
-| App overrides | `theme/<name>/apps/<app>.nix` | Partial map. Merged over the template with `recursiveUpdate`; record value deviations only |
-| Render | `helpers.mk<App>Theme` + `theme/programs/<app>.nix` | Slot map to file text and placement. Global, not per theme |
-
-Resolution is total by construction: template covers every slot, overrides
-only replace. Unknown override keys `throw` at eval; `theme-apps-contract`
-forces every theme's app maps so inactive themes fail the check too.
-
-## Variants
-
-One level of inheritance. Import the base theme, replace `ui`, re-derive
-`roles`, add `apps` overrides, rebuild `outputs` from the base renderer:
-
-```nix
-{helpers, lib, pkgs ? null}: let
-  base = import ../hexagon {inherit helpers lib pkgs;};
-  ui = {/* light palette */};
-  roles = helpers.mkThemeRoles {inherit ui;};
-  apps = {
-    kitty = helpers.resolveAppSlots
-      (import ../templates/kitty.nix {inherit ui roles;})
-      (import ./apps/kitty.nix {inherit ui roles;});
-  };
-  theme = base // {
-    name = "hexagon-light";
-    inherit ui roles apps;
-  };
-in
-  theme // {outputs = import ../hexagon/outputs.nix {inherit helpers lib theme;};}
+```
+theme/
+  base/
+    default.nix     finds the named themes, resolves the selected one, theme-switch
+    options.nix     every value a theme can set, with defaults
+    lib.nix         color helpers (hex, rgb, Qt formats)
+    targets/        one file per program that gets themed
+  hexagon.nix       named themes
+  hexagon-light.nix
 ```
 
-`theme/hexagon-light` follows this shape. Non-color sections (`gtk`, `qt`,
-`font`, `icon`, `cursor`) inherit from the base; override the flavor keys
-(`preferDark`, kvantum variant, look-and-feel) per variant. Omit `spicetify`
-and the module skips it.
+## Named themes
 
-## Switching
+A named theme is a NixOS-style module evaluated against
+`theme/base/options.nix`. Only `palette` is required:
 
-`theme-switch <name>` swaps the live kitty config from pre-rendered store
-outputs and reloads kitty (`SIGUSR1`). It records the choice in
-`~/.config/theme/active`. Scope: session-live. GTK/Qt/Firefox apply on
-restart; `nixos-rebuild` restores `modules.theme.name`, so set the option for
-persistence.
+```nix
+# theme/mytheme.nix
+{
+  variant = "dark";
+  palette = {
+    bg = "#1a1024";
+    bgDark = "#130c1b";
+    bgDarker = "#0d0812";
+    surface = "#251735";
+    overlay = "#38274d";
+    fg = "#eee6f8";
+    fgMuted = "#b0a4c8";
+    accent = "#c6a0ff";
+    accentAlt = "#8bd5ca";
+    accentBright = "#e2c7ff";
+    shadow = "#08050d";
+    red = "#f38ba8";
+    green = "#a6e3a1";
+    yellow = "#f9e2af";
+    blue = "#b4befe";
+    cyan = "#94e2d5";
+  };
+}
+```
 
-## Adding a theme
+The file name is the theme name, and it shows up as a valid value of
+`modules.theme.name` right away. Colors are type-checked (`#rrggbb`), so a typo
+fails evaluation instead of producing a broken config.
 
-Copy `theme/hexagon-light/default.nix`. Supply `ui`; omit `roles` unless a
-role needs a non-derived value; add `apps/<app>.nix` files only for
-deviating slots. The discovery, enum option, and contracts pick it up with no
-further wiring.
+Everything else has a default derived from `palette` or `variant` and can be
+overridden in the theme file:
 
-## Adding an app
+| Option | Default |
+| --- | --- |
+| `variant` | `"dark"`; picks the dark or light GTK theme, Kvantum theme, KDE look and feel, and the dark/light preference reported to GTK, Firefox and VSCode |
+| `roles.*` | what a color is used for: `selectionBg`, `border`, `focus`, `hoverBg`, `link`, ... |
+| `terminal.*` | kitty and VSCode terminal colors, including `normal.*` and `bright.*` ANSI colors |
+| `spicetify.*` | Spotify `color.ini` keys |
+| `gtk`, `icons`, `cursor` | adw-gtk3, Adwaita, Bibata-Modern-Classic 24 |
+| `fonts` | Noto Sans 11, JetBrains Mono 11 |
+| `qt.kvantum`, `qt.lookAndFeel`, `qt.colorScheme` | KvArc(Dark), Breeze (Dark), the capitalized theme name |
+| `gnomeAccent` | `"blue"` |
 
-1. `theme/templates/<app>.nix`: `{ui, roles}` to full slot map.
-2. Renderer in `theme/lib.nix` (`mk<App>Theme`), wired through the theme's
-   `outputs.nix`.
-3. `theme/programs/<app>.nix`: file placement from `theme.outputs`.
-4. Per-theme `apps/<app>.nix` files as needed (none required when defaults
-   hold).
+To reference your own palette in an override, take `config`:
+
+```nix
+{config, ...}: {
+  palette = { /* ... */ };
+  terminal.cursor = config.palette.accent;
+  roles.selectionFg = config.palette.bg;
+}
+```
+
+`hexagon.nix` is a full example; `hexagon-light.nix` is the same idea with
+`variant = "light"`.
+
+## Targets
+
+Each file in `theme/base/targets/` reads `config.modules.theme.active` and
+applies it to one program:
+
+| Target | Output |
+| --- | --- |
+| `gtk.nix` | GTK 2/3/4 settings and CSS, dconf interface settings, cursor variables |
+| `qt.nix` | qt5ct/qt6ct, Kvantum, kdeglobals, KDE color scheme |
+| `kitty.nix` | `~/.config/kitty/theme.conf`, also swappable with `theme-switch` |
+| `firefox.nix` | profile, `userChrome.css`, `userContent.css` (including Sidebery), theme prefs |
+| `vscode.nix` | a VSCode color theme extension, `modules.theme.vscodeExtension` |
+| `spicetify/` | Spotify `color.ini` and `user.css` |
+| `hyprland.nix` | themed screen-share picker |
+| `palette.nix` | `~/.config/theme/palette.json` and `palette.sh` for scripts |
+
+Generated home files go into `dotfiles.files`, which is the lowest dotfile
+layer, so a user can extend them from their `home/` directory. Programs
+configured by hand-written files (Hyprland, Quickshell) read colors through
+`{{theme.*}}` placeholders instead; see the README.
+
+Adding a program means adding one file to `targets/`. If the program needs a
+color nobody has a name for yet, add a role or a target-specific option to
+`options.nix` with a default derived from the palette, the way `spicetify.*`
+does, so existing themes keep working without changes.

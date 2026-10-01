@@ -1,0 +1,205 @@
+{
+  "workbench.colorTheme": "{{theme.vscode}}",
+  "workbench.view.showQuietly": {
+    "workbench.panel.output": true
+  },
+  "workbench.layoutControl.enabled": false,
+  "window.commandCenter": false,
+  "window.menuStyle": "custom",
+  "window.menuBarVisibility": "compact",
+  "window.titleBarStyle": "native",
+  "window.customTitleBarVisibility": "never",
+  "window.zoomPerWindow": true,
+
+  "editor.tabSize": 2,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  "editor.renderWhitespace": "trailing",
+  "editor.mouseWheelZoom": true,
+  "editor.inlayHints.enabled": "off",
+  "editor.inlineSuggest.enabled": true,
+  "editor.suggest.showInlineDetails": true,
+  "editor.suggest.preview": true,
+  "editor.gotoLocation.multipleDefinitions": "goto",
+  "editor.gotoLocation.multipleReferences": "goto",
+  "editor.gotoLocation.multipleTypeDefinitions": "goto",
+  "editor.gotoLocation.multipleImplementations": "goto",
+  "files.autoSave": "afterDelay",
+  "debug.breakpointsView.presentation": "tree",
+
+  "terminal.integrated.profiles.linux": {
+    "bash": {
+      "path": "{{pkgs.bashInteractive}}/bin/bash",
+      "args": ["-l"]
+    }
+  },
+  "terminal.integrated.defaultProfile.linux": "bash",
+  "terminal.integrated.copyOnSelection": true,
+  "terminal.integrated.fontSize": 16,
+  "terminal.integrated.mouseWheelZoom": true,
+  "terminal.integrated.stickyScroll.enabled": false,
+
+  "git.openRepositoryInParentFolders": "never",
+  "cSpell.enabled": false,
+  "todohighlight.isEnable": true,
+  "supermaven.enable": {
+    "*": true
+  },
+
+  "errorLens.enableOnDiffView": true,
+  "errorLens.gutterIconsEnabled": true,
+  "errorLens.messageEnabled": false,
+  "errorLens.messageBackgroundMode": "none",
+  "errorLens.statusBarMessageEnabled": true,
+  "errorLens.statusBarMessageType": "activeCursor",
+  "errorLens.statusBarColorsEnabled": true,
+  "errorLens.statusBarIconsEnabled": true,
+  "errorLens.statusBarIconsPriority": 800,
+  "errorLens.codeLensEnabled": true,
+  "errorLens.editorHoverPartsEnabled": {
+    "sourceCodeEnabled": true,
+    "messageEnabled": true,
+    "buttonsEnabled": true
+  },
+
+  "telemetry.feedback.enabled": false,
+  "redhat.telemetry.enabled": false,
+  "gitlens.telemetry.enabled": false,
+  "database-client.telemetry.usesOnlineServices": false,
+
+  "nix.enableLanguageServer": true,
+  "nix.serverPath": "nixd",
+  "nix.formatterPath": "alejandra",
+  "nix.hiddenLanguageServerErrors": ["textDocument/definition"],
+  "nix.serverSettings": {
+    "nixd": {
+      "nixpkgs": {
+        "expr": "import /etc/nix/inputs/nixpkgs { }"
+      },
+      "formatting": {
+        "command": ["alejandra"]
+      },
+      "options": {
+        "nixos": {
+          "expr": "(builtins.getFlake \"{{flake}}\").nixosConfigurations.{{host}}.options"
+        },
+        "hjem": {
+          "expr": "(builtins.getFlake \"{{flake}}\").nixosConfigurations.{{host}}.options.hjem.users.type.getSubOptions []"
+        }
+      }
+    }
+  },
+  "[nix]": {
+    "editor.defaultFormatter": "jnoortheen.nix-ide"
+  },
+
+  "js/ts.preferGoToSourceDefinition": true,
+  "js/ts.inlayHints.functionLikeReturnTypes.enabled": true,
+  "js/ts.inlayHints.propertyDeclarationTypes.enabled": true,
+  "js/ts.inlayHints.variableTypes.enabled": true,
+  "prettier.printWidth": 120,
+  "prettier.singleQuote": false,
+  "prettier.semi": true,
+  "prettier.vueIndentScriptAndStyle": true,
+  "vue.autoInsert.dotValue": true,
+  "vue.format.style.initialIndent": true,
+  "vue.format.script.initialIndent": false,
+  "vue.format.template.initialIndent": false,
+  "vue.inlayHints.inlineHandlerLeading": true,
+  "vue.inlayHints.destructuredProps": true,
+  "vue.inlayHints.missingProps": true,
+  "vue.inlayHints.optionsWrapper": true,
+  "vue.inlayHints.vBindShorthand": true,
+  "nuxtr.vueFiles.style.alwaysScoped": true,
+  "nuxtr.defaultPackageManager": "pnpm",
+  "nuxtr.openItemsAfterCreation": true,
+  "[vue]": {
+    "editor.defaultFormatter": "Vue.volar"
+  },
+  "[snippets]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  },
+
+  "php.validate.executablePath": "{{pkgs.php}}/bin/php",
+  "[php]": {
+    "editor.defaultFormatter": "bmewburn.vscode-intelephense-client"
+  },
+
+  "python.languageServer": "None",
+  "python.venvFolders": ["~/.cache/pypoetry/virtualenvs"],
+  "debugpy.showPythonInlineValues": true,
+  "ruff.nativeServer": "on",
+  "ruff.path": ["{{pkgs.ruff}}/bin/ruff"],
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.codeActionsOnSave": {
+      "source.organizeImports.ruff": "explicit"
+    }
+  },
+
+  "[go]": {
+    "editor.defaultFormatter": "golang.go"
+  },
+
+  "clangd.arguments": [
+    "--compile-commands-dir=${workspaceFolder}/build",
+    "--query-driver=/nix/store/*clang*/bin/clang,/nix/store/*clang*/bin/clang++,/etc/profiles/per-user/${env:USER}/bin/clang,/etc/profiles/per-user/${env:USER}/bin/clang++",
+    "--background-index",
+    "--clang-tidy"
+  ],
+  "[cpp]": {
+    "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
+  },
+  "cmake.cmakePath": "{{pkgs.cmake}}/bin/cmake",
+  "cmake.showConfigureWithDebuggerNotification": false,
+
+  "java.jdt.ls.java.home": "{{pkgs.jdk}}/lib/openjdk",
+  "[java]": {
+    "editor.defaultFormatter": "redhat.java"
+  },
+
+  "qt-core.additionalQtPaths": [
+    {
+      "name": "Qt-6.10.0-linux-g++_from_PATH",
+      "path": "/etc/profiles/per-user/${env:USER}/bin/qtpaths"
+    }
+  ],
+  "qt-qml.doNotAskForQmllsDownload": true,
+  "qt-qml.qmlls.customExePath": "/etc/profiles/per-user/${env:USER}/bin/qmlls",
+  "qt-qml.qmlls.useQmlImportPathEnvVar": true,
+  "[qml]": {
+    "editor.defaultFormatter": "theqtcompany.qt-qml"
+  },
+
+  "Lua.misc.executablePath": "{{pkgs.lua-language-server}}/bin/lua-language-server",
+  "Lua.runtime.version": "Lua 5.4",
+  "Lua.diagnostics.globals": ["hl"],
+  "[lua]": {
+    "editor.defaultFormatter": "sumneko.lua"
+  },
+
+  "bashIde.shellcheckPath": "{{pkgs.shellcheck}}/bin/shellcheck",
+  "shellformat.path": "{{pkgs.shfmt}}/bin/shfmt",
+  "[shellscript]": {
+    "editor.defaultFormatter": "foxundermoon.shell-format"
+  },
+
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[html]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[yaml]": {
+    "editor.defaultFormatter": "redhat.vscode-yaml"
+  },
+  "[toml]": {
+    "editor.defaultFormatter": "tamasfe.even-better-toml"
+  },
+  "[xml]": {
+    "editor.defaultFormatter": "redhat.vscode-xml"
+  }
+}

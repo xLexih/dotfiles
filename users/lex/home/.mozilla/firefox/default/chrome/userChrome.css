@@ -1,0 +1,7 @@
+/* Tabs and the sidebar live in Sidebery. */
+#TabsToolbar,
+#sidebar-main,
+#sidebar-header,
+#sidebar-launcher-splitter {
+  display: none !important;
+}

@@ -1,87 +1,117 @@
-<div align="center"> 
+# dotfiles
 
-# Dotfiles
-
-**Declarative NixOS flake with layered dotfile management and per-host configuration**
-
-[![NixOS](https://img.shields.io/badge/NixOS-unstable-3b5487?logo=NixOS)](https://nixos.org)
-[![Flakes](https://img.shields.io/badge/Nix_Flakes-enabled-4d6dad?logo=NixOS)](https://wiki.nixos.org/wiki/Flakes)
-
-</div>
-
----
-
-## Contents
-
-- [Configuration Layers](#configuration-layers)
-- [Software Layout](#software-layout)
-- [Repository Structure](#repository-structure)
-- [Validation](#validation)
-
----
-
-## Configuration Layers
-
-Dotfiles are split across three layers that get merged into a single result per file:
+NixOS flake for my machines. Each host is assembled from the same pieces:
+global defaults, opt-in modules, the host's hardware, its users and a theme.
+Dotfiles are plain files in `home/` directories, layered and copied into
+`$HOME` by [hjem](https://github.com/feel-co/hjem).
 
 ```
-.config/            → Global (shared across all hosts and users)
-host/<name>/.config → Host-specific (hardware, display, keybinds)
-user/<name>/.config → User-specific (personal preferences)
+flake.nix            hosts and the users on them, packages, checks
+global/              applies to every host
+  home/              global dotfile layer
+hosts/<host>/        hardware, enabled modules
+  home/              host dotfile layer (monitors, keybinds)
+users/<user>/        account, packages, programs
+  home/              user dotfile layer
+modules/             opt-in NixOS modules (modules.*) and the dotfile layering
+theme/
+  base/              theme options, program targets, theme-switch
+  <name>.nix         named themes
+overlays/            changes to nixpkgs packages
+pkgs/                packages defined here (pkgs/<name>/package.nix)
+templates/           `nix flake init -t` templates
 ```
 
-Text-based configs (`.conf`, `.ini`, `.lua`, `.sh`) are **concatenated** across all layers that exist, producing a merged result. Structured formats (`.json`, `.jsonc`, `.qml`, `.qmldir`, `.svg`, `.toml`, `.yaml`, `.yml`) use **last-wins** — the most specific layer replaces the others entirely.
+Everything under `global/`, `modules/`, `hosts/<host>/` and `users/<user>/`
+is imported automatically, so a new `.nix` file there is picked up without
+being listed anywhere. `home/` directories are skipped.
 
-Merged text files receive a warning banner so manual edits aren't mistaken for persistent changes.
-See [docs/config-layers.md](docs/config-layers.md) for the exact placement and merge rules.
+## Hosts and users
 
-## Software Layout
+`flake.nix` lists the hosts and which users live on them:
 
-Software lives in one of three places depending on what it needs:
-
-| Need | Location | Example |
-| ---- | -------- | ------- |
-| Plain package | `user/<name>/lib/packages.nix` | Kitty, VSCodium, development tools |
-| Custom build or patch | `overlay/` | Codium with extensions, Krita plugins |
-| System services or NixOS options | `module/software/` | Docker, Sunshine, libvirt |
-
-**Overlays** override or wrap upstream packages — theme patches, bundled extensions, version pins, build fixes. Plain `overlay/*.nix` files are auto-discovered, while parameterized overlays stay explicit. The modified package is then installed from the user config like any other package. See [docs/overlays.md](docs/overlays.md).
-
-**module/software/** is reserved for software that genuinely requires system-level integration: services, firewall rules, kernel modules, or virtualization. If it can run as a plain user package, it belongs in the user config or an overlay instead.
-
-Themes are discovered from `theme/<name>/default.nix`. Enable one with `modules.theme = { enable = true; name = "<name>"; };`. Switch live with `theme-switch <name>` (kitty applies instantly, other apps on restart). See [docs/themes.md](docs/themes.md).
-
-## Repository Structure
-
-```
-.
-├── .config/               # Global dotfiles shared across all hosts/users
-├── host/<device_name>     # Per-machine configuration
-│   ├── .config/           # Host-specific dotfile overrides
-│   ├── boot/              # Bootloader and initrd
-│   ├── hardware/          # Machine-specific hardware (disks, peripherals)
-│   └── storage/           # Filesystem mounts and swap
-├── lib/                   # Nix helpers (mkSystem, dotfile layering logic)
-├── module/                # Reusable NixOS modules
-│   ├── base/              # Core system defaults
-│   ├── hardware/          # CPU, GPU, audio, kernel, power
-│   ├── network/           # Networking and firewall
-│   ├── nix/               # Nix daemon and store settings
-│   ├── performance/       # Schedulers, memory, tuning
-│   ├── session/           # Display manager and window manager
-│   └── software/          # System-level services (docker, VMs, etc.)
-├── overlay/               # Custom package builds and patches
-├── theme/                 # Theme definitions, program targets, generated outputs
-├── user/<user_name>/      # User packages and personal dotfiles
-│   ├── .config/           # User-specific dotfile overrides
-│   └── lib/               # User helper files excluded from import-tree
-└── flake.nix              # Entry point — hosts, inputs, checks
+```nix
+nixosConfigurations = lib.mapAttrs mkHost {
+  desktop.users = ["lex"];
+  laptop.users = ["lex"];
+};
 ```
 
-## Validation
+A host turns modules on in `hosts/<host>/default.nix`
+(`modules.desktop.hyprland.enable`, `modules.theme.name`, ...). A user can do
+the same for things that follow the person rather than the machine, such as
+`modules.software.gaming.enable` in `users/lex/default.nix`.
+
+## Dotfiles
+
+A file at `global/home/.config/kitty/kitty.conf` ends up at
+`~/.config/kitty/kitty.conf`. The same relative path can exist in three
+layers, merged from least to most specific:
+
+```
+theme output  ->  global/home  ->  hosts/<host>/home  ->  users/<user>/home
+```
+
+- Text files (`.conf`, `.lua`, `.css`, `.ini`, shell files, ...) are
+  concatenated. The global `hyprland.lua` defines `mainMod`, the host layer
+  adds monitors, the user layer adds autostart and binds.
+- `.json`, `.jsonc`, `.yaml`, `.yml`, `.toml`, `.qml`, `.qmldir` and `.svg`
+  can't be concatenated, so the most specific layer wins.
+- Images and fonts are copied unchanged.
+
+Files are copied rather than symlinked, so programs can write to them. Every
+rebuild resets them to what the repo says; files that support comments get a
+first line saying so. Port changes you want to keep back into the repo.
+
+Theme targets generate some files (GTK CSS, Firefox `userChrome.css`, ...).
+Those are the lowest layer: putting a file at the same path in a `home/`
+directory appends to it (or replaces it, for the formats above). That is how
+`users/lex/home/.mozilla/.../userChrome.css` hides the tab bar on top of the
+themed Firefox.
+
+### Placeholders
+
+Layered files can use `{{name}}`, filled in at build time:
+
+| Placeholder | Value |
+| --- | --- |
+| `{{theme.accent}}`, `{{theme.selectionBg}}`, ... | any palette or role color, `#rrggbb` |
+| `{{theme.accent.hex}}` | the same color without `#` |
+| `{{theme.cursor}}`, `{{theme.cursor.size}}`, `{{theme.gtk}}`, `{{theme.icons}}`, `{{theme.font.mono}}` | theme settings |
+| `{{theme.vscode}}` | name of the generated VSCode color theme |
+| `{{pkgs.<attr>}}` | store path of a package, e.g. `{{pkgs.nix-direnv}}` |
+| `{{host}}`, `{{flake}}` | host name, store path of this flake |
+
+An unknown placeholder fails the build with the file name, so typos don't ship.
+Modules add their own with `dotfiles.vars."name" = "value";`.
+
+## Themes
+
+A named theme is a small file in `theme/` that sets colors; `theme/base`
+turns them into program configuration. Pick one per host with
+`modules.theme.name`. See [docs/themes.md](docs/themes.md).
+
+`theme-switch <name>` swaps kitty's colors without rebuilding. The next
+rebuild restores the configured theme.
+
+## Packages
+
+| Need | Where |
+| --- | --- |
+| A package from nixpkgs | `users/<user>/packages.nix` |
+| A package that needs a NixOS service, group or kernel module | `modules/software/<name>.nix`, enabled from a host or user |
+| A tweak to a nixpkgs package (wrapper, patch, override) | `overlays/<name>.nix`, a plain `final: prev:` overlay picked up automatically |
+| A package that doesn't exist in nixpkgs | `pkgs/<name>/package.nix`, a `callPackage` function exposed as `pkgs.<name>` |
+
+Packages in `pkgs/` are also flake outputs, so `nix build .#hid-send` works.
+Every directory in `pkgs/omp-extensions/` is an Oh My Pi extension; its
+`package.json` supplies name and version, and `users/lex/omp.nix` installs and
+enables all of them.
+
+## Commands
 
 ```bash
-nix flake check path:.
+sudo nixos-rebuild switch --flake .#laptop   # or: nh os switch .
+nix flake check                              # formatting, host evaluation, hyprland.lua syntax, package tests
+nix fmt .                                    # alejandra
 ```
-
-This runs all checks defined in the flake: evaluation of each host configuration, contract assertions (hostName, stateVersion, CPU vendor, theme), formatting with Alejandra, and import-tree hygiene (ensuring non-default Nix files are referenced or placed in a `lib/` helper directory).
