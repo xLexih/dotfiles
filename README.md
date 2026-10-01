@@ -9,7 +9,7 @@ Dotfiles are plain files in `home/` directories, layered and copied into
 flake.nix            hosts and the users on them, packages, checks
 global/              applies to every host
   home/              global dotfile layer
-hosts/<host>/        hardware, enabled modules
+hosts/<host>/        hardware, enabled modules, specs.md (hardware inventory)
   home/              host dotfile layer (monitors, keybinds)
 users/<user>/        account, packages, programs
   home/              user dotfile layer

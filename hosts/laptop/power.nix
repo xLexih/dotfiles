@@ -97,8 +97,9 @@ in {
       USB_AUTOSUSPEND = 1;
       USB_EXCLUDE_AUDIO = 1;
       USB_EXCLUDE_BTUSB = 0;
-      # TLP keeps HID devices awake; the ITE keyboard lighting controller is
-      # safe to suspend (the keyboard itself, 048d:7001, is not).
+      # TLP keeps HID devices awake; the ITE per-key keyboard lighting
+      # controller can suspend. (The lightbar, 048d:7001, stays awake
+      # because its LED driver holds it; the keyboard itself is PS/2.)
       USB_ALLOWLIST = "048d:600b";
     };
   };
