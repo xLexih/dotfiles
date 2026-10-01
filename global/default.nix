@@ -60,4 +60,9 @@
   services.dbus.packages = with pkgs; [gcr_4 gnome-keyring];
   services.udev.packages = [pkgs.gnome-settings-daemon];
   hardware.steam-hardware.enable = true;
+
+  # Caps on disk use: the journal had grown to 1.7 GB and crash dumps (mostly
+  # omp's headless Chrome) to 2.1 GB.
+  services.journald.settings.Journal.SystemMaxUse = "500M";
+  systemd.coredump.settings.Coredump.MaxUse = "500M";
 }

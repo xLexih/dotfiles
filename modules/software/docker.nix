@@ -1,9 +1,11 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }: let
   cfg = config.modules.software.docker;
+  systemctl = "${config.systemd.package}/bin/systemctl";
 in {
   options.modules.software.docker = {
     enable = lib.mkEnableOption "Docker container runtime";
@@ -24,8 +26,15 @@ in {
 
     hardware.nvidia-container-toolkit.enable = cfg.nvidia.enable;
 
-    # Generate the CDI spec when Docker starts (it requires the unit) instead
-    # of at boot, where it delays login and wakes the NVIDIA GPU.
-    systemd.services.nvidia-container-toolkit-cdi-generator.wantedBy = lib.mkIf cfg.nvidia.enable (lib.mkForce []);
+    # Generate the CDI spec only when Docker runs or is starting (it waits for
+    # this unit). nixpkgs also restarts the unit from udev whenever the NVIDIA
+    # driver loads, which at boot cost 2.7 s and woke the NVIDIA GPU.
+    systemd.services.nvidia-container-toolkit-cdi-generator = lib.mkIf cfg.nvidia.enable {
+      wantedBy = lib.mkForce [];
+      serviceConfig.ExecCondition = pkgs.writeShellScript "docker-starting" ''
+        [ "$(${systemctl} show -P ActiveState docker.service)" != inactive ] ||
+          ${systemctl} list-jobs --no-legend docker.service | ${pkgs.gnugrep}/bin/grep -q .
+      '';
+    };
   };
 }

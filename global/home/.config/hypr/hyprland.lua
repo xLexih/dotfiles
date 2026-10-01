@@ -10,7 +10,12 @@ hl.env("XDG_SESSION_TYPE", "wayland")
 hl.on("hyprland.start", function()
     hl.exec_cmd("dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY HYPRLAND_INSTANCE_SIGNATURE XDG_CURRENT_DESKTOP XDG_SESSION_DESKTOP XDG_SESSION_TYPE && systemctl --user start hyprland-session.target && theme reload")
 end)
-hl.on("hyprland.shutdown", function() hl.exec_cmd("systemctl --user stop hyprland-session.target") end)
+-- Stop session services (bar helpers, portals) while the compositor still
+-- runs, so they exit cleanly instead of crashing and restarting without it.
+-- os.execute waits; hl.exec_cmd would return before they're stopped.
+hl.on("hyprland.shutdown", function()
+    os.execute("systemctl --user stop graphical-session.target; systemctl --user unset-environment WAYLAND_DISPLAY DISPLAY HYPRLAND_INSTANCE_SIGNATURE")
+end)
 
 hl.config({
     general = {

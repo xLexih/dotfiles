@@ -115,7 +115,6 @@ in {
   };
 
   boot.kernel.sysctl = {
-    "vm.laptop_mode" = 5;
     "vm.dirty_writeback_centisecs" = 6000;
     "vm.dirty_expire_centisecs" = 6000;
     "kernel.watchdog" = 0;

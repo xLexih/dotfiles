@@ -25,8 +25,6 @@
     kernelModules = [
       "kvm_intel"
       "yt6801" # Motorcomm ethernet
-      "asus_wmi"
-      "asus_nb_wmi"
       "tuxedo-keyboard"
     ];
     blacklistedKernelModules = ["ite_8291"];
