@@ -1,0 +1,88 @@
+providers:
+  kimiApiFormat: auto
+modelRoles:
+  advisor: opencode-free/muse-spark-1.3-contributor-free:xhigh
+  smol: opencode-free/muse-spark-1.3-contributor-free:low
+  tiny: zai/glm-4.7-flash:low
+  default: opencode-free/muse-spark-1.3-contributor-free:xhigh
+  REVIEWER: opencode-free/muse-spark-1.3-contributor-free:xhigh
+  task: opencode-free/muse-spark-1.3-contributor-free:xhigh
+symbolPreset: nerd
+theme:
+  dark: dark-tokyo-night
+  light: light
+setupVersion: 2
+statusLine:
+  preset: default
+  separator: powerline-thin
+  sessionAccent: true
+  transparent: false
+  compactThinkingLevel: false
+  showHookStatus: true
+terminal:
+  showProgress: false
+tui:
+  textSizing: false
+  renderMermaid: true
+  codexResetFireworks: false
+  titleState: true
+display:
+  shimmer: classic
+  showTokenUsage: false
+task:
+  showResolvedModelBadge: false
+  enableLsp: true
+  maxRecursionDepth: 3
+secrets:
+  enabled: false
+plan:
+  defaultOnStartup: false
+memory:
+  backend: "off"
+compaction:
+  idleEnabled: true
+  enabled: true
+  methodOrder:
+    - shake
+    - soft
+    - handoff
+retry:
+  waitForUsageReset: true
+  usageAwareFallback: true
+features:
+  unexpectedStopDetection: smart
+defaultThinkingLevel: high
+externalThinking: false
+images:
+  blockImages: false
+hideThinkingBlock: true
+includeModelInPrompt: true
+personality: pragmatic
+emojiAutocomplete: false
+error:
+  notify: "on"
+recap:
+  enabled: false
+startup:
+  checkUpdate: false
+autolearn:
+  enabled: false
+dev:
+  autoqa: false
+advisor:
+  enabled: false
+  syncBacklog: "3"
+omitThinking: false
+composer:
+  shape: claude
+browser:
+  headless: true
+  enabled: true
+tools:
+  xdev: true
+  xdevDocs: builtins
+extendedContext: true
+edit:
+  mode: hashline
+astGrep:
+  enabled: true
