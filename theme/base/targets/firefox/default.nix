@@ -13,7 +13,7 @@
 
   loader = ''
     // Loads ~/.config/theme/firefox.css as a user style sheet and reloads it
-    // when the file changes (checked every second).
+    // when the file changes (checked every 250 ms).
     (() => {
       const { classes: Cc, interfaces: Ci, utils: Cu } = Components;
       const sheets = Cc["@mozilla.org/content/style-sheet-service;1"].getService(Ci.nsIStyleSheetService);
@@ -48,7 +48,7 @@
 
       load();
       const timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
-      timer.initWithCallback({ notify: load }, 1000, Ci.nsITimer.TYPE_REPEATING_SLACK);
+      timer.initWithCallback({ notify: load }, 250, Ci.nsITimer.TYPE_REPEATING_SLACK);
       // Keeps the timer referenced for the lifetime of the browser.
       Cc["@mozilla.org/observer-service;1"].getService(Ci.nsIObserverService)
         .addObserver({ observe() {}, timer }, "theme-style-sheet-loader");

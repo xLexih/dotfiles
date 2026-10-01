@@ -144,7 +144,7 @@ Each file in `theme/base/targets/` handles one program. A target can set:
 | `kitty.nix` | `~/.config/kitty/theme.conf` | every kitty window reloads |
 | `hyprland.nix` | `~/.config/hypr/theme.lua` (borders, shadow, cursor), share-picker stylesheet | re-runs `theme.lua`, sets the cursor |
 | `palette.nix` | `~/.config/theme/palette.sh` | new shells source it; the bar watches `theme.json` |
-| `firefox/` | `~/.config/theme/firefox.css` | Firefox reloads it within a second |
+| `firefox/` | `~/.config/theme/firefox.css` | Firefox reloads it within 250 ms |
 | `vscode.nix` | colors and token rules in `theme.json` | writes them to VSCodium's `settings.json` as color customizations over Default Dark/Light Modern |
 | `swayosd/` | popup style sheet | restarts the popup service |
 | `satty.nix` | annotation palette and font | next screenshot |
@@ -160,9 +160,12 @@ Firefox only reads `userChrome.css` and `userContent.css` at startup, and a
 custom WebExtension theme would need Mozilla's signature. Instead an
 AutoConfig script (`firefox/default.nix`, run by Firefox at startup with
 full privileges) registers `~/.config/theme/firefox.css` as a user style
-sheet, checks the file once a second and swaps the sheet when `theme`
+sheet, checks the file every 250 ms and swaps the sheet when `theme`
 replaces it. One sheet covers the browser window, menus and panels, `about:`
 pages and Sidebery, scoped with `@-moz-document`.
+The script itself only runs at startup: after a rebuild that changes it,
+quit Firefox completely (Ctrl+Q) and start it again. Opening a new window
+while an old Firefox is still running reuses the old process.
 
 Adding a program means adding one file to `targets/`. If the program needs a
 color nobody has a name for yet, add a role or a target-specific option to

@@ -98,10 +98,10 @@ in {
     # GVariant text, written straight to dconf; GSettings users get notified.
     metadata.gtk = theme: lib.mapAttrs (_: value: toString (lib.gvariant.mkValue value)) (interface theme);
 
+    # One dconf transaction, so apps re-theme once instead of once per key.
     reload.gtk = ''
-      while IFS=$'\t' read -r key value; do
-        ${dconf} write "/org/gnome/desktop/interface/$key" "$value"
-      done < <(theme_get '.gtk | to_entries[] | "\(.key)\t\(.value)"')
+      theme_get '"[/]", (.gtk | to_entries[] | "\(.key)=\(.value)")' |
+        ${dconf} load /org/gnome/desktop/interface/
     '';
   };
 

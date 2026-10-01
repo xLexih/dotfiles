@@ -79,13 +79,15 @@
       ${lib.getExe pkgs.jq} -r "$1" "$THEME_DIR/theme.json"
     }
 
+    # Hooks don't depend on each other, so they run in parallel.
     ${lib.concatStrings (lib.mapAttrsToList (target: script: ''
         # ${target}
         (
           ${script}
-        ) >/dev/null 2>&1 || true
+        ) >/dev/null 2>&1 &
       '')
       cfg.reload)}
+    wait
   '';
 
   mkThemeCommand = themes:

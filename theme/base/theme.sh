@@ -77,12 +77,20 @@ gnome_accent() {
 
 # Renders the dynamic theme for the current wallpaper into the cache: the
 # template for the scheme's mode, with every placeholder color replaced in
-# each format targets write it (#rrggbb, rrggbb, r,g,b and r;g;b).
+# each format targets write it (#rrggbb, rrggbb, r,g,b and r;g;b). matugen
+# takes about a second on a large image, so the result is reused until the
+# wallpaper file or the rendered themes change.
 render_dynamic() {
   wallpaper=$(cat "$state/wallpaper" 2>/dev/null || true)
   if [ ! -f "$wallpaper" ]; then
     echo "the dynamic theme needs a wallpaper: theme wallpaper <image>" >&2
     exit 1
+  fi
+
+  key="$wallpaper $(stat -c '%Y %s' "$wallpaper") $themes"
+  dir="$cache/dynamic"
+  if [ "$(cat "$cache/dynamic.key" 2>/dev/null)" = "$key" ] && [ -f "$dir/theme.json" ]; then
+    return
   fi
 
   scheme=$(matugen image "$wallpaper" --dry-run --json hex --mode smart --prefer saturation \
@@ -91,7 +99,7 @@ render_dynamic() {
   palette=$(jq -c --slurpfile roles "$dynamic_roles" --arg mode "$mode" \
     '. as $scheme | $roles[0][$mode] | map_values($scheme.colors[.].default.color | ascii_downcase)' <<<"$scheme")
 
-  dir="$cache/dynamic"
+  rm -f "$cache/dynamic.key"
   rm -rf "$dir"
   mkdir -p "$dir"
   cp -rL "$themes/dynamic/$mode/." "$dir"
@@ -120,6 +128,7 @@ render_dynamic() {
   jq --arg accent "'$accent'" --arg wallpaper "$wallpaper" \
     '.gtk["accent-color"] = $accent | .wallpaper = $wallpaper' "$dir/theme.json" >"$tmp"
   mv -f "$tmp" "$dir/theme.json"
+  echo "$key" >"$cache/dynamic.key"
 }
 
 # Copies a file into $HOME in one step, so programs watching it (the bar,
@@ -177,8 +186,12 @@ wallpaper() {
   mkdir -p "$state"
   echo "$file" >"$state/wallpaper"
   awww img --transition-type fade --transition-duration 1 "$file" || true
+  # Rendered now, while the wallpaper fades in, so switching to dynamic later
+  # doesn't wait for matugen.
   if [ "$(current)" = dynamic ]; then
     apply dynamic
+  else
+    render_dynamic
   fi
 }
 
