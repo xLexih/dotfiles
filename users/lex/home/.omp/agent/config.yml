@@ -46,6 +46,9 @@ compaction:
     - shake
     - soft
     - handoff
+retry:
+  waitForUsageReset: true
+  usageAwareFallback: true
 features:
   unexpectedStopDetection: smart
 defaultThinkingLevel: high

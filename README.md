@@ -55,8 +55,12 @@ theme output  ->  global/home  ->  hosts/<host>/home  ->  users/<user>/home
 - Text files (`.conf`, `.lua`, `.css`, `.ini`, shell files, ...) are
   concatenated. The global `hyprland.lua` defines `mainMod`, the host layer
   adds monitors, the user layer adds autostart and binds.
-- `.json`, `.jsonc`, `.yaml`, `.yml`, `.toml`, `.qml`, `.qmldir` and `.svg`
-  can't be concatenated, so the most specific layer wins.
+- `.json` files are merged key by key: a more specific layer only needs the
+  keys it changes (nested objects merge too, lists are replaced). A host could
+  ship `hosts/laptop/home/.config/VSCodium/User/settings.json` containing just
+  `{"window.zoomLevel": 1}`.
+- `.jsonc`, `.yaml`, `.yml`, `.toml`, `.qml`, `.qmldir` and `.svg` can't be
+  combined, so the most specific layer wins.
 - Images and fonts are copied unchanged.
 
 Files are copied rather than symlinked, so programs can write to them. Every
@@ -94,6 +98,32 @@ turns them into program configuration. Pick one per host with
 `theme-switch <name>` swaps kitty's colors without rebuilding. The next
 rebuild restores the configured theme.
 
+## Desktop
+
+Hyprland with a Quickshell frame around the screen. The left side of the
+frame is the bar, top to bottom:
+
+| Item | Hover | Click | Scroll |
+| --- | --- | --- | --- |
+| Clock | date | | |
+| Workspace pills (this monitor) | | switch | step through |
+| Tray icons | app tooltip | left: activate, middle: secondary, right: menu | app-defined |
+| Brightness (laptops) | percentage | | 5% steps |
+| Volume | output and level | left: mute, right: pwvucontrol | 5% steps, up to 150% |
+| Network | connection | left: nmtui, right: Wi-Fi on/off | |
+| Battery (laptops) | level and time left | | |
+| Dot in the bottom-right corner | | notes popup | |
+
+Keys beyond the usual window management (`global/home/.config/hypr/hyprland.lua`
+and `users/lex/home/.config/hypr/hyprland.lua`):
+
+| Keys | Action |
+| --- | --- |
+| volume, mute, mic mute, brightness keys | change the value and show the swayosd popup |
+| `SUPER + N` | night light on/off; it also follows the schedule in `global/home/.config/hypr/hyprsunset.conf` (4500 K from 21:00 to 07:00) |
+| `SUPER + Print` | region screenshot to the clipboard |
+| `SUPER + SHIFT + Print` | region screenshot into satty for annotation (Enter copies) |
+
 ## Packages
 
 | Need | Where |
@@ -111,7 +141,7 @@ enables all of them.
 ## Commands
 
 ```bash
-sudo nixos-rebuild switch --flake .#laptop   # or: nh os switch .
+nh os switch                                 # or: sudo nixos-rebuild switch --flake .#laptop
 nix flake check                              # formatting, host evaluation, hyprland.lua syntax, package tests
 nix fmt .                                    # alejandra
 ```

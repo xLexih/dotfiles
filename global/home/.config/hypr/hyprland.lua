@@ -14,7 +14,7 @@ hl.env("QT_STYLE_OVERRIDE", "{{theme.qt.style}}")
 hl.env("XDG_SESSION_TYPE", "wayland")
 
 hl.on("hyprland.start", function()
-    hl.exec_cmd("dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_DESKTOP XDG_SESSION_TYPE && systemctl --user start hyprland-session.target")
+    hl.exec_cmd("dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY HYPRLAND_INSTANCE_SIGNATURE XDG_CURRENT_DESKTOP XDG_SESSION_DESKTOP XDG_SESSION_TYPE && systemctl --user start hyprland-session.target")
 end)
 hl.on("hyprland.shutdown", function() hl.exec_cmd("systemctl --user stop hyprland-session.target") end)
 
@@ -125,6 +125,8 @@ hl.window_rule({
 hl.window_rule({ name = "intellij-stayfocused", match = { class = "^(jetbrains-idea-ce)$", title = "negative:^win.*$" }, stay_focused = true })
 hl.window_rule({ name = "jetbrains-all", match = { class = "(jetbrains-.*)" }, no_anim = true, no_initial_focus = true })
 hl.window_rule({ name = "quickshell-notes", match = { title = "^Notes$" }, float = true, size = { 320, 400 }, center = true })
+hl.window_rule({ name = "quickshell-nmtui", match = { class = "^nmtui$" }, float = true, size = { 760, 560 }, center = true })
+hl.window_rule({ name = "satty", match = { class = "^com.gabm.satty$" }, float = true, center = true })
 
 hl.gesture({ fingers = 3, direction = "horizontal", action = "workspace" })
 
@@ -168,19 +170,22 @@ bind("mouse_up", hl.dsp.focus({ workspace = "e-1" }))
 bind("mouse:272", hl.dsp.window.drag(), { mouse = true })
 bind("mouse:273", hl.dsp.window.resize(), { mouse = true })
 
+-- swayosd-client changes the value and shows the on-screen display.
 local mediaBinds = {
-    { "XF86AudioRaiseVolume", "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+", { locked = true, repeating = true } },
-    { "XF86AudioLowerVolume", "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-", { locked = true, repeating = true } },
-    { "XF86AudioMute", "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle", { locked = true, repeating = true } },
-    { "XF86AudioMicMute", "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle", { locked = true, repeating = true } },
-    { "XF86MonBrightnessUp", "brightnessctl s 10%+", { locked = true, repeating = true } },
-    { "XF86MonBrightnessDown", "brightnessctl s 10%-", { locked = true, repeating = true } },
+    { "XF86AudioRaiseVolume", "swayosd-client --output-volume +5", { locked = true, repeating = true } },
+    { "XF86AudioLowerVolume", "swayosd-client --output-volume -5", { locked = true, repeating = true } },
+    { "XF86AudioMute", "swayosd-client --output-volume mute-toggle", { locked = true } },
+    { "XF86AudioMicMute", "swayosd-client --input-volume mute-toggle", { locked = true } },
+    { "XF86MonBrightnessUp", "swayosd-client --brightness +10", { locked = true, repeating = true } },
+    { "XF86MonBrightnessDown", "swayosd-client --brightness -10", { locked = true, repeating = true } },
     { "XF86AudioNext", "playerctl next", { locked = true } },
     { "XF86AudioPause", "playerctl play-pause", { locked = true } },
     { "XF86AudioPlay", "playerctl play-pause", { locked = true } },
     { "XF86AudioPrev", "playerctl previous", { locked = true } },
 }
 for _, mediaBind in ipairs(mediaBinds) do hl.bind(mediaBind[1], hl.dsp.exec_cmd(mediaBind[2]), mediaBind[3]) end
+
+bind("N", hl.dsp.exec_cmd("night-light"))
 
 bind("F", hl.dsp.window.fullscreen())
 bind("Space", hl.dsp.window.float())

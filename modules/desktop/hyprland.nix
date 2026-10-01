@@ -5,6 +5,34 @@
   ...
 }: let
   cfg = config.modules.desktop.hyprland;
+
+  # Session services start with Hyprland and stop when it exits.
+  sessionService = description: command: {
+    inherit description;
+    partOf = ["graphical-session.target"];
+    after = ["graphical-session.target"];
+    wantedBy = ["hyprland-session.target"];
+    serviceConfig = {
+      ExecStart = command;
+      Restart = "on-failure";
+      Slice = "session.slice";
+    };
+  };
+
+  # Turns the blue-light filter on (4500 K) or off until the next scheduled
+  # profile in ~/.config/hypr/hyprsunset.conf.
+  nightLight = pkgs.writeShellApplication {
+    name = "night-light";
+    runtimeInputs = [config.programs.hyprland.package];
+    text = ''
+      if [ "$(hyprctl hyprsunset identity get)" = false ]; then
+        hyprctl hyprsunset identity true
+      else
+        hyprctl hyprsunset temperature 4500
+        hyprctl hyprsunset identity false
+      fi
+    '';
+  };
 in {
   options.modules.desktop.hyprland.enable = lib.mkEnableOption "the Hyprland desktop";
 
@@ -41,6 +69,14 @@ in {
       after = ["graphical-session-pre.target"];
     };
 
+    systemd.user.services = {
+      swayosd = sessionService "Volume and brightness OSD" "${pkgs.swayosd}/bin/swayosd-server --style %h/.config/swayosd/style.css";
+      hyprsunset = sessionService "Blue-light filter" (lib.getExe pkgs.hyprsunset);
+    };
+
+    # Lets the video group (and swayosd) change the backlight.
+    services.udev.packages = [pkgs.swayosd];
+
     environment.systemPackages = with pkgs; [
       awww # wallpaper daemon
       brightnessctl
@@ -53,12 +89,16 @@ in {
       hyprlock
       hyprpicker
       hyprshot
+      hyprsunset
       libnotify
+      nightLight
       pamixer
       playerctl
       quickshell
       rofi
+      satty # screenshot annotation
       slurp
+      swayosd
       wev
       wl-clipboard
     ];

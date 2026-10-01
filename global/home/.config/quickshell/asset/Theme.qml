@@ -17,6 +17,10 @@ Singleton {
     readonly property color accentBright: "{{theme.accentBright}}"
     readonly property color selection: "{{theme.selectionBg}}"
     readonly property color selectionText: "{{theme.selectionFg}}"
+    readonly property color danger: "{{theme.red}}"
+    readonly property color warning: "{{theme.yellow}}"
+
+    readonly property string iconFont: "Material Symbols Rounded"
 
     // Screen frame
     readonly property color primary: surface
@@ -25,5 +29,5 @@ Singleton {
     readonly property color collisionColor: "transparent"
     readonly property int innerCornerRadius: 14
     readonly property int outlineThickness: 5
-    readonly property int sidebarWidth: 25
+    readonly property int sidebarWidth: 28
 }

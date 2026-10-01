@@ -54,7 +54,8 @@ overridden in the theme file:
 | `roles.*` | what a color is used for: `selectionBg`, `border`, `focus`, `hoverBg`, `link`, ... |
 | `terminal.*` | kitty and VSCode terminal colors, including `normal.*` and `bright.*` ANSI colors |
 | `spicetify.*` | Spotify `color.ini` keys |
-| `gtk`, `icons`, `cursor` | adw-gtk3, Adwaita, Bibata-Modern-Classic 24 |
+| `gtk`, `cursor` | adw-gtk3, Bibata-Modern-Classic 24 |
+| `icons` | Papirus-Dark or Papirus-Light by `variant`, folders tinted to match `gnomeAccent` |
 | `fonts` | Noto Sans 11, JetBrains Mono 11 |
 | `qt.kvantum`, `qt.lookAndFeel`, `qt.colorScheme` | KvArc(Dark), Breeze (Dark), the capitalized theme name |
 | `gnomeAccent` | `"blue"` |
@@ -87,6 +88,8 @@ applies it to one program:
 | `spicetify/` | Spotify `color.ini` and `user.css` |
 | `hyprland.nix` | themed screen-share picker |
 | `palette.nix` | `~/.config/theme/palette.json` and `palette.sh` for scripts |
+| `swayosd.nix` | volume and brightness popup style |
+| `satty.nix` | screenshot annotation palette and font |
 
 Generated home files go into `dotfiles.files`, which is the lowest dotfile
 layer, so a user can extend them from their `home/` directory. Programs

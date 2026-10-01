@@ -140,7 +140,14 @@ Scope {
                 }
             }
 
+            Widget.Tooltip {
+                id: tooltip
+            }
+
             Item {
+                id: clockItem
+                readonly property string tooltipText: Qt.formatDateTime(clock.date, "dddd, d MMMM yyyy")
+
                 x: 0
                 y: 0
                 width: root.sidebarWidth
@@ -148,7 +155,7 @@ Scope {
 
                 SystemClock {
                     id: clock
-                    precision: SystemClock.Seconds
+                    precision: SystemClock.Minutes
                 }
 
                 Text {
@@ -159,6 +166,31 @@ Scope {
                     font.weight: Font.Bold
                     horizontalAlignment: Text.AlignHCenter
                     lineHeight: 0.86
+                }
+
+                HoverHandler {
+                    onHoveredChanged: hovered ? tooltip.show(clockItem) : tooltip.hide(clockItem)
+                }
+            }
+
+            Widget.Workspaces {
+                x: 0
+                y: clockItem.height + 6
+                screen: visualPanel.modelData
+            }
+
+            Column {
+                x: 0
+                anchors.bottom: gearCollision.top
+                anchors.bottomMargin: 10
+                spacing: 12
+
+                Widget.Tray {
+                    tooltip: tooltip
+                }
+
+                Widget.Status {
+                    tooltip: tooltip
                 }
             }
 

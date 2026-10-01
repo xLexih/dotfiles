@@ -1,7 +1,17 @@
-{pkgs, ...}: {
+{
+  config,
+  pkgs,
+  ...
+}: {
   users.users.lex = {
     isNormalUser = true;
     extraGroups = ["wheel" "video" "audio" "networkmanager" "docker" "libvirtd" "i2c" "plugdev"];
+  };
+
+  # `nh os switch` and friends work from any directory.
+  programs.nh = {
+    enable = true;
+    flake = "${config.users.users.lex.home}/dotfiles";
   };
 
   fonts.packages = [pkgs.corefonts];

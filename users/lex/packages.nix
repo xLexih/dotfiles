@@ -15,7 +15,6 @@
 
     # nix
     alejandra
-    nh
     nil
     nixd
     nix-tree

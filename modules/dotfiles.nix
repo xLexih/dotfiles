@@ -2,8 +2,9 @@
 #
 # Every file under global/home, hosts/<host>/home and users/<user>/home is
 # copied into that user's $HOME at the same relative path. Generated files from
-# `dotfiles.files` (theme output) sit below those layers. Text is concatenated
-# from the least to the most specific layer; formats that can't be concatenated
+# `dotfiles.files` (theme output) sit below those layers. Layers are combined
+# from the least to the most specific: text is concatenated, `.json` objects are
+# merged recursively (lists are replaced), and formats that can't be combined
 # take the most specific layer only. The copies are writable and get reset on
 # the next rebuild.
 {
@@ -17,8 +18,10 @@
 }: let
   cfg = config.dotfiles;
 
+  # Merged recursively; a more specific layer overrides individual keys.
+  mergeSuffixes = [".json"];
   # The most specific layer replaces the others.
-  replaceSuffixes = [".json" ".jsonc" ".qml" ".qmldir" ".svg" ".toml" ".yaml" ".yml"];
+  replaceSuffixes = [".jsonc" ".qml" ".qmldir" ".svg" ".toml" ".yaml" ".yml"];
   # Copied as-is: no placeholders, no header.
   binarySuffixes = [".png" ".jpg" ".jpeg" ".webp" ".gif" ".ico" ".ttf" ".otf" ".woff2"];
 
@@ -84,18 +87,37 @@
   mkFile = user: path: let
     layers = lib.filter builtins.pathExists (map (dir: dir + "/${path}") (layerDirs user));
     texts = lib.optional (cfg.files ? ${path}) cfg.files.${path} ++ map (file: render path (builtins.readFile file)) layers;
-    body =
-      if hasSuffixIn replaceSuffixes path
-      then lib.last texts
-      else lib.concatMapStrings withNewline texts;
+    # Key order is lost when layers are merged, so a single layer is kept verbatim.
+    mergeJSON = hasSuffixIn mergeSuffixes path && lib.length texts > 1;
+    # fromJSON rejects store-path context, so it is dropped for parsing and
+    # re-attached to the result to keep referenced packages in the closure.
+    mergedJSON =
+      builtins.appendContext
+      (builtins.toJSON (lib.foldl' lib.recursiveUpdate {} (map (text: builtins.fromJSON (builtins.unsafeDiscardStringContext text)) texts)))
+      (builtins.getContext (lib.concatStrings texts));
   in
     {type = "copy";}
     // (
       if hasSuffixIn binarySuffixes path
       then {source = lib.last layers;}
+      else if mergeJSON
+      then {
+        permissions = "644";
+        source = pkgs.runCommand (baseNameOf path) {
+          nativeBuildInputs = [pkgs.jq];
+          json = mergedJSON;
+          passAsFile = ["json"];
+        } ''jq . "$jsonPath" > $out'';
+      }
       else {
         permissions = "644";
-        text = lib.optionalString (layers != []) (header path) + body;
+        text =
+          lib.optionalString (layers != []) (header path)
+          + (
+            if hasSuffixIn replaceSuffixes path
+            then lib.last texts
+            else lib.concatMapStrings withNewline texts
+          );
       }
     );
 

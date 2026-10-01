@@ -168,14 +168,34 @@ in {
       };
     };
 
+    # Papirus, with folders recolored to match `gnomeAccent`.
     icons = {
       name = mkOption {
         type = types.str;
-        default = "Adwaita";
+        default =
+          if dark
+          then "Papirus-Dark"
+          else "Papirus-Light";
       };
       package = mkOption {
         type = types.package;
-        default = pkgs.adwaita-icon-theme;
+        default = pkgs.papirus-icon-theme.override {
+          color =
+            {
+              blue = "blue";
+              teal = "teal";
+              green = "green";
+              yellow = "yellow";
+              orange = "orange";
+              red = "red";
+              pink = "pink";
+              purple = "violet";
+              slate = "grey";
+            }
+            .${
+              config.gnomeAccent
+            };
+        };
       };
     };
 
