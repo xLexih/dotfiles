@@ -37,6 +37,10 @@ if [ -f "$HOME/.config/theme/palette.sh" ]; then
     . "$HOME/.config/theme/palette.sh"
 fi
 
+if [ -f "$HOME/.config/theme/man.sh" ]; then
+    . "$HOME/.config/theme/man.sh"
+fi
+
 PROMPT_COLOR="${PROMPT_COLOR:-95m}"
 export PS1="\n\[\033[$PROMPT_COLOR\][\u@\h:\w]\\$\[\033[0m\] "
 

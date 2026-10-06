@@ -36,6 +36,9 @@
     pkgs.qt6.qtbase
   ];
 
+  documentation.man.cache.enable = true;
+  documentation.dev.enable = true;
+
   environment.systemPackages = with pkgs; [
     bat
     btop
@@ -45,8 +48,11 @@
     file
     git
     killall
+    man-pages
+    man-pages-posix
     pciutils
     ripgrep
+    stdman
     unzip
     upower
     usbutils

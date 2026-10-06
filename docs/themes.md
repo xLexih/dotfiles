@@ -144,6 +144,7 @@ Each file in `theme/base/targets/` handles one program. A target can set:
 | `kitty.nix` | `~/.config/kitty/theme.conf` | every kitty window reloads |
 | `hyprland.nix` | `~/.config/hypr/theme.lua` (borders, shadow, cursor), share-picker stylesheet | re-runs `theme.lua`, sets the cursor |
 | `palette.nix` | `~/.config/theme/palette.sh` | new shells source it; the bar watches `theme.json` |
+| `man.nix` | `~/.config/theme/man.sh` (`less` `TERMCAP` colors for `man`) | new shells source it |
 | `firefox/` | `~/.config/theme/firefox.css` | Firefox reloads it within 250 ms |
 | `vscode.nix` | colors and token rules in `theme.json` | writes them to VSCodium's `settings.json` as color customizations over Default Dark/Light Modern |
 | `swayosd/` | popup style sheet | restarts the popup service |
