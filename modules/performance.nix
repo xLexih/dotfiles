@@ -34,6 +34,20 @@ in {
       priority = 100;
     };
 
+    # systemd-oomd runs by default but watches no cgroup, so a runaway process
+    # can fill RAM and all swap before the kernel OOM killer steps in. As on
+    # Fedora: once swap is 90% used, kill the cgroup holding the most swap, and
+    # kill user units that stay under heavy memory pressure (80% for 30 s).
+    systemd.oomd.enableUserSlices = true;
+    systemd.slices."-".sliceConfig.ManagedOOMSwap = "kill";
+
+    # Local builds (the CachyOS kernel has no binary cache) yield to the
+    # desktop: batch CPU and idle I/O scheduling, and their compilers are the
+    # kernel OOM killer's first pick instead of the browser or the session.
+    nix.daemonCPUSchedPolicy = "batch";
+    nix.daemonIOSchedClass = "idle";
+    systemd.services.nix-daemon.serviceConfig.OOMScoreAdjust = 500;
+
     boot.kernel.sysctl = {
       # Swapping to zram is cheap, so idle pages go there before disk cache
       # is dropped (CachyOS sets 150 once zram is active).
