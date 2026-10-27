@@ -109,17 +109,18 @@ hl.window_rule({
     match = { class = "^$", title = "^$", xwayland = true, float = true, fullscreen = false, pin = false },
     no_focus = true,
 })
-hl.window_rule({ name = "intellij-main", match = { class = "^(jetbrains-idea-ce)$", title = "negative:^win.*$" }, float = false })
+hl.window_rule({ name = "intellij-main", match = { class = "^(jetbrains-idea)$", title = "negative:^(win.*)?$" }, float = false })
 hl.window_rule({
     name = "intellij-popups",
-    match = { class = "^(jetbrains-idea-ce)$", title = "^win.*$" },
+    match = { class = "^(jetbrains-idea)$", title = "^win.*$" },
     no_focus = true,
     no_initial_focus = true,
     float = true,
     no_blur = true,
     no_shadow = true,
 })
-hl.window_rule({ name = "intellij-stayfocused", match = { class = "^(jetbrains-idea-ce)$", title = "negative:^win.*$" }, stay_focused = true })
+-- Untitled floating dialogs (Search Everywhere, Find) lose focus to the editor otherwise.
+hl.window_rule({ name = "intellij-stayfocused", match = { class = "^(jetbrains-idea)$", title = "^$", float = true }, stay_focused = true })
 hl.window_rule({ name = "jetbrains-all", match = { class = "(jetbrains-.*)" }, no_anim = true, no_initial_focus = true })
 hl.window_rule({ name = "quickshell-notes", match = { title = "^Notes$" }, float = true, size = { 320, 400 }, center = true })
 hl.window_rule({ name = "quickshell-nmtui", match = { class = "^nmtui$" }, float = true, size = { 760, 560 }, center = true })

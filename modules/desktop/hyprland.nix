@@ -34,9 +34,9 @@
     '';
   };
 
-  # Follows the system power profile: internal panels drop to 144 Hz on
-  # balanced and to their lowest rate on power-saver, which also turns off
-  # blur, shadows and animations. Leaving power-saver reloads the config.
+  # Follows the system power profile: internal panels drop to their lowest
+  # rate on power-saver, which also turns off blur, shadows and animations.
+  # Leaving power-saver restores the fastest rate and reloads the config.
   powerProfileSession = pkgs.writeShellApplication {
     name = "power-profile-session";
     runtimeInputs = [config.programs.hyprland.package pkgs.glib pkgs.gnused pkgs.jq];
@@ -48,15 +48,13 @@
           org.freedesktop.UPower.PowerProfiles ActiveProfile | sed -E "s/.*'(.*)'.*/\1/"
       }
 
-      # $1: highest refresh rate allowed, 0 for the fastest mode, -1 for the slowest.
+      # $1: "max" for the fastest mode, "min" for the slowest.
       panels() {
-        hyprctl monitors -j | jq -r --argjson cap "$1" '
+        hyprctl monitors -j | jq -r --arg pick "$1" '
           .[] | select(.name | startswith("eDP")) | . as $m
           | [.availableModes[] | capture("^(?<w>[0-9]+)x(?<h>[0-9]+)@(?<r>[0-9.]+)Hz$")
              | select((.w | tonumber) == $m.width and (.h | tonumber) == $m.height) | .r | tonumber] as $rates
-          | (if $cap == 0 then ($rates | max)
-             elif $cap < 0 then ($rates | min)
-             else ([$rates[] | select(. <= $cap)] | max) // ($rates | min) end) as $rate
+          | (if $pick == "max" then ($rates | max) else ($rates | min) end) as $rate
           | select((($rate - .refreshRate) | fabs) > 0.5)
           | "hl.monitor({ output = \(.name | @json), mode = \("\(.width)x\(.height)@\($rate)" | @json), position = \("\(.x)x\(.y)" | @json), scale = \(.scale) })"' |
           while read -r monitor; do hyprctl eval "$monitor" >/dev/null; done
@@ -68,11 +66,10 @@
         [ "$current" = "$last" ] && return 0
         [ "$last" = power-saver ] && hyprctl reload >/dev/null
         case "$current" in
-          performance) panels 0 ;;
-          balanced) panels 144 ;;
+          performance | balanced) panels max ;;
           power-saver)
             hyprctl eval 'hl.config({ decoration = { blur = { enabled = false }, shadow = { enabled = false } }, animations = { enabled = false } })' >/dev/null
-            panels -1
+            panels min
             ;;
         esac
         last=$current
@@ -82,6 +79,34 @@
       gdbus monitor "''${dest[@]}" | while read -r line; do
         case "$line" in *ActiveProfile*) apply ;; esac
       done
+    '';
+  };
+
+  # Hyprland is started with `start-hyprland` from a TTY login. On hybrid
+  # laptops the wrapper first lets the compositor drive displays attached to
+  # the NVIDIA GPU (see compositorShell in nvidia.nix).
+  inherit (config.modules.hardware.graphics.nvidia) compositorShell;
+  startHyprland = pkgs.writeShellScriptBin "start-hyprland" ''
+    ${compositorShell}
+    exec ${config.programs.hyprland.package}/bin/start-hyprland "$@"
+  '';
+
+  # At shutdown logind stops the login session (Hyprland, Xwayland) and the
+  # user manager at the same time, so session services crashed on the
+  # vanishing display. Run under a delay lock, this stops them first when
+  # logind announces the shutdown.
+  stopSessionOnShutdown = pkgs.writeShellApplication {
+    name = "stop-session-on-shutdown";
+    runtimeInputs = [pkgs.glib config.systemd.package];
+    text = ''
+      while read -r line; do
+        case "$line" in
+          *"PrepareForShutdown (true"*)
+            systemctl --user stop graphical-session.target
+            exit 0
+            ;;
+        esac
+      done < <(gdbus monitor --system --dest org.freedesktop.login1 --object-path /org/freedesktop/login1)
     '';
   };
 in {
@@ -128,42 +153,84 @@ in {
       swayosd = sessionService "Volume and brightness OSD" "${pkgs.swayosd}/bin/swayosd-server --style %h/.config/swayosd/style.css";
       hyprsunset = sessionService "Blue-light filter" (lib.getExe pkgs.hyprsunset);
       power-profile-session = sessionService "Display settings for the power profile" (lib.getExe powerProfileSession);
+      # The password dialog for privileged actions in GUI apps (mounting
+      # disks, virt-manager, fwupd).
+      hyprpolkitagent = sessionService "Polkit authentication agent" "${pkgs.hyprpolkitagent}/libexec/hyprpolkitagent";
+      session-shutdown = {
+        description = "Stop the graphical session before shutdown";
+        wantedBy = ["hyprland-session.target"];
+        serviceConfig = {
+          ExecStart = "${config.systemd.package}/bin/systemd-inhibit --what=shutdown --mode=delay --who=Hyprland --why='Stopping session services' ${lib.getExe stopSessionOnShutdown}";
+          Slice = "session.slice";
+        };
+      };
+      # PAM unlocks the login keyring at login, but a daemon it starts itself
+      # quits after two minutes unless the session initializes it, which only
+      # GNOME's autostart does. Started with the user manager instead, the
+      # daemon is already running when PAM unlocks it.
+      gnome-keyring = {
+        description = "GNOME Keyring";
+        wantedBy = ["default.target"];
+        serviceConfig = {
+          ExecStart = "/run/wrappers/bin/gnome-keyring-daemon --foreground --components=secrets --control-directory=%t/keyring";
+          # Login waits for the user manager to start, so PAM finds the socket.
+          ExecStartPost = "${pkgs.bash}/bin/sh -c 'until [ -S %t/keyring/control ]; do sleep 0.05; done'";
+          TimeoutStartSec = 5;
+          Restart = "on-failure";
+        };
+      };
+    };
+
+    # The OSD server gets Caps/Num/Scroll Lock key events from this root
+    # backend over D-Bus.
+    services.dbus.packages = [pkgs.swayosd];
+    systemd.services.swayosd-libinput-backend = {
+      description = "SwayOSD LibInput backend";
+      wantedBy = ["graphical.target"];
+      serviceConfig = {
+        Type = "dbus";
+        BusName = "org.erikreider.swayosd";
+        ExecStart = "${pkgs.swayosd}/bin/swayosd-libinput-backend";
+        Restart = "on-failure";
+      };
     };
 
     # Lets the video group (and swayosd) change the backlight.
     services.udev.packages = [pkgs.swayosd];
 
-    environment.systemPackages = with pkgs; [
-      awww
-      brightnessctl
-      cliphist
-      dunst
-      egl-wayland
-      grim
-      hyprcursor
-      hypridle
-      hyprlock
-      hyprpicker
-      hyprshot
-      hyprsunset
-      libnotify
-      nightLight
-      pamixer
-      playerctl
-      quickshell
-      rofi
-      satty # screenshot annotation
-      slurp
-      swayosd
-      wev
-      wl-clipboard
-    ];
+    environment.systemPackages = with pkgs;
+      lib.optional (compositorShell != "") (lib.hiPrio startHyprland)
+      ++ [
+        awww
+        brightnessctl
+        cliphist
+        dunst
+        egl-wayland
+        grim
+        hyprcursor
+        hypridle
+        hyprlock
+        hyprpicker
+        hyprshot
+        hyprsunset
+        libnotify
+        nightLight
+        pamixer
+        playerctl
+        quickshell
+        rofi
+        satty # screenshot annotation
+        slurp
+        swayosd
+        wev
+        wl-clipboard
+      ];
 
     environment.sessionVariables = {
       NIXOS_OZONE_WL = "1";
       ELECTRON_OZONE_PLATFORM_HINT = "auto";
       MOZ_ENABLE_WAYLAND = "1";
-      GDK_BACKEND = "wayland";
+      GDK_BACKEND = "wayland,x11";
       QT_QPA_PLATFORM = "wayland;xcb";
       CLUTTER_BACKEND = "wayland";
       XDG_CURRENT_DESKTOP = "Hyprland";

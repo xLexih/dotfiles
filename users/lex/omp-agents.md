@@ -69,6 +69,7 @@
 - Before changing a repo: check branch and worktree status (`git status`, `git diff`).
 - Never commit unless asked. Never commit to `main` or `master`; if asked to commit while on one of these, create a focused branch first without asking what to name it.
 - Conventional Commits, one logical change per commit.
+- Never reference other GitHub repos, issues, PRs, or users in commit titles or bodies (no URLs, `owner/repo#123`, `#123`, or `@user`); GitHub turns them into cross-references and pings the maintainers.
 - Don't create a repo for config edits, diagnostics, or scratch work; ask first when a repo would help. Add a suitable `.gitignore` when generated files or secrets are at risk.
 
 ## Research & Accuracy

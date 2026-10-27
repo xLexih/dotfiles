@@ -163,6 +163,7 @@ Each file in `theme/base/targets/` handles one program. A target can set:
 | `vscode.nix` | colors and token rules in `theme.json` | writes them to VSCodium's `settings.json` as color customizations over Default Dark/Light Modern |
 | `swayosd/` | popup style sheet | restarts the popup service |
 | `satty.nix` | annotation palette and font | next screenshot |
+| `hyprtoolkit.nix` | `~/.config/hypr/hyprtoolkit.conf` (colors, icon theme, font) | restarts the polkit agent |
 | `spicetify/` | Spotify `color.ini` and `user.css` | nothing: Spicetify patches Spotify at build time, so Spotify keeps `modules.theme.default` |
 
 Where a program reads a real style sheet, the rules live in a static file

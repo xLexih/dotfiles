@@ -23,7 +23,12 @@
 
   users.defaultUserShell = pkgs.bash;
   programs.bash.completion.enable = true;
-  security.sudo.wheelNeedsPassword = false;
+  # One password covers 15 minutes of sudo (a whole `nh os switch`); typing
+  # shows stars.
+  security.sudo.extraConfig = ''
+    Defaults pwfeedback
+    Defaults timestamp_timeout=15
+  '';
 
   # Managed home files replace whatever is in the way on activation.
   hjem.clobberByDefault = true;
@@ -63,7 +68,8 @@
 
   services.fwupd.enable = true;
   services.flatpak.enable = true;
-  services.dbus.packages = with pkgs; [gcr_4 gnome-keyring];
+  # gnome-keyring's own services come from services.gnome.gnome-keyring.
+  services.dbus.packages = [pkgs.gcr_4];
   services.udev.packages = [pkgs.gnome-settings-daemon];
   hardware.steam-hardware.enable = true;
 

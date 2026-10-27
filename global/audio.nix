@@ -9,6 +9,10 @@
     pulse.enable = true;
     jack.enable = true;
 
+    # The X11 bell module connects to Xwayland and segfaults PipeWire when
+    # Xwayland goes away (every logout and shutdown).
+    extraConfig.pipewire."10-no-x11-bell"."context.properties"."module.x11.bell" = false;
+
     wireplumber.extraConfig."10-momentum-4-bluetooth" = {
       "wireplumber.settings" = {
         "bluetooth.profile-preference" = "quality";

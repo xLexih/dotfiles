@@ -102,7 +102,7 @@ which is part of the idle power floor. Hyprland uses scale 1.33.
 | Modules | 2 × Kingston 9905790-210.A00G, 16 GB DDR5 SODIMM, single rank |
 | Speed | 5600 MT/s (configured 5600) |
 | Slots | 2, both used; 64 GiB maximum per SMBIOS |
-| Swap | zram 31 GB (zstd) at priority 100, then `nvme0n1p2` 7.5 GB |
+| Swap | zswap (zstd, 20% pool) in front of `nvme0n1p2` 40 GB; hibernation resumes from it |
 
 ## Storage
 
@@ -111,11 +111,15 @@ SN24998, 2.05 TB.
 
 | Partition | Size | Filesystem | Label | Mount |
 | --- | --- | --- | --- | --- |
-| nvme0n1p1 | 800 GB | ext4 | ROOT | `/` |
-| nvme0n1p2 | 7.5 GB | swap | SWAP | |
 | nvme0n1p3 | 512 MB | vfat | | `/boot` |
+| unallocated | 7.5 GB | | | |
+| nvme0n1p1 | 800 GB | ext4 | ROOT | `/` |
 | nvme0n1p4 | 500 GB | ext4 | DATA | `/data` (automounted) |
-| unallocated | 600 GB | | | |
+| nvme0n1p2 | 40 GB | swap | SWAP | |
+| unallocated | 560 GB | | | |
+
+Rows are in disk order. A GPT backup from before the swap move (2026-10-27) is
+at `~/.local/state/gpt-nvme0n1-20261027.bin`.
 
 NVMe power states: PS0-PS2 operational (6.5 / 5.8 / 3.6 W max), PS3 0.05 W
 (15 ms round trip), PS4 0.005 W (53 ms). APST needs the kernel's default
@@ -160,9 +164,16 @@ on DMI vendor `TUXEDO` and that board name. This firmware reports "Standard",
 so neither binds: charge limits, fan readings, fan control and TDP limits stay
 unavailable, and `tuxedo-keyboard` fails its compatibility check. The lightbar
 works because `ite_8291_lb` matches by USB ID.
+The Uniwill/Clevo WMI modules that the board's GUIDs would autoload, and the
+unused ASUS and `xe` drivers, are blacklisted in `hardware.nix`.
 
-`uniwill-laptop` takes `force=1` to skip the DMI check. It hasn't been tried
-on this machine.
+`uniwill-laptop` takes `force=1` to skip the DMI check, but then enables every
+feature, including EC writes for hardware this board lacks. `uniwill.nix`
+builds a copy (`uniwill_gm6ix`) that uses TUXEDO's GM6IXxB feature set
+instead: charge modes (80/90/100%), fan and temperature sensors, NVIDIA
+cTGP. It isn't loaded automatically; on an Eluktronics unit of the same
+chassis the EC accepted the charge mode but kept charging to 100%
+([tongfang-uniwill-dkms](https://github.com/arbitrary-string/tongfang-uniwill-dkms)).
 
 ## Battery and power
 
@@ -170,9 +181,13 @@ on this machine.
 | --- | --- |
 | Design capacity | 6400 mAh (about 99 Wh) |
 | Current full charge | 4200 mAh (about 65 Wh), 66% of design (2026-10-21) |
-| Charge limits | not available; no platform driver binds (see Platform drivers) |
+| Charge limits | charge modes via `uniwill_gm6ix`, untested (see Platform drivers) |
 | Charger | 240 W barrel adapter (`AC0`) and USB-C power delivery (UCSI) |
 | Secure Boot | disabled |
+
+fwupd (LVFS) offers nothing for this machine except Microsoft's UEFI dbx,
+which only matters with Secure Boot on (checked 2026-10-27). BIOS, EC and ME
+updates come only from Captiva or Uniwill as AMI images.
 
 Power profiles and what they change are documented in `power.nix` and the
 README's Power section.

@@ -21,7 +21,6 @@
       use-xdg-base-directories = true;
       download-buffer-size = 524288000; # nix#11728
       max-jobs = "auto";
-      cores = 0;
       trusted-users = ["root" "@wheel"];
       substituters = [
         "https://cache.nixos.org"
