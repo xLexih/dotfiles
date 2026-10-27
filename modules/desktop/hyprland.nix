@@ -91,7 +91,6 @@ in {
     programs.hyprland = {
       enable = true;
       xwayland.enable = true;
-      portalPackage = pkgs.xdg-desktop-portal-hyprland;
     };
 
     services.gnome.gnome-keyring.enable = true;
@@ -101,9 +100,12 @@ in {
       hyprland.enableGnomeKeyring = true;
     };
 
+    # programs.hyprland already adds its portal, built against the configured
+    # Hyprland; listing pkgs.xdg-desktop-portal-hyprland again would install a
+    # second build with the same unit and D-Bus names.
     xdg.portal = {
       enable = true;
-      extraPortals = with pkgs; [xdg-desktop-portal-hyprland xdg-desktop-portal-gtk];
+      extraPortals = [pkgs.xdg-desktop-portal-gtk];
       config.common = {
         default = ["hyprland" "gtk"];
         "org.freedesktop.impl.portal.Settings" = ["gtk"];
