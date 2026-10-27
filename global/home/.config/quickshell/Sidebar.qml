@@ -200,7 +200,7 @@ Scope {
 
                 Widget.Gear {
                     anchors.centerIn: parent
-                    from_color: Qt.lighter(Asset.Theme.primary, 1.2)
+                    from_color: Asset.Theme.border
                     to_color: Asset.Theme.secondaryBright
                 }
 
