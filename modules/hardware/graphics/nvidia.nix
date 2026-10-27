@@ -33,6 +33,19 @@
     exec "$@"
   '';
 
+  # External outputs (and the MUX panel) hang off the NVIDIA GPU. A compositor
+  # restricted to Mesa's EGL can't render to them, so it gets the NVIDIA EGL
+  # driver when one is connected at startup; that GPU stays awake for the
+  # display anyway. Plugging in later needs a compositor restart.
+  compositorShell = ''
+    for status in /sys/bus/pci/devices/${pciAddress hybrid.nvidiaBusId}/drm/card*/card*-*/status; do
+      if [ "$(cat "$status" 2>/dev/null)" = connected ]; then
+        unset __EGL_VENDOR_LIBRARY_FILENAMES
+        break
+      fi
+    done
+  '';
+
   # Every binary of `pkg` runs offloaded; desktop entries point at the wrappers.
   wrapOffload = pkg:
     pkgs.symlinkJoin {
@@ -117,6 +130,13 @@ in {
       default = lib.optionalString offloadOnly offloadShell;
       description = "Shell snippet that switches to the NVIDIA GPU, for launchers configured through a profile script (Steam).";
     };
+
+    compositorShell = lib.mkOption {
+      type = lib.types.str;
+      readOnly = true;
+      default = lib.optionalString offloadOnly compositorShell;
+      description = "Shell snippet for compositor launchers: lifts the offloadOnly EGL restriction while a display on the NVIDIA GPU is connected.";
+    };
   };
 
   config = lib.mkIf (cfg.enable && cfg.nvidia.enable) (lib.mkMerge [
@@ -125,9 +145,16 @@ in {
 
       hardware.nvidia = {
         open = true;
-        modesetting.enable = true;
         nvidiaSettings = true;
         package = config.boot.kernelPackages.nvidiaPackages.production;
+        # nixpkgs adds nvidia_drm modeset/fbdev (modesetting is on by default),
+        # PreserveVideoMemoryAllocations (powerManagement) and
+        # DynamicPowerManagement=0x02 (finegrained).
+        moduleParams.nvidia = {
+          NVreg_UsePageAttributeTable = 1;
+          # Skips zeroing system memory the driver allocates (CachyOS default).
+          NVreg_InitializeSystemMemoryAllocations = 0;
+        };
         # Laptop-only: desktop cards support neither (no runtime D3, and
         # nvidia-powerd quits on them).
         dynamicBoost.enable = hybrid.enable;
@@ -149,19 +176,12 @@ in {
         );
       };
 
-      boot.kernelParams = [
-        "nvidia_drm.modeset=1"
-        "nvidia_drm.fbdev=1"
-        "nvidia.NVreg_UsePageAttributeTable=1"
-        "nvidia.NVreg_PreserveVideoMemoryAllocations=1"
-        # Skips zeroing system memory the driver allocates (CachyOS default).
-        "nvidia.NVreg_InitializeSystemMemoryAllocations=0"
-      ];
-
       environment.variables = {
-        WLR_NO_HARDWARE_CURSORS = "1";
         __GL_THREADED_OPTIMIZATION = "1";
         __GL_SHADER_CACHE = "1";
+        # Keeps the shader cache past its 1 GB cap instead of evicting and
+        # recompiling (stutter) once several games fill it.
+        __GL_SHADER_DISK_CACHE_SKIP_CLEANUP = "1";
       };
 
       environment.systemPackages = with pkgs; [
@@ -169,12 +189,27 @@ in {
         libva-utils
         nvtopPackages.nvidia
       ];
+
+      # nixpkgs loads nvidia_uvm (CUDA) at boot for the open modules. That
+      # initializes the GPU (~1.3 s) inside systemd-modules-load, which the
+      # rest of boot waits for; a service loads it in parallel instead.
+      environment.etc."modules-load.d/nixos.conf".source = lib.mkForce (
+        pkgs.writeText "nixos.conf" (lib.concatLines (lib.remove "nvidia_uvm" config.boot.kernelModules))
+      );
+      systemd.services.nvidia-uvm = {
+        description = "Load the NVIDIA CUDA kernel module";
+        wantedBy = ["multi-user.target"];
+        before = ["nvidia-container-toolkit-cdi-generator.service"];
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          ExecStart = "${pkgs.kmod}/bin/modprobe nvidia_uvm";
+        };
+      };
     }
 
     (lib.mkIf hybrid.enable {
       environment.systemPackages = [nvidiaOffload];
-      # Lets the GPU power off when idle (runtime D3).
-      boot.kernelParams = ["nvidia.NVreg_DynamicPowerManagement=0x02"];
     })
 
     # With the audio function bound, the GPU's PCIe slot can't reach D3cold.
