@@ -1,7 +1,9 @@
-/* Tabs and the sidebar live in Sidebery. */
+/* Tabs and the sidebar live in Sidebery. #sidebar-panel-header is the
+   per-panel title/close bar Firefox 137+ renders above extension sidebars. */
 #TabsToolbar,
 #sidebar-main,
 #sidebar-header,
+#sidebar-panel-header,
 #sidebar-launcher-splitter {
   display: none !important;
 }
