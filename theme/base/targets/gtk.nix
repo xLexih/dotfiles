@@ -82,7 +82,7 @@ in {
     render.gtk = theme: let
       colors = namedColors theme;
     in {
-      ".gtkrc-2.0" = ''
+      ".config/gtk-2.0/gtkrc" = ''
         gtk-theme-name="${theme.gtk.name}"
         gtk-icon-theme-name="${theme.icons.name}"
         gtk-cursor-theme-name="${theme.cursor.name}"
@@ -120,6 +120,9 @@ in {
       }
     ];
   };
+
+  # GTK 2 reads ~/.gtkrc-2.0 unless pointed at the rendered file.
+  environment.sessionVariables.GTK2_RC_FILES = "$HOME/.config/gtk-2.0/gtkrc";
 
   environment.systemPackages =
     lib.unique (lib.concatMap (theme: [theme.gtk.package theme.icons.package theme.cursor.package]) (lib.attrValues cfg.themes))

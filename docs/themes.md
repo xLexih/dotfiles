@@ -139,7 +139,7 @@ Each file in `theme/base/targets/` handles one program. A target can set:
 
 | Target | Files | After a switch |
 | --- | --- | --- |
-| `gtk.nix` | GTK 3/4 `gtk.css` overriding libadwaita's named colors, `settings.ini`, `.gtkrc-2.0` | writes GTK theme, icons, cursor, fonts and dark/light to dconf; libadwaita, Firefox and Electron follow the preference live, CSS applies to newly started apps |
+| `gtk.nix` | GTK 3/4 `gtk.css` overriding libadwaita's named colors, `settings.ini`, `~/.config/gtk-2.0/gtkrc` (via `GTK2_RC_FILES`) | writes GTK theme, icons, cursor, fonts and dark/light to dconf; libadwaita, Firefox and Electron follow the preference live, CSS applies to newly started apps |
 | `qt.nix` | qt5ct/qt6ct, Kvantum, kdeglobals, KDE color scheme | newly started Qt apps |
 | `kitty.nix` | `~/.config/kitty/theme.conf` | every kitty window reloads |
 | `hyprland.nix` | `~/.config/hypr/theme.lua` (borders, shadow, cursor), share-picker stylesheet | re-runs `theme.lua`, sets the cursor |
