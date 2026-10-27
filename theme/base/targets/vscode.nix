@@ -217,6 +217,51 @@
       "diffEditor.removedLineBackground" = "${t.red}14";
       "merge.currentHeaderBackground" = "${t.blue}28";
       "merge.incomingHeaderBackground" = "${t.green}28";
+
+      # The rest of Dark Modern's color set: unset keys keep stock grays.
+      "activityBar.activeBorder" = t.accent;
+      "activityBar.border" = t.overlay;
+      "button.border" = t.overlay;
+      "chat.editedFileForeground" = t.yellow;
+      "chat.slashCommandBackground" = "${t.accent}66";
+      "chat.slashCommandForeground" = t.blue;
+      "checkbox.background" = t.surface;
+      "checkbox.border" = t.overlay;
+      "debugToolBar.background" = t.bgDarker;
+      "dropdown.listBackground" = t.bgDark;
+      "editorGroupHeader.tabsBorder" = t.overlay;
+      "errorForeground" = t.red;
+      "notificationCenterHeader.foreground" = t.fgMuted;
+      "panelInput.border" = t.overlay;
+      "panelTitle.activeBorder" = t.accent;
+      "peekViewResult.matchHighlightBackground" = "${t.yellow}66";
+      "pickerGroup.border" = t.overlay;
+      "settings.dropdownBackground" = t.surface;
+      "settings.dropdownBorder" = t.overlay;
+      "settings.headerForeground" = t.fg;
+      "settings.modifiedItemIndicator" = t.yellow;
+      "sideBarSectionHeader.border" = t.overlay;
+      "statusBar.border" = t.overlay;
+      "statusBar.focusBorder" = t.accent;
+      "statusBarItem.focusBorder" = t.accent;
+      "statusBarItem.hoverForeground" = t.fg;
+      "statusBarItem.prominentBackground" = "${t.overlay}66";
+      "tab.activeBorder" = t.bgDark;
+      "tab.selectedBorderTop" = t.accent;
+      "tab.unfocusedActiveBorder" = t.bgDark;
+      "tab.unfocusedActiveBorderTop" = t.overlay;
+      "tab.unfocusedHoverBackground" = t.bgDark;
+      "terminal.tab.activeBorder" = t.accent;
+      "textBlockQuote.background" = t.bgDark;
+      "textBlockQuote.border" = t.overlay;
+      "textCodeBlock.background" = t.bgDark;
+      "textPreformat.background" = t.surface;
+      "textPreformat.foreground" = t.fg;
+      "textSeparator.foreground" = t.bgDarker;
+      "titleBar.border" = t.overlay;
+      "welcomePage.progress.foreground" = t.accent;
+      "welcomePage.tileBackground" = t.bgDark;
+      "widget.border" = t.overlay;
     };
 
     tokenColors = let
