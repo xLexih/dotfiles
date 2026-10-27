@@ -81,6 +81,10 @@ in {
       CPU_HWP_DYN_BOOST_ON_BAT = 1;
       CPU_HWP_DYN_BOOST_ON_SAV = 0;
 
+      INTEL_GPU_MIN_FREQ_ON_AC = 300;
+      INTEL_GPU_MIN_FREQ_ON_BAT = 300;
+      INTEL_GPU_MIN_FREQ_ON_SAV = 300;
+
       INTEL_GPU_MAX_FREQ_ON_AC = 1650;
       INTEL_GPU_MAX_FREQ_ON_BAT = 1650;
       INTEL_GPU_MAX_FREQ_ON_SAV = 900;
@@ -112,7 +116,6 @@ in {
     pathConfig.PathChanged = "/run/tlp/last_pwr";
   };
   systemd.services.power-profile-hook = {
-    wantedBy = ["multi-user.target"];
     after = ["tlp.service"];
     serviceConfig = {
       Type = "oneshot";
