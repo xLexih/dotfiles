@@ -6,7 +6,8 @@
 #   override there.)
 # - yt6801 skips kernelModuleMakeFlags, so its module is never signed and the
 #   aggregated tree misses yt6801.ko.cer
-#   (https://github.com/NixOS/nixpkgs/issues/575192).
+#   (https://github.com/NixOS/nixpkgs/issues/575192). Fixed on nixpkgs master
+#   but not yet in nixos-unstable; drop this override once it lands there.
 final: prev: let
   inherit (prev) lib;
   fix = kfinal: kprev: {
