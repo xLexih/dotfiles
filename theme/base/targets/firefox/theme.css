@@ -270,6 +270,29 @@
     --newtab-background-card: var(--theme-surface) !important;
     --newtab-text-primary-color: var(--theme-fg) !important;
     --newtab-primary-action-background: var(--theme-selection-bg) !important;
+
+    /* Remaining in-content surface: unset ones fall back to stock grays. */
+    --in-content-button-background: var(--theme-surface) !important;
+    --in-content-button-background-hover: var(--theme-active-bg) !important;
+    --in-content-button-background-active: var(--theme-active-bg) !important;
+    --in-content-button-text-color: var(--theme-fg) !important;
+    --in-content-button-text-color-hover: var(--theme-fg) !important;
+    --in-content-text-color: var(--theme-fg) !important;
+    --in-content-deemphasized-text: var(--theme-fg-muted) !important;
+    --in-content-box-background-hover: var(--theme-hover-bg) !important;
+    --in-content-box-background-active: var(--theme-active-bg) !important;
+    --in-content-box-background-odd: var(--theme-bg-dark) !important;
+    --in-content-box-background-info: var(--theme-bg-dark) !important;
+    --in-content-dialog-header-background: var(--theme-bg-dark) !important;
+    --in-content-tab-color: var(--theme-fg) !important;
+    --in-content-table-header-background: var(--theme-bg-dark) !important;
+    --in-content-link-color-hover: var(--theme-accent) !important;
+    --in-content-link-color-visited: var(--theme-link) !important;
+    --newtab-search-dropdown-background-color: var(--theme-bg) !important;
+    --newtab-search-dropdown-header-color: var(--theme-bg-dark) !important;
+    --newtab-modal-overlay-background-color: color-mix(in srgb, var(--theme-bg) 60%, transparent) !important;
+    --newtab-contextmenu-background-color: var(--theme-bg) !important;
+    --newtab-contextmenu-button-color: var(--theme-surface) !important;
   }
 }
 
