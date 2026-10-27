@@ -36,8 +36,7 @@ export interface TokenrouterModelDescriptor {
  * upstream-served GLM-5.3 (architectural max 1,048,576 tokens); the paid
  * `glm-5.3-flash` shares the same upstream model with a different serving
  * profile. A 16,384 `maxTokens` cap keeps free-tier turns from self-correcting
- * into 12k-character rambles — same rationale as the OpenBroker DeepSeek
- * verbosity brake in `pkgs/omp-extensions/provider-openbroker/src/catalog.ts:32-33`.
+ * into 12k-character rambles.
  */
 export const TOKENROUTER_MODELS: readonly TokenrouterModelDescriptor[] = [
 	{

@@ -9,7 +9,7 @@ import type {Model} from "@oh-my-pi/pi-ai";
  *
  * Context windows: GLM-5.x models share the 1,048,576-token architectural max
  * (same upstream weights as TokenRouter's `z-ai/glm-5.3` routes, see
- * `pkgs/omp-extensions/provider-tokenrouter/README.md`). `glm-4.7` is a GLM-4.x
+ * `pkgs/omp-extensions/provider-tokenrouter/src/catalog.ts`). `glm-4.7` is a GLM-4.x
  * model with a 128K window per the Z.AI model card.
  */
 

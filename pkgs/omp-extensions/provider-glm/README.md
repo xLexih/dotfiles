@@ -48,7 +48,7 @@ unknown new ids are admitted with conservative defaults, vision detected from
 | `glm-5` | GLM 5 (bridge default) | 1,048,576 | 16,384 | 0 / 0 |
 
 The 16,384-token `maxTokens` cap is a verbosity brake, mirroring
-`pkgs/omp-extensions/provider-tokenrouter/README.md`.
+`pkgs/omp-extensions/provider-tokenrouter/src/catalog.ts`.
 
 ## Request compatibility
 
