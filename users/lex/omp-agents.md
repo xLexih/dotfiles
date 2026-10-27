@@ -12,6 +12,7 @@
 - Non-trivial work (new features, new projects, multi-module changes, architectural decisions, ambiguous intent) gets a design pass first: options considered, chosen approach and why, integration points with existing code, blast radius. Confirm before implementing.
 - Trivial, clearly scoped fixes (small diff, single module, obvious approach) skip the design pass and are implemented directly.
 - Before any change, establish goal, constraints, and what must be inspected.
+- Make the best decisions that will elevate all three: the user experience (UX), developer experience (DX), and agent experience (AX) always, without breaking anything.
 
 ## Implementation
 
@@ -28,6 +29,10 @@
 - Self-documenting code. Comments only for non-obvious intent, workarounds, or tradeoffs, never narration of what the code plainly does.
 - New or substantially modified files target roughly 250-300 lines; split by responsibility, not line count, and don't fragment cohesive logic to hit the range.
 - Compact, inlined configuration (CSS, config files) over scattered declarations, following existing syntax.
+
+### Interfaces
+
+- Cut taglines, helper text and secondary labels. If a screen needs them to make sense, fix the layout.
 
 ### Dependencies
 
