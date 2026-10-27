@@ -1,0 +1,60 @@
+# Managed omp behaviour, passed with `--config` by users/lex/omp.nix.
+# These keys win over ~/.omp/agent/config.yml. That file is not managed by the
+# repo: it holds only what the user owns by hand (model roles, and whatever
+# omp writes itself). Do NOT add modelRoles or retry.fallbackChains here; they
+# would shadow the manual settings.
+personality: pragmatic
+extendedContext: true
+checkpoint:
+  enabled: true
+plan:
+  autosave: true
+  autosaveDir: /home/lex/.omp/agent/plans
+compaction:
+  # Fixed trigger instead of a share of the window. omp clamps it to
+  # contextWindow - 1, so models with a window of 400k or less compact only at
+  # the very edge of their context.
+  thresholdTokens: 400000
+  idleEnabled: true
+  handoffSaveToDisk: true
+  methodOrder:
+    - shake
+    - soft
+    - handoff
+memory:
+  backend: mnemopi
+mnemopi:
+  # One isolated bank per working directory.
+  scoping: per-project
+advisor:
+  syncBacklog: "3"
+prewalk:
+  enabled: true
+task:
+  enableLsp: true
+  maxRecursionDepth: 3
+  showResolvedModelBadge: true
+features:
+  unexpectedStopDetection: smart
+tools:
+  xdevDocs: builtins
+astGrep:
+  enabled: true
+retry:
+  waitForUsageReset: true
+  # No silent rerouting: a failing/limited model errors instead of moving to
+  # another provider. usageAwareFallback moves between accounts/models before
+  # a hard limit; modelFallback switches to fallbackChains entries.
+  modelFallback: false
+  usageAwareFallback: false
+error:
+  notify: "on"
+recap:
+  enabled: false
+# The binary is pinned by the flake; updates come through nix.
+startup:
+  checkUpdate: false
+dev:
+  autoqa: false
+disabledProviders:
+  - glm-local
