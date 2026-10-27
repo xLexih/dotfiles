@@ -1,8 +1,35 @@
 # laptop
 
-Hardware of the `laptop` host, read from the running system on 2026-10-01.
-DMI reports every vendor and product field as "Standard"; the touchpad's ACPI
-ID (`UNIW0001`) points to a Uniwill-built chassis.
+Hardware of the `laptop` host, read from the running system on 2026-10-01 and
+re-checked on 2026-10-21 against the vendor listings.
+
+## Model
+
+| | |
+| --- | --- |
+| Retail model | Captiva Advanced Gaming I84-740 (16", i9-14900HX, 32 GB, 2 TB SSD, RTX 4060 8 GB, no OS) |
+| Captiva case code | GB6 946IG 24T1 |
+| Barebone | Uniwill GM6IX0B (SMBIOS OEM strings 11-12) |
+| Same barebone | TUXEDO Stellaris 16 Gen6 (Intel), board family `GM6IXxB` |
+| Size and weight | 356.68 × 245.02 × 26.6 mm, 2.6 kg |
+| Power adapter | 240 W, 20 V |
+
+DMI reports every vendor, product and board field as "Standard"; only the
+SMBIOS OEM strings name the barebone (`sudo dmidecode -t 11`). The touchpad's
+ACPI ID (`UNIW0001`) and the Uniwill WMI GUIDs agree.
+
+No page for the I84-740 itself was reachable or archived. The case code, size,
+weight and adapter come from the archived page of the I84-744, the same
+configuration with Windows 11 Home
+([captiva-power.de, 2025-11-16](https://web.archive.org/web/20251116063413/https://www.captiva-power.de/produkte/nbs/advanced-gaming-i84-744)).
+That page disagrees with the hardware in a few places:
+
+| | Captiva page | This unit |
+| --- | --- | --- |
+| Battery | 80 Wh | 99 Wh design, as on the TUXEDO Stellaris 16 Gen6 |
+| Wi-Fi | Wi-Fi 6 | Wi-Fi 6E (AX211) |
+| Memory speed | DDR5-5200 | DDR5-5600 |
+| Maximum memory | 64 GB | 64 GiB per SMBIOS; TUXEDO sells the barebone with up to 96 GB (2 × 48 GB), untested here |
 
 ## Overview
 
@@ -17,7 +44,7 @@ ID (`UNIW0001`) points to a Uniwill-built chassis.
 | Wi-Fi / Bluetooth | Intel Wi-Fi 6E AX211 (CNVi) |
 | Ethernet | Motorcomm YT6801, 1 Gbit |
 | Battery | Li-ion 4S, 99 Wh design (6400 mAh at 15.48 V) |
-| Firmware | AMI UEFI 2.80, BIOS N.1.07STD03 (2024-07-11) |
+| Firmware | AMI UEFI 2.80, BIOS N.1.07STD03 (2024-07-11), EC 1.23 |
 
 ## CPU
 
@@ -42,10 +69,18 @@ H/U laptop chips: the package idles at about 7 W on battery settings.
 | Clocks / memory | 300-1650 MHz | 8 GB GDDR6, PCIe 4.0 x8, 140 W max |
 | VBIOS | | 95.07.3F.00.26 |
 | Role | drives the internal panel, renders the desktop | PRIME offload only (games, `nvidia-offload`); powered off otherwise |
+| Outputs | `eDP-1` (internal panel) | `HDMI-A-1`, `DP-1`, `DP-2`, `eDP-2` |
 
 The NVIDIA HDMI audio function (01:00.1) is removed at boot so the dGPU can
 reach D3cold. Check with
 `cat /sys/bus/pci/devices/0000:01:00.0/power/runtime_status` (`suspended`).
+
+Every external display output hangs off the NVIDIA GPU: HDMI, the DisplayPort
+output and the Thunderbolt port's DP alt mode (Captiva lists DP 1.4). Which of
+`DP-1`/`DP-2` is which hasn't been checked. Plugging in a monitor wakes the
+dGPU and keeps it out of D3cold. `eDP-2` is the panel's second path through
+the display MUX (Captiva lists NVIDIA Advanced Optimus); it stays disconnected
+while the iGPU drives the panel.
 
 ## Display
 
@@ -66,7 +101,7 @@ which is part of the idle power floor. Hyprland uses scale 1.33.
 | --- | --- |
 | Modules | 2 × Kingston 9905790-210.A00G, 16 GB DDR5 SODIMM, single rank |
 | Speed | 5600 MT/s (configured 5600) |
-| Slots | 2, both used; 64 GB maximum |
+| Slots | 2, both used; 64 GiB maximum per SMBIOS |
 | Swap | zram 31 GB (zstd) at priority 100, then `nvme0n1p2` 7.5 GB |
 
 ## Storage
@@ -93,34 +128,50 @@ latency limit to use PS3/PS4; a limit below 15000 µs keeps the drive awake.
 | Wi-Fi | Intel AX211 CNVi, 8086:7a70 | Wi-Fi 6E, 160 MHz, `iwlwifi` firmware 89 |
 | Bluetooth | Intel AX211, 8087:0033 (USB) | off at boot |
 | Ethernet | Motorcomm YT6801, 1f0a:6801, 3a:00.0 | out-of-tree `yt6801` module; no ASPM, unbound on battery |
-| Thunderbolt 4 | Intel Maple Ridge 2C (8086:1133/1134/1135) | USB4 host; UCSI reports one USB-C port |
+| Thunderbolt 4 | Intel Maple Ridge 2C (8086:1133/1134/1135) | USB4 host; the one UCSI port, accepts USB-C PD charging |
 | USB | Intel 700-series xHCI (USB 3.2 Gen 2x2), two Genesys hubs (05e3:0610, 05e3:0620) | |
 | Card reader | Realtek 0bda:0316 (USB 3) | shows up as `sda` |
+
+Ports per Captiva: 3 × USB-A 3.2 Gen 1, 1 × USB-C 3.2 Gen 2, 1 × Thunderbolt 4
+(USB-C with PD and DP 1.4), HDMI, DisplayPort, RJ-45, card reader, 3.5 mm
+combo jack, DC-in and a Kensington slot.
 
 ## Input, audio and other devices
 
 | Device | ID / driver |
 | --- | --- |
 | Keyboard | PS/2 (i8042, "AT Translated Set 2 keyboard") |
-| Keyboard lighting | ITE 8291, 048d:600b (`ite_8291` blacklisted) |
+| Keyboard lighting | ITE 8291, 048d:600b, single-zone RGB (`ite_8291` blacklisted) |
 | Lightbar | ITE 8233, 048d:7001, LED `rgb:lightbar` |
 | Touchpad | PixArt 093A:0255 on I2C HID `UNIW0001:00` |
 | Webcam | Kingcome FHD WebCam, 2b7e:c858 |
-| Audio | Intel 700-series HDA; Conexant SN6140 codec, Intel HDMI codec |
+| Audio | Intel 700-series HDA; Conexant SN6140 codec, Intel HDMI codec; two speakers |
 | TPM | TPM 2.0 (MSFT0101) |
 | Chipset | Intel HM770 |
 
 Sensors: CPU (`coretemp`), NVMe, memory modules (`spd5118`), ACPI thermal
-zones, Wi-Fi. Fan speeds aren't exposed.
+zones, Wi-Fi. Fan speeds aren't exposed (see Platform drivers).
+
+## Platform drivers
+
+`tuxedo-drivers` and the mainline `uniwill-laptop` driver (in the running 7.2
+kernel) both support this board as `GM6IXxB_MB1`/`GM6IXxB_MB2`, but they match
+on DMI vendor `TUXEDO` and that board name. This firmware reports "Standard",
+so neither binds: charge limits, fan readings, fan control and TDP limits stay
+unavailable, and `tuxedo-keyboard` fails its compatibility check. The lightbar
+works because `ite_8291_lb` matches by USB ID.
+
+`uniwill-laptop` takes `force=1` to skip the DMI check. It hasn't been tried
+on this machine.
 
 ## Battery and power
 
 | | |
 | --- | --- |
 | Design capacity | 6400 mAh (about 99 Wh) |
-| Current full charge | 4000 mAh (about 62 Wh), 62.5% of design |
-| Charge limits | not supported; TLP finds no driver for this chassis |
-| Charger | AC adapter (`AC0`) and USB-C power delivery (UCSI) |
+| Current full charge | 4200 mAh (about 65 Wh), 66% of design (2026-10-21) |
+| Charge limits | not available; no platform driver binds (see Platform drivers) |
+| Charger | 240 W barrel adapter (`AC0`) and USB-C power delivery (UCSI) |
 | Secure Boot | disabled |
 
 Power profiles and what they change are documented in `power.nix` and the
