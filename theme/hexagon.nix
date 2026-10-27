@@ -1,7 +1,5 @@
 # Dark aubergine with lavender and teal accents.
-{config, ...}: let
-  p = config.palette;
-in {
+{
   variant = "dark";
   gnomeAccent = "purple";
 
@@ -22,15 +20,6 @@ in {
     yellow = "#f9e2af";
     blue = "#b4befe";
     cyan = "#94e2d5";
-  };
-
-  terminal = {
-    cursor = p.accent;
-    selectionBg = p.overlay;
-    selectionFg = p.fg;
-    tabActiveFg = p.bg;
-    tabInactiveBg = p.surface;
-    bright.white = "#ffffff";
   };
 
   # In-between shades for Spotify's layered panels.

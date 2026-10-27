@@ -1,7 +1,5 @@
 # Light counterpart of hexagon: warm paper with violet accents.
-{config, ...}: let
-  p = config.palette;
-in {
+{
   variant = "light";
   gnomeAccent = "purple";
 
@@ -22,17 +20,5 @@ in {
     yellow = "#92600a";
     blue = "#2563eb";
     cyan = "#0891b2";
-  };
-
-  terminal = {
-    cursor = p.accent;
-    selectionBg = p.overlay;
-    selectionFg = p.fg;
-    tabActiveBg = p.accent;
-    tabActiveFg = p.bg;
-    tabInactiveBg = p.surface;
-    normal.black = p.fg;
-    bright.black = p.fgMuted;
-    bright.white = "#ffffff";
   };
 }

@@ -92,19 +92,24 @@ in {
       mkDefaults {
         background = p.bg;
         foreground = p.fg;
-        cursor = r.focus;
+        cursor = p.accent;
         cursorText = p.bg;
-        selectionBg = r.selectionBg;
-        selectionFg = r.selectionFg;
+        selectionBg = p.overlay;
+        selectionFg = p.fg;
         url = r.link;
         tabActiveBg = r.selectionBg;
-        tabActiveFg = r.selectionFg;
-        tabInactiveBg = r.panelBgAlt;
+        tabActiveFg = p.bg;
+        tabInactiveBg = p.surface;
         tabInactiveFg = r.disabledFg;
       }
       // {
         normal = mkDefaults {
-          black = p.overlay;
+          # Every ANSI color is printed as text. On a light background black
+          # becomes the text color and bright white can't stay white.
+          black =
+            if dark
+            then p.overlay
+            else p.fg;
           red = p.red;
           green = p.green;
           yellow = p.yellow;
@@ -121,7 +126,10 @@ in {
           blue = p.blue;
           magenta = r.focus;
           cyan = p.cyan;
-          white = p.fg;
+          white =
+            if dark
+            then "#ffffff"
+            else p.fg;
         };
       };
 

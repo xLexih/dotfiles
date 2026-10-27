@@ -55,7 +55,7 @@ overridden in the theme file:
 | --- | --- |
 | `variant` | `"dark"`; picks the dark or light GTK theme, Kvantum theme, KDE look and feel, and the dark/light preference reported to GTK, Firefox and VSCode |
 | `roles.*` | what a color is used for: `selectionBg`, `border`, `focus`, `hoverBg`, `link`, ... |
-| `terminal.*` | kitty and VSCode terminal colors, including `normal.*` and `bright.*` ANSI colors |
+| `terminal.*` | kitty and VSCode terminal colors, including `normal.*` and `bright.*` ANSI colors: `accent` cursor, `overlay` selection, `surface` inactive tabs; on light themes ANSI black and bright white are `fg`. Shell prompts use ANSI colors (magenta, green, bright black/magenta), so open terminals recolor on a switch |
 | `spicetify.*` | Spotify `color.ini` keys |
 | `gtk`, `cursor` | adw-gtk3, Bibata-Modern-Classic 24 |
 | `icons` | Papirus-Dark or Papirus-Light by `variant`, folders tinted to match `gnomeAccent` |

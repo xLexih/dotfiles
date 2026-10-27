@@ -14,8 +14,9 @@ if [ -f "$HOME/.config/theme/man.sh" ]; then
     . "$HOME/.config/theme/man.sh"
 fi
 
-PROMPT_COLOR="${PROMPT_COLOR:-95m}"
-export PS1="\n\[\033[$PROMPT_COLOR\][\u@\h:\w]\\$\[\033[0m\] "
+# Magenta is the theme's accent in kitty's palette, so the prompt follows
+# theme switches in open shells too.
+export PS1="\n\[\033[35m\][\u@\h:\w]\\$\[\033[0m\] "
 
 alias publicip="dig +short myip.opendns.com @resolver1.opendns.com"
 
