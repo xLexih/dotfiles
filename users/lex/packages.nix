@@ -37,7 +37,6 @@ in {
     vesktop
     inputs.ayugram-desktop.packages.${pkgs.stdenv.hostPlatform.system}.default
     vlc
-    zotero
 
     # agents
     llm-agents.claude-code
