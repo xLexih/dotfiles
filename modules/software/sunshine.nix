@@ -28,15 +28,14 @@ in {
       openFirewall = cfg.openFirewall;
     };
 
-    boot.kernelModules = ["uinput"];
+    # nixpkgs' sunshine module still sets the obsolete
+    # `services.avahi.publish.{enable,userServices}` options (defaults for
+    # its own avahi block); null them so only `settings.publish` applies and
+    # the deprecation warnings stay quiet.
+    services.avahi.publish.enable = lib.mkOverride 90 null;
+    services.avahi.publish.userServices = lib.mkOverride 100 null;
 
-    services.avahi = {
-      enable = true;
-      publish = {
-        enable = true;
-        userServices = true;
-      };
-    };
+    boot.kernelModules = ["uinput"];
 
     environment.systemPackages = with pkgs; [
       xrandr # display configuration
