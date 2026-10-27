@@ -1,5 +1,6 @@
 {
   config,
+  inputs,
   pkgs,
   ...
 }: let
@@ -34,6 +35,7 @@ in {
     onlyoffice-desktopeditors
     pwvucontrol
     vesktop
+    inputs.ayugram-desktop.packages.${pkgs.stdenv.hostPlatform.system}.default
     vlc
     zotero
 

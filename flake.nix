@@ -30,6 +30,10 @@
       url = "github:nix-community/nix-vscode-extensions";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    # Not following nixpkgs: upstream CI binaries (cachix) match only its
+    # locked nixpkgs, and following would rebuild tg_owt + AyuGram (~2800
+    # objects) from source on every nixpkgs bump.
+    ayugram-desktop.url = "github:ndfined-crp/ayugram-desktop";
   };
 
   outputs = {
