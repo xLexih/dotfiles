@@ -5,6 +5,7 @@ theme/
   base/
     default.nix     finds the named themes, renders each into /etc/themes, builds the `theme` command and its check
     theme.sh        the `theme` command
+    contrast.jq     readability check theme-check runs on every theme
     options.nix     every value a theme can set, with defaults
     lib.nix         color, name and font helpers
     dynamic.nix     template and scheme mapping of the wallpaper-derived theme
@@ -43,8 +44,9 @@ A named theme is a NixOS-style module evaluated against
 }
 ```
 
-The file name is the theme name. It's picked up by `theme list` and the gear
-in the bar after the next rebuild, and is a valid `modules.theme.default`.
+The file name is the theme name. It's picked up by `theme list` (named themes
+first, then `dynamic`) and the gear in the bar after the next rebuild, and is
+a valid `modules.theme.default`.
 Colors are type-checked (`#rrggbb`), so a typo fails evaluation instead of
 producing a broken config.
 
@@ -97,23 +99,35 @@ Theme files belong to the `theme` command. A `home/` dotfile at the same path
 fails the build with an assertion.
 
 The system build runs `theme-check` (`system.checks`): it switches through
-every theme and the dynamic one (from a dark and a light test image) in an
-empty home, and fails if a placeholder survives, `theme.json` names the wrong
-theme, or switching back leaves files behind.
+every theme and the dynamic one (from a dark, a light and an SVG test image,
+then Hyprland's default wallpapers) in an empty home, and fails if a
+placeholder survives, `theme.json` names the wrong theme, a text color reads
+below 3:1 against its background (`contrast.jq`: fg, accents, selection and
+every ANSI color), dynamic doesn't take its surfaces from the image's dominant
+color, or switching back leaves files behind.
 
 ## Dynamic theme
 
 `dynamic` derives its palette from the wallpaper (`theme wallpaper <image>`
-sets it through awww and remembers it). `dynamic.nix` is rendered like a
-named theme, once dark and once light, with a sentinel color in each palette
-slot (`#e1e210` to `#e1e21f`). On a switch, `theme`:
+sets it through awww and remembers it; any format awww reads, SVG included).
+`theme wallpaper default` goes back to one of Hyprland's own
+`share/hypr/wall*.png`, a different one each time. `dynamic` is always
+listed, with the wallpaper's full path, but `theme set dynamic` and the
+gear's cycle need a wallpaper first. `dynamic.nix` is rendered like a named
+theme, once dark and once light, with a sentinel color in each palette slot
+(`#e1e210` to `#e1e21f`). On a switch, `theme`:
 
-1. runs [matugen](https://github.com/InioX/matugen) on the wallpaper for a
-   Material You scheme. It picks dark or light from the image and harmonizes
-   the default theme's green, yellow, blue and cyan toward the wallpaper,
-   since Material has no such colors.
-2. maps scheme roles onto the palette (`roles` in `dynamic.nix`: surfaces to
-   `bg`/`surface`, `primary` to `accent`, `tertiary` to `accentAlt`, ...).
+1. runs [matugen](https://github.com/InioX/matugen) on the wallpaper (SVGs
+   are first rendered to a small PNG with resvg) for two Material You
+   schemes: one seeded by the image's dominant color, one by its most vivid.
+   matugen picks dark or light from the image and harmonizes the default
+   theme's green, yellow, blue and cyan toward it, since Material has no such
+   colors.
+2. maps scheme roles onto the palette (`roles` in `dynamic.nix`): surfaces
+   and text from the dominant scheme, so the desktop carries the wallpaper's
+   overall tint; `accent` from the vivid one; `accentAlt` from the dominant
+   color. When both seeds are the same color, `accentAlt` is the vivid
+   scheme's tertiary instead (`sameSource`).
 3. copies the matching template to `~/.cache/theme/dynamic` and replaces each
    sentinel in every format targets write it (`#rrggbb`, `rrggbb`, `r,g,b`,
    `r;g;b`), then fails if any sentinel is left.
