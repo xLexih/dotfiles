@@ -72,12 +72,14 @@ in {
     (offload prismlauncher)
 
     # c / c++ / qt
+    bear
     clang
     clang-tools
     cmake
     gcc
     gdb
     gnumake
+    lldb
     mold
     ninja
     pkg-config
