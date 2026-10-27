@@ -5,7 +5,7 @@
 }: {
   users.users.lex = {
     isNormalUser = true;
-    extraGroups = ["wheel" "video" "audio" "networkmanager" "docker" "libvirtd" "i2c" "plugdev"];
+    extraGroups = ["wheel" "video" "audio" "networkmanager" "docker" "libvirtd"];
   };
 
   # `nh os switch` and friends work from any directory.
