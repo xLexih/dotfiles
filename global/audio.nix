@@ -12,7 +12,13 @@
     wireplumber.extraConfig."10-momentum-4-bluetooth" = {
       "wireplumber.settings" = {
         "bluetooth.profile-preference" = "quality";
-        "bluetooth.autoswitch-to-headset-profile" = true;
+        # Classic Bluetooth can't carry A2DP music and a microphone at once:
+        # with this on, any app recording from the headset mic (Discord,
+        # Minecraft voice chat) flips the headphones to HFP/mSBC (16 kHz mono).
+        # Off, they stay on A2DP (aptX HD) and apps record from the laptop
+        # mic. To use the headset mic anyway, pick the "Headset Head Unit"
+        # profile in pwvucontrol.
+        "bluetooth.autoswitch-to-headset-profile" = false;
       };
       "monitor.alsa.rules" = [
         {

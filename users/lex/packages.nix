@@ -1,5 +1,6 @@
 {
   config,
+  inputs,
   pkgs,
   ...
 }: let
@@ -34,8 +35,8 @@ in {
     onlyoffice-desktopeditors
     pwvucontrol
     vesktop
+    inputs.ayugram-desktop.packages.${pkgs.stdenv.hostPlatform.system}.default
     vlc
-    zotero
 
     # agents
     llm-agents.claude-code
@@ -71,12 +72,14 @@ in {
     (offload prismlauncher)
 
     # c / c++ / qt
+    bear
     clang
     clang-tools
     cmake
     gcc
     gdb
     gnumake
+    lldb
     mold
     ninja
     pkg-config

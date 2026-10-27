@@ -27,6 +27,13 @@
     enable = true;
     nssmdns4 = true;
     openFirewall = true;
+    # Publishing on by default (Sunshine announces over mDNS); the old
+    # `services.avahi.publish.{enable,userServices}` options are obsolete.
+    settings.publish = {
+      "disable-publishing" = false;
+      "disable-user-service-publishing" = false;
+      "publish-addresses" = true;
+    };
   };
 
   hardware.bluetooth = {

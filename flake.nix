@@ -30,6 +30,10 @@
       url = "github:nix-community/nix-vscode-extensions";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    # Not following nixpkgs: upstream CI binaries (cachix) match only its
+    # locked nixpkgs, and following would rebuild tg_owt + AyuGram (~2800
+    # objects) from source on every nixpkgs bump.
+    ayugram-desktop.url = "github:ndfined-crp/ayugram-desktop";
   };
 
   outputs = {
@@ -113,7 +117,10 @@
               cp -rL $config qml
               cd qml
               imports=$(sed -n 's/^AdditionalImportPaths=//p' .qmllint.ini | tr -d ' ' | tr ',' '\n' | sed 's/^/-I/')
-              ${cfg.pkgs.qt6.qtdeclarative}/bin/qmllint $imports $(find -L . -name '*.qml') >$TMPDIR/lint 2>&1 || { cat $TMPDIR/lint; exit 1; }
+              # qmllint ignores the qmldir next to a linted file, so singletons
+              # declared there (asset/qmldir) are passed in explicitly.
+              qmldirs=$(find -L . -name qmldir | sed 's/^/-i /')
+              ${cfg.pkgs.qt6.qtdeclarative}/bin/qmllint $imports $qmldirs $(find -L . -name '*.qml') >$TMPDIR/lint 2>&1 || { cat $TMPDIR/lint; exit 1; }
               if grep '\[import\]' $TMPDIR/lint; then exit 1; fi
               touch $out
             ''))

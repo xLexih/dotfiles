@@ -2,9 +2,11 @@
 #   themes           directory with one rendered theme per name, plus dynamic/{dark,light}
 #   default_theme    theme used until the user picks one
 #   matugen_config   matugen config with the colors to harmonize
-#   dynamic_roles    JSON: palette key -> matugen color, per mode
+#   dynamic_roles    JSON: palette key -> "<scheme>.<matugen color>" per mode, and the
+#                    overrides for single-color wallpapers (see dynamic.nix)
 #   sentinels        JSON: palette key -> placeholder hex in the dynamic templates
 #   reload_hooks     script run with THEME_DIR after a switch
+#   hyprland_walls   directory with Hyprland's own wall*.png wallpapers
 # shellcheck disable=SC2154
 
 state="${XDG_STATE_HOME:-$HOME/.local/state}/theme"
@@ -20,16 +22,61 @@ if [ -z "${HYPRLAND_INSTANCE_SIGNATURE:-}" ] && [ -d "$XDG_RUNTIME_DIR/hypr" ]; 
   export HYPRLAND_INSTANCE_SIGNATURE
 fi
 
-usage() {
-  echo "usage: theme [current | list | set <name> | next | prev | apply | reload | wallpaper <image>]" >&2
+die() {
+  echo "theme: $*" >&2
   exit 1
 }
 
+usage() {
+  cat <<'USAGE'
+Usage: theme [<command>]
+
+Switch the desktop theme at runtime, no rebuild needed.
+
+Commands:
+  current             Print the active theme (the default command)
+  list                List the themes, * marks the active one; piped, names only
+  set <name>          Apply a theme
+  next, prev          Apply the next or previous theme (the gear in the bar)
+  apply               Reinstall the active theme's files, undoing manual edits
+  reload              Re-run the reload hooks without reinstalling files
+  wallpaper <image>   Set the wallpaper: PNG, JPEG, WebP, SVG, ...
+  wallpaper default   Go back to one of Hyprland's own wallpapers, a different
+                      one each time
+  help                Show this help
+
+Themes:
+USAGE
+  table | sed 's/^/  /'
+  cat <<'USAGE'
+
+dynamic takes its colors from the wallpaper: surfaces from its dominant
+color, the accent from its most vivid one, dark or light from its
+brightness. Pick an image with `theme wallpaper <image>`, then run
+`theme set dynamic`; while it's active, every new wallpaper recolors the
+desktop.
+
+Named themes are theme/<name>.nix in the dotfiles; see docs/themes.md.
+USAGE
+}
+
+# The image set with `theme wallpaper`, if it still exists.
+wallpaper_file() {
+  file=$(cat "$state/wallpaper" 2>/dev/null) && [ -f "$file" ] && echo "$file"
+}
+
+# Every theme: the named ones, then dynamic.
 names() {
   for dir in "$themes"/*; do
-    name=$(basename "$dir")
-    # Without a wallpaper there is nothing to derive colors from.
-    if [ "$name" != dynamic ] || [ -f "$(cat "$state/wallpaper" 2>/dev/null)" ]; then
+    [ "${dir##*/}" = dynamic ] || echo "${dir##*/}"
+  done
+  echo dynamic
+}
+
+# The themes `next` and `prev` cycle through: dynamic only with a wallpaper.
+available() {
+  names | while read -r name; do
+    if [ "$name" != dynamic ] || wallpaper_file >/dev/null; then
       echo "$name"
     fi
   done
@@ -49,6 +96,47 @@ theme_dir() {
   else
     echo "$themes/$1"
   fi
+}
+
+# One aligned line per theme: active marker, name, label, variant and, for
+# dynamic, the wallpaper it follows.
+table() {
+  active=$(current)
+  rows_name=() rows_label=() rows_variant=() rows_detail=()
+  while read -r name; do
+    rows_name+=("$name")
+    if [ "$name" != dynamic ]; then
+      rows_label+=("$(jq -r .label "$themes/$name/theme.json")")
+      rows_variant+=("$(jq -r .variant "$themes/$name/theme.json")")
+      rows_detail+=("")
+    elif wallpaper=$(wallpaper_file); then
+      rows_label+=(Dynamic)
+      # The mode is only known once matugen has seen the image.
+      if dynamic_fresh "$wallpaper"; then
+        rows_variant+=("$(jq -r .variant "$cache/dynamic/theme.json")")
+      else
+        rows_variant+=(auto)
+      fi
+      rows_detail+=("from $wallpaper")
+    else
+      rows_label+=(Dynamic)
+      rows_variant+=(-)
+      rows_detail+=("needs a wallpaper: theme wallpaper <image>")
+    fi
+  done < <(names)
+
+  name_width=0 label_width=0
+  for i in "${!rows_name[@]}"; do
+    if [ "${#rows_name[i]}" -gt "$name_width" ]; then name_width=${#rows_name[i]}; fi
+    if [ "${#rows_label[i]}" -gt "$label_width" ]; then label_width=${#rows_label[i]}; fi
+  done
+  for i in "${!rows_name[@]}"; do
+    marker=' '
+    if [ "${rows_name[i]}" = "$active" ]; then marker='*'; fi
+    line=$(printf '%s %-*s  %-*s  %-5s  %s' "$marker" "$name_width" "${rows_name[i]}" \
+      "$label_width" "${rows_label[i]}" "${rows_variant[i]}" "${rows_detail[i]}")
+    echo "${line%"${line##*[! ]}"}"
+  done
 }
 
 # Closest GNOME accent preset to a color, by hue.
@@ -75,29 +163,61 @@ gnome_accent() {
   }'
 }
 
+dynamic_key() {
+  echo "$1 $(stat -c '%Y %s' "$1") $themes $dynamic_roles"
+}
+
+# Whether the cached dynamic theme was rendered from this wallpaper.
+dynamic_fresh() {
+  [ "$(cat "$cache/dynamic.key" 2>/dev/null)" = "$(dynamic_key "$1")" ] &&
+    [ -f "$cache/dynamic/theme.json" ]
+}
+
+# matugen only reads raster images, so an SVG is rendered for it; awww draws
+# SVGs itself.
+color_source() {
+  case "${1,,}" in
+    *.svg | *.svgz)
+      resvg --width 512 "$1" "$cache/wallpaper.png" 2>/dev/null || die "can't render $1"
+      echo "$cache/wallpaper.png"
+      ;;
+    *) echo "$1" ;;
+  esac
+}
+
+# Material You scheme of an image as JSON; further arguments go to matugen.
+scheme() {
+  image=$1
+  shift
+  matugen image "$image" --dry-run --json hex --config "$matugen_config" "$@" 2>/dev/null ||
+    die "can't read colors from $wallpaper"
+}
+
 # Renders the dynamic theme for the current wallpaper into the cache: the
 # template for the scheme's mode, with every placeholder color replaced in
-# each format targets write it (#rrggbb, rrggbb, r,g,b and r;g;b). matugen
-# takes about a second on a large image, so the result is reused until the
-# wallpaper file or the rendered themes change.
+# each format targets write it (#rrggbb, rrggbb, r,g,b and r;g;b). The result
+# is reused until the wallpaper file, the rendered themes or the role mapping
+# change.
 render_dynamic() {
-  wallpaper=$(cat "$state/wallpaper" 2>/dev/null || true)
-  if [ ! -f "$wallpaper" ]; then
-    echo "the dynamic theme needs a wallpaper: theme wallpaper <image>" >&2
-    exit 1
-  fi
-
-  key="$wallpaper $(stat -c '%Y %s' "$wallpaper") $themes"
-  dir="$cache/dynamic"
-  if [ "$(cat "$cache/dynamic.key" 2>/dev/null)" = "$key" ] && [ -f "$dir/theme.json" ]; then
+  wallpaper=$(wallpaper_file) || die "dynamic needs a wallpaper first: theme wallpaper <image>"
+  if dynamic_fresh "$wallpaper"; then
     return
   fi
 
-  scheme=$(matugen image "$wallpaper" --dry-run --json hex --mode smart --prefer saturation \
-    --config "$matugen_config" 2>/dev/null)
-  mode=$(jq -r .mode <<<"$scheme")
-  palette=$(jq -c --slurpfile roles "$dynamic_roles" --arg mode "$mode" \
-    '. as $scheme | $roles[0][$mode] | map_values($scheme.colors[.].default.color | ascii_downcase)' <<<"$scheme")
+  mkdir -p "$cache"
+  image=$(color_source "$wallpaper")
+  vivid=$(scheme "$image" --mode smart --prefer saturation)
+  mode=$(jq -r .mode <<<"$vivid")
+  dominant=$(scheme "$image" --mode "$mode" --source-color-index 0)
+  palette=$(jq -nc --argjson dominant "$dominant" --argjson vivid "$vivid" --arg mode "$mode" \
+    --slurpfile mapping "$dynamic_roles" '
+      def seed($scheme): $scheme.colors.source_color.default.color;
+      {$dominant, $vivid} as $schemes
+      | $mapping[0].roles[$mode]
+        + (if seed($dominant) == seed($vivid) then $mapping[0].sameSource else {} end)
+      | map_values(split(".") as [$scheme, $color]
+          | $schemes[$scheme].colors[$color].default.color | ascii_downcase)')
+  dir="$cache/dynamic"
 
   rm -f "$cache/dynamic.key"
   rm -rf "$dir"
@@ -114,11 +234,12 @@ render_dynamic() {
       b=$((16#${hex:4:2}))
       printf 's/%s/%s/g\n' "$sentinel" "$hex"
       printf 's/\\<225,226,%d\\>/%d,%d,%d/g\n' "$from" "$r" "$g" "$b"
-      printf 's/225;226;%d/%d;%d;%d/g\n' "$from" "$r" "$g" "$b"
+      printf 's/225;226;%d\\([^0-9]\\|$\\)/%d;%d;%d\\1/g\n' "$from" "$r" "$g" "$b"
     done >"$cache/dynamic.sed"
   find "$dir" -type f -exec sed -i -f "$cache/dynamic.sed" {} +
 
-  if grep -rqE 'e1e21[0-9a-f]|225[,;]226[,;]' "$dir"; then
+  # Only the sentinels themselves: a real color may well start with 225,226.
+  if grep -rqE 'e1e21[0-9a-f]|225[,;]226[,;](1[6-9]|2[0-9]|3[01])([^0-9]|$)' "$dir"; then
     echo "dynamic theme: some colors weren't replaced" >&2
     exit 1
   fi
@@ -128,7 +249,7 @@ render_dynamic() {
   jq --arg accent "'$accent'" --arg wallpaper "$wallpaper" \
     '.gtk["accent-color"] = $accent | .wallpaper = $wallpaper' "$dir/theme.json" >"$tmp"
   mv -f "$tmp" "$dir/theme.json"
-  echo "$key" >"$cache/dynamic.key"
+  dynamic_key "$wallpaper" >"$cache/dynamic.key"
 }
 
 # Copies a file into $HOME in one step, so programs watching it (the bar,
@@ -144,11 +265,12 @@ install_file() {
 }
 
 apply() {
-  [ "$1" = dynamic ] && render_dynamic
+  if [ "$1" = dynamic ]; then
+    render_dynamic
+  fi
   dir=$(theme_dir "$1")
-  if [ -z "$1" ] || [ ! -f "$dir/theme.json" ]; then
-    echo "unknown theme: $1 (available: $(names | tr '\n' ' '))" >&2
-    exit 1
+  if [ ! -f "$dir/theme.json" ]; then
+    die "unknown theme: $1 (themes: $(names | paste -sd ' '))"
   fi
 
   mkdir -p "$state"
@@ -172,7 +294,7 @@ apply() {
 }
 
 step() {
-  mapfile -t list < <(names)
+  mapfile -t list < <(available)
   now=$(current)
   index=0
   for i in "${!list[@]}"; do
@@ -181,8 +303,16 @@ step() {
   apply "${list[(index + $1 + ${#list[@]}) % ${#list[@]}]}"
 }
 
+# One of Hyprland's wallpapers, other than the current one.
+default_wallpaper() {
+  now=$(cat "$state/wallpaper" 2>/dev/null || true)
+  mapfile -t walls < <(find "$hyprland_walls" -maxdepth 1 -name 'wall*.png' | grep -vxF "$now" | sort)
+  [ "${#walls[@]}" -gt 0 ] || die "no Hyprland wallpapers in $hyprland_walls"
+  echo "${walls[RANDOM % ${#walls[@]}]}"
+}
+
 wallpaper() {
-  file=$(realpath -e "$1")
+  file=$(realpath -e "$1" 2>/dev/null) || die "no such file: $1"
   mkdir -p "$state"
   echo "$file" >"$state/wallpaper"
   awww img --transition-type fade --transition-duration 1 "$file" || true
@@ -197,15 +327,29 @@ wallpaper() {
 
 case "${1:-current}" in
   current) current ;;
-  list) names ;;
-  set) apply "${2:-}" ;;
+  list)
+    if [ -t 1 ]; then
+      table
+    else
+      names
+    fi
+    ;;
+  set)
+    [ -n "${2:-}" ] || die "set needs a theme name: $(names | paste -sd ' ')"
+    apply "$2"
+    ;;
   next) step 1 ;;
   prev) step -1 ;;
   apply) apply "$(current)" ;;
   reload) THEME_DIR=$(theme_dir "$(current)") "$reload_hooks" ;;
   wallpaper)
-    [ -n "${2:-}" ] || usage
-    wallpaper "$2"
+    [ -n "${2:-}" ] || die "wallpaper needs an image: theme wallpaper <image> | default"
+    image=$2
+    if [ "$image" = default ]; then
+      image=$(default_wallpaper)
+    fi
+    wallpaper "$image"
     ;;
-  *) usage ;;
+  help | -h | --help) usage ;;
+  *) die "unknown command: $1 (see theme help)" ;;
 esac

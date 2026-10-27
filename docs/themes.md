@@ -5,6 +5,7 @@ theme/
   base/
     default.nix     finds the named themes, renders each into /etc/themes, builds the `theme` command and its check
     theme.sh        the `theme` command
+    contrast.jq     readability check theme-check runs on every theme
     options.nix     every value a theme can set, with defaults
     lib.nix         color, name and font helpers
     dynamic.nix     template and scheme mapping of the wallpaper-derived theme
@@ -43,8 +44,9 @@ A named theme is a NixOS-style module evaluated against
 }
 ```
 
-The file name is the theme name. It's picked up by `theme list` and the gear
-in the bar after the next rebuild, and is a valid `modules.theme.default`.
+The file name is the theme name. It's picked up by `theme list` (named themes
+first, then `dynamic`) and the gear in the bar after the next rebuild, and is
+a valid `modules.theme.default`.
 Colors are type-checked (`#rrggbb`), so a typo fails evaluation instead of
 producing a broken config.
 
@@ -55,7 +57,7 @@ overridden in the theme file:
 | --- | --- |
 | `variant` | `"dark"`; picks the dark or light GTK theme, Kvantum theme, KDE look and feel, and the dark/light preference reported to GTK, Firefox and VSCode |
 | `roles.*` | what a color is used for: `selectionBg`, `border`, `focus`, `hoverBg`, `link`, ... |
-| `terminal.*` | kitty and VSCode terminal colors, including `normal.*` and `bright.*` ANSI colors |
+| `terminal.*` | kitty and VSCode terminal colors, including `normal.*` and `bright.*` ANSI colors: `accent` cursor, `overlay` selection, `surface` inactive tabs; on light themes ANSI black and bright white are `fg`. Shell prompts use ANSI colors (magenta, green, bright black/magenta), so open terminals recolor on a switch |
 | `spicetify.*` | Spotify `color.ini` keys |
 | `gtk`, `cursor` | adw-gtk3, Bibata-Modern-Classic 24 |
 | `icons` | Papirus-Dark or Papirus-Light by `variant`, folders tinted to match `gnomeAccent` |
@@ -97,23 +99,35 @@ Theme files belong to the `theme` command. A `home/` dotfile at the same path
 fails the build with an assertion.
 
 The system build runs `theme-check` (`system.checks`): it switches through
-every theme and the dynamic one (from a dark and a light test image) in an
-empty home, and fails if a placeholder survives, `theme.json` names the wrong
-theme, or switching back leaves files behind.
+every theme and the dynamic one (from a dark, a light and an SVG test image,
+then Hyprland's default wallpapers) in an empty home, and fails if a
+placeholder survives, `theme.json` names the wrong theme, a text color reads
+below 3:1 against its background (`contrast.jq`: fg, accents, selection and
+every ANSI color), dynamic doesn't take its surfaces from the image's dominant
+color, or switching back leaves files behind.
 
 ## Dynamic theme
 
 `dynamic` derives its palette from the wallpaper (`theme wallpaper <image>`
-sets it through awww and remembers it). `dynamic.nix` is rendered like a
-named theme, once dark and once light, with a sentinel color in each palette
-slot (`#e1e210` to `#e1e21f`). On a switch, `theme`:
+sets it through awww and remembers it; any format awww reads, SVG included).
+`theme wallpaper default` goes back to one of Hyprland's own
+`share/hypr/wall*.png`, a different one each time. `dynamic` is always
+listed, with the wallpaper's full path, but `theme set dynamic` and the
+gear's cycle need a wallpaper first. `dynamic.nix` is rendered like a named
+theme, once dark and once light, with a sentinel color in each palette slot
+(`#e1e210` to `#e1e21f`). On a switch, `theme`:
 
-1. runs [matugen](https://github.com/InioX/matugen) on the wallpaper for a
-   Material You scheme. It picks dark or light from the image and harmonizes
-   the default theme's green, yellow, blue and cyan toward the wallpaper,
-   since Material has no such colors.
-2. maps scheme roles onto the palette (`roles` in `dynamic.nix`: surfaces to
-   `bg`/`surface`, `primary` to `accent`, `tertiary` to `accentAlt`, ...).
+1. runs [matugen](https://github.com/InioX/matugen) on the wallpaper (SVGs
+   are first rendered to a small PNG with resvg) for two Material You
+   schemes: one seeded by the image's dominant color, one by its most vivid.
+   matugen picks dark or light from the image and harmonizes the default
+   theme's green, yellow, blue and cyan toward it, since Material has no such
+   colors.
+2. maps scheme roles onto the palette (`roles` in `dynamic.nix`): surfaces
+   and text from the dominant scheme, so the desktop carries the wallpaper's
+   overall tint; `accent` from the vivid one; `accentAlt` from the dominant
+   color. When both seeds are the same color, `accentAlt` is the vivid
+   scheme's tertiary instead (`sameSource`).
 3. copies the matching template to `~/.cache/theme/dynamic` and replaces each
    sentinel in every format targets write it (`#rrggbb`, `rrggbb`, `r,g,b`,
    `r;g;b`), then fails if any sentinel is left.
@@ -139,11 +153,12 @@ Each file in `theme/base/targets/` handles one program. A target can set:
 
 | Target | Files | After a switch |
 | --- | --- | --- |
-| `gtk.nix` | GTK 3/4 `gtk.css` overriding libadwaita's named colors, `settings.ini`, `.gtkrc-2.0` | writes GTK theme, icons, cursor, fonts and dark/light to dconf; libadwaita, Firefox and Electron follow the preference live, CSS applies to newly started apps |
+| `gtk.nix` | GTK 3/4 `gtk.css` overriding libadwaita's named colors, `settings.ini`, `~/.config/gtk-2.0/gtkrc` (via `GTK2_RC_FILES`) | writes GTK theme, icons, cursor, fonts and dark/light to dconf; libadwaita, Firefox and Electron follow the preference live, CSS applies to newly started apps |
 | `qt.nix` | qt5ct/qt6ct, Kvantum, kdeglobals, KDE color scheme | newly started Qt apps |
 | `kitty.nix` | `~/.config/kitty/theme.conf` | every kitty window reloads |
 | `hyprland.nix` | `~/.config/hypr/theme.lua` (borders, shadow, cursor), share-picker stylesheet | re-runs `theme.lua`, sets the cursor |
 | `palette.nix` | `~/.config/theme/palette.sh` | new shells source it; the bar watches `theme.json` |
+| `man.nix` | `~/.config/theme/man.sh` (`less` `TERMCAP` colors for `man`) | new shells source it |
 | `firefox/` | `~/.config/theme/firefox.css` | Firefox reloads it within 250 ms |
 | `vscode.nix` | colors and token rules in `theme.json` | writes them to VSCodium's `settings.json` as color customizations over Default Dark/Light Modern |
 | `swayosd/` | popup style sheet | restarts the popup service |

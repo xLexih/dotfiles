@@ -6,6 +6,91 @@
   ...
 }: let
   inherit (import ../lib.nix {inherit lib;}) argb argbAlpha qtFont rgbCsv;
+  inherit (lib) replaceStrings;
+
+  # Kvantum themes hardcode their colors in a kvconfig and an SVG. The stock
+  # KvArcDark is otherwise the right geometry, so copy it per theme and remap
+  # its Arc grays/blues onto the palette. Longest-first, so #ffffffc8 is
+  # replaced before #fff and never one of its own suffixes twice.
+  kvantumMap = theme: let
+    t = theme.colors;
+    m = {
+      # window / button grays
+      "#22252e" = t.bgDark;
+      "#3c404e" = t.surface;
+      "#343844" = t.bgDark;
+      "#444a58" = t.surface;
+      "#2d303b" = t.bgDark;
+      "#383c4a" = t.bg;
+      "#414654" = t.surface;
+      "#3c434f" = t.surface;
+      "#363c48" = t.surface;
+      "#2f343f" = t.bgDark;
+      "#2d323d" = t.bgDark;
+      "#2b2e39" = t.bgDark;
+      "#323542" = t.bgDark;
+      "#31353f" = t.bgDark;
+      "#22242e" = t.bgDarker;
+      "#222224" = t.bgDarker;
+      "#262933" = t.bgDarker;
+      "#404552" = t.surface;
+      "#474d5d" = t.activeBg;
+      "#505666" = t.activeBg;
+      "#4d5367" = t.activeBg;
+      "#5a616e" = t.activeBg;
+      "#474d5b" = t.activeBg;
+      "#444448" = t.activeBg;
+      "#767b87" = t.overlay;
+      "#5f677f" = t.overlay;
+      "#1e1e1e" = t.bgDarker;
+      "#141414" = t.bgDarker;
+      "#111217" = t.bgDarker;
+      "#191919" = t.shadow;
+      "#313131" = t.shadow;
+      "#505050" = t.border;
+      "#5a5a5a" = t.border;
+      "#666" = t.border;
+      "#787878" = t.disabledFg;
+      "#7b7b7b" = t.disabledFg;
+      "#969696" = t.fgMuted;
+      "#92959d" = t.fgMuted;
+      "#a0a0a0" = t.fgMuted;
+      "#acb1bc" = t.fgMuted;
+      "#b4b4b4" = t.fgMuted;
+      "#c3c3c3" = t.fgMuted;
+      "#d2d2d2" = t.fg;
+      "#d7d7d7" = t.fg;
+      # accents (stock Arc blue + violet)
+      "#5294e2" = t.accent;
+      "#4693e6" = t.accent;
+      "#5796e8" = t.accent;
+      "#58acff" = t.accentBright;
+      "#3176bf" = t.accentAlt;
+      "#0582ff" = t.link;
+      "#39f" = t.link;
+      "#009DFF" = t.link;
+      "#9E4FFF" = t.accentAlt;
+      "#b74aff" = t.accentAlt;
+      "#f04a50" = t.red;
+      # whites -> theme text
+      "#ffffffc8" = t.fg;
+      "#ffffffb4" = t.fg;
+      "#ffffffd2" = t.fg;
+      "#ffffff96" = t.fgMuted;
+      "#ffffff78" = t.fgMuted;
+      "#ffffff73" = t.disabledFg;
+      "#ffffff" = t.fg;
+      "#fff" = t.fg;
+      "#eefcff" = t.fg;
+      "#000000b4" = t.shadow;
+    };
+    # Longest first: "#ffffffc8" before "#ffffff" before "#fff".
+    pairs = lib.sort (a: b:
+      (lib.stringLength (lib.head (lib.attrNames a)))
+      > (lib.stringLength (lib.head (lib.attrNames b))))
+    (lib.mapAttrsToList lib.nameValuePair m);
+  in
+    text: lib.foldl' (acc: kv: replaceStrings [kv.name] [kv.value] acc) text pairs;
 
   render = theme: let
     t = theme.colors;
@@ -18,6 +103,22 @@
       else "kvantum";
     generalFont = qtFont theme.fonts.sans;
     fixedFont = qtFont theme.fonts.mono;
+
+    # Recolored copy of the stock Kvantum theme: same geometry, palette
+    # colors. kvantum.kvconfig below points at it by name.
+    kvantumTheme = let
+      # The plugin nixpkgs' config/qt.nix installs for `style = "kvantum"`;
+      # Qt5 and Qt6 copies ship identical stock themes.
+      stock = pkgs.kdePackages.qtstyleplugin-kvantum;
+      stockName = theme.qt.kvantum;
+      stockDir = "${stock}/share/Kvantum/${stockName}";
+      kvconfig = builtins.readFile "${stockDir}/${stockName}.kvconfig";
+      svg = builtins.readFile "${stockDir}/${stockName}.svg";
+    in {
+      "${stockName}.kvconfig" = kvantumMap theme kvconfig;
+      "${stockName}.svg" = kvantumMap theme svg;
+    };
+    kvantumDir = ".config/Kvantum/${theme.qt.kvantum}";
 
     # QPalette roles in order: WindowText, Button, Light, Midlight, Dark, Mid,
     # Text, BrightText, ButtonText, Base, Window, Shadow, Highlight,
@@ -221,6 +322,8 @@
       [General]
       theme=${theme.qt.kvantum}
     '';
+    "${kvantumDir}/${theme.qt.kvantum}.kvconfig" = kvantumTheme."${theme.qt.kvantum}.kvconfig";
+    "${kvantumDir}/${theme.qt.kvantum}.svg" = kvantumTheme."${theme.qt.kvantum}.svg";
     ".config/qt5ct/qt5ct.conf" = qtctConfig;
     ".config/qt6ct/colors/theme.conf" = qtctColors;
     ".config/qt6ct/qt6ct.conf" = qtctConfig;

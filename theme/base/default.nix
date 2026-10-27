@@ -93,14 +93,15 @@
   mkThemeCommand = themes:
     pkgs.writeShellApplication {
       name = "theme";
-      runtimeInputs = with pkgs; [awww coreutils findutils gawk gnugrep gnused jq matugen];
+      runtimeInputs = with pkgs; [awww coreutils findutils gawk gnugrep gnused jq matugen resvg];
       text = ''
         themes=${themes}
         default_theme=${lib.escapeShellArg cfg.default}
         matugen_config=${matugenConfig}
-        dynamic_roles=${pkgs.writeText "dynamic-roles.json" (builtins.toJSON dynamic.roles)}
+        dynamic_roles=${pkgs.writeText "dynamic-roles.json" (builtins.toJSON {inherit (dynamic) roles sameSource;})}
         sentinels=${pkgs.writeText "dynamic-sentinels.json" (builtins.toJSON dynamic.sentinels)}
         reload_hooks=${reloadHooks}
+        hyprland_walls=${config.programs.hyprland.package}/share/hypr
 
         ${builtins.readFile ./theme.sh}
       '';
@@ -108,9 +109,11 @@
 
   themeCommand = mkThemeCommand themesDir;
 
-  # Switches through every theme and the dynamic one (dark and light test
-  # wallpapers) in an empty home: no placeholder survives, each switch
-  # installs the right theme.json, and switching back leaves no stale files.
+  # Switches through every theme and the dynamic one (dark, light, SVG and
+  # Hyprland's default test wallpapers) in an empty home: no placeholder
+  # survives, each switch installs the right theme.json, text stays readable
+  # (contrast.jq), dynamic follows the wallpaper's dominant color, and
+  # switching back leaves no stale files.
   check =
     pkgs.runCommand "theme-check" {
       nativeBuildInputs = [themeCommand pkgs.imagemagick pkgs.jq];
@@ -121,16 +124,23 @@
       verify() {
         name=$(jq -r .name $HOME/.config/theme/theme.json)
         [ "$name" = "$1" ] || { echo "theme.json says $name after switching to $1"; exit 1; }
-        if grep -rliE 'e1e21[0-9a-f]|225[,;]226[,;]|@HOME@' --exclude-dir=.cache $HOME; then
+        if grep -rliE 'e1e21[0-9a-f]|225[,;]226[,;](1[6-9]|2[0-9]|3[01])([^0-9]|$)|@HOME@' --exclude-dir=.cache $HOME; then
           echo "placeholders left after switching to $1"
           exit 1
         fi
+        unreadable=$(jq -r -f ${./contrast.jq} $HOME/.config/theme/theme.json)
+        [ -z "$unreadable" ] || { echo "unreadable colors in $1:"; echo "$unreadable"; exit 1; }
       }
 
-      for name in $(theme list); do
+      [ "$(theme list | tail -1)" = dynamic ] || { echo "theme list doesn't end with dynamic"; exit 1; }
+      for name in $(theme list | grep -vx dynamic); do
         theme set $name
         verify $name
       done
+      if theme set dynamic 2>/dev/null; then
+        echo "dynamic applied without a wallpaper"
+        exit 1
+      fi
 
       magick -size 64x64 gradient:'#10301c'-'#2f8f5f' dark.png
       magick -size 64x64 gradient:'#fbf3e6'-'#e9c9a0' light.png
@@ -141,6 +151,33 @@
       theme wallpaper light.png
       verify dynamic
       [ "$(jq -r .variant $HOME/.config/theme/theme.json)" = light ]
+
+      # A navy SVG with a small orange sun: the surfaces must stay blue and
+      # the accent orange, instead of everything following the vivid sun.
+      cat > navy.svg <<'EOF'
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 90">
+        <rect width="160" height="90" fill="#13304a"/>
+        <circle cx="120" cy="30" r="12" fill="#f29e4c"/>
+      </svg>
+      EOF
+      theme wallpaper navy.svg
+      verify dynamic
+      hue() {
+        jq -r ".colors.$1" $HOME/.config/theme/theme.json |
+          awk '{ r = strtonum("0x" substr($0, 2, 2)); b = strtonum("0x" substr($0, 6, 2)); print (b > r ? "blue" : "warm") }'
+      }
+      [ "$(hue bg)" = blue ] || { echo "dynamic bg doesn't follow the dominant navy"; exit 1; }
+      [ "$(hue accent)" = warm ] || { echo "dynamic accent doesn't follow the orange sun"; exit 1; }
+
+      # `default` goes back to Hyprland's own wallpapers, a different one each time.
+      for _ in 1 2; do
+        before=$(cat $HOME/.local/state/theme/wallpaper)
+        theme wallpaper default
+        verify dynamic
+        after=$(cat $HOME/.local/state/theme/wallpaper)
+        [ "$after" != "$before" ] || { echo "wallpaper default kept $before"; exit 1; }
+        [ "$after" = "${config.programs.hyprland.package}/share/hypr/''${after##*/}" ] || { echo "wallpaper default chose $after"; exit 1; }
+      done
 
       theme set ${cfg.default}
       installed=$(cd $HOME && find . -path ./.local/state -prune -o -path ./.cache -prune -o -type f -print | wc -l)

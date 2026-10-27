@@ -11,6 +11,8 @@
   "window.zoomPerWindow": true,
 
   "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "editor.detectIndentation": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.formatOnSave": true,
   "editor.renderWhitespace": "trailing",
@@ -97,6 +99,8 @@
   "js/ts.inlayHints.propertyDeclarationTypes.enabled": true,
   "js/ts.inlayHints.variableTypes.enabled": true,
   "prettier.printWidth": 120,
+  "prettier.tabWidth": 2,
+  "prettier.useTabs": false,
   "prettier.singleQuote": false,
   "prettier.semi": true,
   "prettier.vueIndentScriptAndStyle": true,
@@ -137,19 +141,27 @@
   },
 
   "[go]": {
-    "editor.defaultFormatter": "golang.go"
+    "editor.defaultFormatter": "golang.go",
+    "editor.insertSpaces": false
   },
 
+  "clangd.path": "{{pkgs.clang-tools}}/bin/clangd",
   "clangd.arguments": [
-    "--compile-commands-dir=${workspaceFolder}/build",
-    "--query-driver=/nix/store/*clang*/bin/clang,/nix/store/*clang*/bin/clang++,/etc/profiles/per-user/${env:USER}/bin/clang,/etc/profiles/per-user/${env:USER}/bin/clang++",
+    "--query-driver=/nix/store/*clang*/bin/clang,/nix/store/*clang*/bin/clang++,/etc/profiles/per-user/${env:USER}/bin/clang,/etc/profiles/per-user/${env:USER}/bin/clang++,/nix/store/*gcc*/bin/gcc,/nix/store/*gcc*/bin/g++,/etc/profiles/per-user/${env:USER}/bin/gcc,/etc/profiles/per-user/${env:USER}/bin/g++",
     "--background-index",
     "--clang-tidy"
   ],
+  "lldb.library": "{{pkgs.lldb}}/lib/liblldb.so",
+  "[c]": {
+    "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
+  },
   "[cpp]": {
     "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
   },
   "cmake.cmakePath": "{{pkgs.cmake}}/bin/cmake",
+  "cmake.buildDirectory": "${workspaceFolder}/build",
+  "cmake.generator": "Ninja",
+  "cmake.configureArgs": ["-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"],
   "cmake.showConfigureWithDebuggerNotification": false,
 
   "java.jdt.ls.java.home": "{{pkgs.jdk}}/lib/openjdk",
