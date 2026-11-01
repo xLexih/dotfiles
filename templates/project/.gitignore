@@ -1,0 +1,11 @@
+.direnv/
+result*
+
+# private files: plaintext stays local, git tracks .encrypted/<path>.age
+# (keep in sync with PRIVATE in script/private)
+.env
+.env.*
+*.private
+*.private.*
+!*.example
+!/.encrypted/**

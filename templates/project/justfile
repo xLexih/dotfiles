@@ -1,0 +1,45 @@
+set positional-arguments := true
+
+[private]
+default:
+  @just --list --unsorted
+
+# `nix flake init` drops the executable bits, so setup restores them.
+
+# Install the git hooks, select your key and decrypt the private files. Do this one time in each clone.
+[group('setup')]
+setup:
+  chmod +x script/private script/hook/*
+  script/private setup
+
+# ---------------------------------------------------------------------------
+
+# Show the private files that are different from their encrypted copies.
+[group('private files')]
+private-status:
+  script/private status
+
+# Encrypt the changed private files. With --force, your files replace encrypted copies that also changed.
+[group('private files')]
+private-encrypt *flags:
+  script/private encrypt "$@"
+
+# Decrypt the changed encrypted copies. With --force, the encrypted copies replace all your changes.
+[group('private files')]
+private-decrypt *flags:
+  script/private decrypt "$@"
+
+# Give a key access to the private files: age1..., "ssh-ed25519 ...", or a key file.
+[group('private files')]
+private-add-key key:
+  script/private add-key "$1"
+
+# Encrypt all private files again for the keys in .encrypted/recipients. Do this after you remove a key.
+[group('private files')]
+private-reencrypt:
+  script/private reencrypt
+
+# Remove a private file and its encrypted copy.
+[group('private files')]
+private-remove path:
+  script/private remove "$1"

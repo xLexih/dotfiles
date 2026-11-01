@@ -19,7 +19,7 @@
 
 ### Edits
 
-- Smallest safe change that solves the problem. No full-file rewrites unless asked.
+- Change the fewest files and lines that solve the task safely. No full-file rewrites unless asked; never reformat files the task does not touch.
 - Preserve existing style and conventions; match the project's formatters and linters.
 - If an approach fails mid-task or strays from the plan, undo your own edits: `git restore <file>` for files that were clean pre-task, and for already-dirty files revert only your changes (or ask if you can't separate them). Delete any files you created. Never discard changes you didn't make.
 
@@ -27,6 +27,7 @@
 
 - Simplicity first: fewest moving parts, direct over clever.
 - Refactor existing components (props/params) before writing new ones. One responsibility per module.
+- Name commands, functions, scripts and variables noun-verb: object first, action second (`docker image build`). Keep the bare verb where no object exists (`deploy`, `setup`).
 - Self-documenting code. Comments only for non-obvious intent, workarounds, or tradeoffs, never narration of what the code plainly does.
 - New or substantially modified files target roughly 250-300 lines; split by responsibility, not line count, and don't fragment cohesive logic to hit the range.
 - Compact, inlined configuration (CSS, config files) over scattered declarations, following existing syntax.
@@ -45,6 +46,11 @@
 - Bug fixes, new features, and non-trivial logic changes get tests, matching existing suite conventions, whenever a test suite exists.
 - Pure refactors and trivial glue code may skip new tests; state explicitly when a test is skipped and why.
 
+### READMEs
+
+- README.md is the short introduction: what the project is, how to run and build it. Every deeper topic goes in `docs/<topic>.md`, with one pointer line in the README. It grows with use, never with explanations.
+- Put in only what a user must see at a first look. A docs file exists only when it earns its place.
+
 ## Verification
 
 - Default: provide the exact commands (lint, type-check, build, tests) for me to run manually, with the expected outcome.
@@ -58,7 +64,7 @@
 - Host is NixOS. Never use imperative package managers (apt, yum, pacman).
 - If the flake environment isn't loaded in the current shell (no `direnv`), wrap commands: `nix develop --command <cmd>`.
 - New projects with executable code, tests, build tooling, codegen, or dependencies:
-  - Create a `flake.nix` with a `devShell`. Use the repo's nixpkgs pin if present, otherwise current stable NixOS.
+  - Create a `flake.nix` with a `devShell`. Use the repo's nixpkgs pin if present, otherwise current stable NixOS. Point nixpkgs at the channel tarball `https://channels.nixos.org/<branch>/nixexprs.tar.zst` (e.g. `nixos-26.05`), not `github:NixOS/nixpkgs`.
   - Use the `{ ... } @ inputs:` outputs pattern with `inputs.<name>` references. Run `nix flake lock` to generate `flake.lock`.
   - Add a `.envrc` with `use flake`; ensure `.direnv/` is gitignored and never committed.
 - Existing projects: prefer the repo's tooling. Add a flake when asked, when tooling is missing or inconsistent, or when reproducibility would materially help.

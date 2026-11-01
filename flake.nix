@@ -2,14 +2,18 @@
   description = "lex's NixOS hosts, users and dotfiles";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    # nixos.org channel tarballs: smaller than GitHub's and no rate limits.
+    nixpkgs.url = "https://channels.nixos.org/nixos-unstable/nixexprs.tar.zst";
 
     hjem = {
       url = "github:feel-co/hjem";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     import-tree.url = "github:denful/import-tree";
-    nixos-hardware.url = "github:NixOS/nixos-hardware";
+    nixos-hardware = {
+      url = "github:NixOS/nixos-hardware";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     nix-index-database = {
       url = "github:nix-community/nix-index-database";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -17,6 +21,7 @@
     nix-cachyos-kernel = {
       url = "github:xddxdd/nix-cachyos-kernel/release";
       inputs.nixpkgs.follows = "nixpkgs";
+      inputs.flake-parts.inputs.nixpkgs-lib.follows = "nixpkgs";
     };
     llm-agents = {
       url = "github:numtide/llm-agents.nix";
@@ -71,10 +76,11 @@
 
     packages.${system} = removeAttrs ownPackages ["omp-extensions"] // lib.filterAttrs (_: lib.isDerivation) ownPackages.omp-extensions;
 
-    templates.git-private = {
-      path = ./templates/git-private;
-      description = "Git repository with age-encrypted private files";
+    templates.project = {
+      path = ./templates/project;
+      description = "Blank project: dev shell, just, AGENTS.md and age-encrypted private files";
     };
+    templates.default = self.templates.project;
 
     formatter.${system} = pkgs.alejandra;
 

@@ -37,6 +37,8 @@
     --toolbox-text-color: var(--color-accent-primary) !important;
     --toolbox-text-color-inactive: color-mix(in oklab, var(--color-accent-primary), transparent 35%) !important;
     --toolbarbutton-icon-fill: var(--color-accent-primary) !important;
+    --toolbar-text-color: var(--theme-fg) !important;
+    --tab-text-color-selected: var(--theme-fg) !important;
     --toolbarbutton-icon-fill-attention: var(--color-accent-primary) !important;
     --toolbarbutton-background-color-hover: color-mix(in oklab, var(--color-accent-primary), transparent 88%) !important;
     --toolbarbutton-background-color-active: color-mix(in oklab, var(--color-accent-primary), transparent 75%) !important;
@@ -132,52 +134,6 @@
     -moz-context-properties: fill, fill-opacity !important;
   }
 
-  .urlbar-input {
-    color: var(--theme-fg) !important;
-  }
-
-  .urlbar-background,
-  #urlbar:is([focused], [open]) > .urlbar-background,
-  #searchbar,
-  #searchbar:focus-within,
-  #searchbar-new > .urlbar-background {
-    background-color: var(--theme-field-bg) !important;
-    border-color: var(--toolbar-field-border-color-focus) !important;
-    box-shadow: none !important;
-  }
-
-  #urlbar:is([focused], [open]) > .urlbar-input-container,
-  #searchbar:focus-within,
-  #searchbar-new:is([focused], [open]) > .urlbar-input-container {
-    color: var(--theme-fg) !important;
-  }
-
-  .urlbarView-row:is([selected], [row-selectable]:hover),
-  .urlbarView-realtime-root:not([selectable]) > .urlbarView-realtime-item:hover,
-  .urlbarView-realtime-item[selected] {
-    background-color: color-mix(in oklab, var(--theme-selection-bg), transparent 35%) !important;
-  }
-
-  .urlbarView-row:is([selected], [row-selectable]:hover) :is(
-    .urlbarView-title,
-    .urlbarView-url,
-    .urlbarView-action,
-    .urlbarView-explanation,
-    .urlbarView-row-body-description,
-    .urlbarView-row-body-bottom,
-    .urlbarView-overflowable
-  ),
-  .urlbarView-realtime-item:is(:hover, [selected]) :is(
-    .urlbarView-realtime-description-top,
-    .urlbarView-realtime-description-bottom
-  ) {
-    color: var(--theme-selection-fg) !important;
-  }
-
-  #urlbar:is([focused], [open])[breakout-extend] > .urlbar-background {
-    border-radius: var(--toolbarbutton-special-border-radius) !important;
-  }
-
   #statuspanel-label {
     background-color: var(--color-accent-primary) !important;
     color: var(--theme-selection-fg) !important;
@@ -248,6 +204,80 @@
     border-color: var(--theme-border) !important;
   }
 
+}
+
+/* The address bar and the New Tab page's search bar, which is the same
+   element inside the page. Expanded, its suggestions sit on
+   .urlbarView-background, and the search engine button is a muted moz-button;
+   Firefox paints both from its own gray tokens. */
+@-moz-document url-prefix("chrome://"), url-prefix("about:") {
+  :root {
+    --button-background-color-muted: var(--theme-surface) !important;
+    --button-background-color-muted-hover: var(--theme-active-bg) !important;
+    --button-background-color-muted-active: color-mix(in oklab, var(--theme-accent-strong), transparent 70%) !important;
+    --button-background-color-muted-selected: color-mix(in oklab, var(--theme-accent-strong), transparent 70%) !important;
+    --button-background-color-muted-disabled: var(--theme-surface) !important;
+    --button-border-color-muted: transparent !important;
+    --button-text-color-muted: var(--theme-fg) !important;
+  }
+
+  .urlbar {
+    --urlbar-background-color: var(--theme-field-bg) !important;
+    --urlbar-background-color-focus: var(--theme-field-bg) !important;
+    --toolbar-field-text-color: var(--theme-fg) !important;
+    --toolbar-field-text-color-focus: var(--theme-fg) !important;
+    --toolbar-field-border-color: var(--theme-border) !important;
+    --urlbarview-background-color-selected: color-mix(in oklab, var(--theme-selection-bg), transparent 35%) !important;
+    --urlbarview-text-color-selected: var(--theme-selection-fg) !important;
+    --urlbarview-text-color-action: var(--theme-accent-strong) !important;
+  }
+
+  .urlbar-input {
+    color: var(--theme-fg) !important;
+  }
+
+  .urlbar-background,
+  .urlbarView-background,
+  #urlbar:is([focused], [open]) > .urlbar-background,
+  #searchbar,
+  #searchbar:focus-within,
+  #searchbar-new > .urlbar-background {
+    background-color: var(--theme-field-bg) !important;
+    border-color: var(--theme-accent-strong) !important;
+    box-shadow: none !important;
+  }
+
+  #urlbar:is([focused], [open]) > .urlbar-input-container,
+  #searchbar:focus-within,
+  #searchbar-new:is([focused], [open]) > .urlbar-input-container {
+    color: var(--theme-fg) !important;
+  }
+
+  .urlbarView-row:is([selected], [row-selectable]:hover),
+  .urlbarView-realtime-root:not([selectable]) > .urlbarView-realtime-item:hover,
+  .urlbarView-realtime-item[selected] {
+    background-color: color-mix(in oklab, var(--theme-selection-bg), transparent 35%) !important;
+  }
+
+  .urlbarView-row:is([selected], [row-selectable]:hover) :is(
+    .urlbarView-title,
+    .urlbarView-url,
+    .urlbarView-action,
+    .urlbarView-explanation,
+    .urlbarView-row-body-description,
+    .urlbarView-row-body-bottom,
+    .urlbarView-overflowable
+  ),
+  .urlbarView-realtime-item:is(:hover, [selected]) :is(
+    .urlbarView-realtime-description-top,
+    .urlbarView-realtime-description-bottom
+  ) {
+    color: var(--theme-selection-fg) !important;
+  }
+
+  #urlbar:is([focused], [open])[breakout-extend] > .urlbar-background {
+    border-radius: var(--toolbarbutton-special-border-radius) !important;
+  }
 }
 
 /* about: pages and the new tab page */

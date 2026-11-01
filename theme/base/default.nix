@@ -62,11 +62,15 @@
   );
 
   # matugen harmonizes the default theme's terminal colors toward the
-  # wallpaper; the Material scheme has no green, yellow, blue or cyan.
+  # wallpaper; the Material scheme has no green, yellow, blue or cyan. A
+  # wallpaper without any usable color (black and white) is seeded by the
+  # default theme's accent instead of matugen's Google blue.
   matugenConfig = let
     p = themes.${cfg.default}.palette;
   in
     pkgs.writeText "matugen.toml" ''
+      [config]
+      fallback_color = "${p.accent}"
       [config.custom_colors]
       ${lib.concatMapStrings (key: ''
         ${key} = { color = "${p.${key}}", blend = true }
@@ -93,12 +97,12 @@
   mkThemeCommand = themes:
     pkgs.writeShellApplication {
       name = "theme";
-      runtimeInputs = with pkgs; [awww coreutils findutils gawk gnugrep gnused jq matugen resvg];
+      runtimeInputs = with pkgs; [awww coreutils findutils gawk gnugrep gnused jq matugen resvg util-linux];
       text = ''
         themes=${themes}
         default_theme=${lib.escapeShellArg cfg.default}
         matugen_config=${matugenConfig}
-        dynamic_roles=${pkgs.writeText "dynamic-roles.json" (builtins.toJSON {inherit (dynamic) roles sameSource;})}
+        dynamic_roles=${pkgs.writeText "dynamic-roles.json" (builtins.toJSON {inherit (dynamic) roles sameSource tint;})}
         sentinels=${pkgs.writeText "dynamic-sentinels.json" (builtins.toJSON dynamic.sentinels)}
         reload_hooks=${reloadHooks}
         hyprland_walls=${config.programs.hyprland.package}/share/hypr
@@ -168,6 +172,36 @@
       }
       [ "$(hue bg)" = blue ] || { echo "dynamic bg doesn't follow the dominant navy"; exit 1; }
       [ "$(hue accent)" = warm ] || { echo "dynamic accent doesn't follow the orange sun"; exit 1; }
+
+      # The bar's frame is `surface`: it has to carry the wallpaper's color
+      # instead of Material's near-gray neutral.
+      color() {
+        jq -r ".colors.$1" $HOME/.config/theme/theme.json
+      }
+      # "<hue in degrees> <max - min channel>" of a #rrggbb color.
+      hue_spread() {
+        awk '{ for (i = 0; i < 3; i++) c[i] = strtonum("0x" substr($0, 2 + 2 * i, 2))
+          max = c[0]; min = c[0]
+          for (i = 1; i < 3; i++) { if (c[i] > max) max = c[i]; if (c[i] < min) min = c[i] }
+          d = max - min; h = 0
+          if (d) h = max == c[0] ? (c[1] - c[2]) / d : max == c[1] ? (c[2] - c[0]) / d + 2 : (c[0] - c[1]) / d + 4
+          print int((h * 60 + 360) % 360), d }' <<<"$1"
+      }
+      tinted() {
+        [ "$(hue_spread "$(color surface)" | cut -d' ' -f2)" -ge 16 ] || { echo "dynamic surface of $1 is gray: $(color surface)"; exit 1; }
+      }
+      tinted navy.svg
+
+      # A black-and-white image has no color of its own: the default theme's
+      # accent seeds it (not matugen's Google blue), so it isn't gray either.
+      magick -size 64x64 gradient:'#181818'-'#d0d0d0' gray.png
+      theme wallpaper gray.png
+      verify dynamic
+      tinted gray.png
+      accent=$(hue_spread "$(color accent)" | cut -d' ' -f1)
+      fallback=$(hue_spread "${themes.${cfg.default}.palette.accent}" | cut -d' ' -f1)
+      awk -v a=$accent -v f=$fallback 'BEGIN { d = a - f; if (d < 0) d = -d; if (d > 180) d = 360 - d; exit !(d < 30) }' ||
+        { echo "gray wallpaper's accent (hue $accent) doesn't follow the default theme's (hue $fallback)"; exit 1; }
 
       # `default` goes back to Hyprland's own wallpapers, a different one each time.
       for _ in 1 2; do
