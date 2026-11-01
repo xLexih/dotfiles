@@ -14,14 +14,13 @@
       nativeBuildInputs = [pkgs.makeWrapper];
       meta.mainProgram = "omp";
     } ''
-      # PI_CODING_AGENT_DIR points pi-coding-agent at ~/.config/pi/agent
-      # (global/xdg.nix), but omp honours it too and would move its sessions,
-      # credentials and memory there; unset it so omp stays in ~/.omp/agent.
-      # LD_LIBRARY_PATH: the mnemopi embed worker dlopens the unpatched
-      # onnxruntime binding from ~/.omp/cache at runtime, which needs libstdc++.
+      # Stage OMP under XDG_CONFIG_HOME before its data/state/cache split.
+      # PI_CODING_AGENT_DIR is unset so PI_CONFIG_DIR controls the default
+      # agent directory instead of the global Pi path.
       makeWrapper ${lib.getExe pkgs.omp} $out/bin/omp \
         --add-flags "--config ${./omp-look.yml}" \
         --add-flags "--config ${./omp-behavior.yml}" \
+        --run 'export PI_CONFIG_DIR=.config/omp' \
         --unset PI_CODING_AGENT_DIR \
         --prefix LD_LIBRARY_PATH : ${lib.getLib pkgs.stdenv.cc.cc}/lib
     '';
@@ -34,7 +33,7 @@ in {
 
     files =
       {
-        ".omp/agent/AGENTS.md" = {
+        ".config/omp/agent/AGENTS.md" = {
           type = "copy";
           text = agentsMd;
         };
@@ -42,7 +41,7 @@ in {
           type = "copy";
           text = agentsMd;
         };
-        ".omp/plugins/omp-plugins.lock.json" = {
+        ".config/omp/plugins/omp-plugins.lock.json" = {
           type = "copy";
           text = builtins.toJSON {
             plugins = lib.listToAttrs (map (ext:
@@ -57,7 +56,7 @@ in {
         };
       }
       // lib.listToAttrs (map (ext:
-        lib.nameValuePair ".omp/plugins/node_modules/${ext.pname}" {
+        lib.nameValuePair ".config/omp/plugins/node_modules/${ext.pname}" {
           source = "${ext}/lib/${ext.pname}";
         })
       extensions);
