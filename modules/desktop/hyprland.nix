@@ -150,12 +150,16 @@ in {
     systemd.user.services = {
       # Restores the last wallpaper by itself; `theme wallpaper <image>` sets one.
       awww = sessionService "Wallpaper" "${pkgs.awww}/bin/awww-daemon";
-      swayosd = sessionService "Volume and brightness OSD" "${pkgs.swayosd}/bin/swayosd-server --style %h/.config/swayosd/style.css";
+      # Every theme switch restarts swayosd and the polkit agent to reload
+      # their style. Cycling themes quickly hit systemd's start limit (5 starts
+      # in 10 s), which left the OSD dead and the volume and brightness keys
+      # doing nothing.
+      swayosd = sessionService "Volume and brightness OSD" "${pkgs.swayosd}/bin/swayosd-server --style %h/.config/swayosd/style.css" // {startLimitIntervalSec = 0;};
       hyprsunset = sessionService "Blue-light filter" (lib.getExe pkgs.hyprsunset);
       power-profile-session = sessionService "Display settings for the power profile" (lib.getExe powerProfileSession);
       # The password dialog for privileged actions in GUI apps (mounting
       # disks, virt-manager, fwupd).
-      hyprpolkitagent = sessionService "Polkit authentication agent" "${pkgs.hyprpolkitagent}/libexec/hyprpolkitagent";
+      hyprpolkitagent = sessionService "Polkit authentication agent" "${pkgs.hyprpolkitagent}/libexec/hyprpolkitagent" // {startLimitIntervalSec = 0;};
       session-shutdown = {
         description = "Stop the graphical session before shutdown";
         wantedBy = ["hyprland-session.target"];

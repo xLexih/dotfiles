@@ -89,7 +89,9 @@ cursor and target metadata) and a `home/` tree of files. `theme set <name>`
 (or `next`/`prev`, which the gear runs) copies that tree and `theme.json`
 (to `~/.config/theme/theme.json`) into `$HOME`, deletes files the previous
 theme installed that this one doesn't, saves the name in
-`~/.local/state/theme/name` and runs each target's reload hook.
+`~/.local/state/theme/name` and runs each target's reload hook. Commands
+that change the theme take a lock (`~/.local/state/theme/lock`), so rapid
+gear clicks run one after another and still advance one theme per click.
 After every rebuild a `theme-<user>` service re-applies each user's choice
 once hjem has updated the dotfiles, so it persists and edited theme files get
 reset like other dotfiles. Hyprland runs `theme reload` (the hooks only) at
@@ -99,12 +101,13 @@ Theme files belong to the `theme` command. A `home/` dotfile at the same path
 fails the build with an assertion.
 
 The system build runs `theme-check` (`system.checks`): it switches through
-every theme and the dynamic one (from a dark, a light and an SVG test image,
-then Hyprland's default wallpapers) in an empty home, and fails if a
-placeholder survives, `theme.json` names the wrong theme, a text color reads
-below 3:1 against its background (`contrast.jq`: fg, accents, selection and
-every ANSI color), dynamic doesn't take its surfaces from the image's dominant
-color, or switching back leaves files behind.
+every theme and the dynamic one (from a dark, a light, an SVG and a black and
+white test image, then Hyprland's default wallpapers) in an empty home, and
+fails if a placeholder survives, `theme.json` names the wrong theme, a text
+color reads below 3:1 against its background (`contrast.jq`: fg, accents,
+selection and every ANSI color), dynamic doesn't take its surfaces from the
+image's dominant color, its `surface` is gray, a black and white image isn't
+seeded by the default theme's accent, or switching back leaves files behind.
 
 ## Dynamic theme
 
@@ -122,16 +125,22 @@ theme, once dark and once light, with a sentinel color in each palette slot
    schemes: one seeded by the image's dominant color, one by its most vivid.
    matugen picks dark or light from the image and harmonizes the default
    theme's green, yellow, blue and cyan toward it, since Material has no such
-   colors.
+   colors. A wallpaper without usable color (black and white) is seeded by
+   the default theme's accent.
 2. maps scheme roles onto the palette (`roles` in `dynamic.nix`): surfaces
-   and text from the dominant scheme, so the desktop carries the wallpaper's
-   overall tint; `accent` from the vivid one; `accentAlt` from the dominant
-   color. When both seeds are the same color, `accentAlt` is the vivid
-   scheme's tertiary instead (`sameSource`).
-3. copies the matching template to `~/.cache/theme/dynamic` and replaces each
+   and text from the dominant scheme, `accent` from the vivid one,
+   `accentAlt` from the dominant color. When both seeds are the same color,
+   `accentAlt` is the vivid scheme's tertiary instead (`sameSource`).
+3. tints the neutrals (`tint` in `dynamic.nix`). Material's surfaces are
+   nearly gray, so each one keeps its lightness but takes the dominant
+   color's hue at the OKLCH chroma hexagon uses for the same slot, less for a
+   wallpaper whose dominant color is muted. The screen frame (`surface`),
+   panels and text then carry the wallpaper's tint the way a named theme
+   does.
+4. copies the matching template to `~/.cache/theme/dynamic` and replaces each
    sentinel in every format targets write it (`#rrggbb`, `rrggbb`, `r,g,b`,
    `r;g;b`), then fails if any sentinel is left.
-4. picks the closest GNOME accent by hue and applies the result like any
+5. picks the closest GNOME accent by hue and applies the result like any
    other theme.
 
 Because roles, terminal colors and every target derive from the palette,
@@ -153,7 +162,7 @@ Each file in `theme/base/targets/` handles one program. A target can set:
 
 | Target | Files | After a switch |
 | --- | --- | --- |
-| `gtk.nix` | GTK 3/4 `gtk.css` overriding libadwaita's named colors, `settings.ini`, `~/.config/gtk-2.0/gtkrc` (via `GTK2_RC_FILES`) | writes GTK theme, icons, cursor, fonts and dark/light to dconf; libadwaita, Firefox and Electron follow the preference live, CSS applies to newly started apps |
+| `gtk.nix` | GTK 3/4 `gtk.css` overriding libadwaita's named colors, `settings.ini`, `~/.config/gtk-2.0/gtkrc` (via `GTK2_RC_FILES`) | writes GTK theme, icons, cursor, fonts and dark/light to dconf; libadwaita, Firefox and Electron follow the preference live, CSS applies to newly started apps; restarts the GTK portal, which draws file choosers for Firefox and Electron |
 | `qt.nix` | qt5ct/qt6ct, Kvantum, kdeglobals, KDE color scheme | newly started Qt apps |
 | `kitty.nix` | `~/.config/kitty/theme.conf` | every kitty window reloads |
 | `hyprland.nix` | `~/.config/hypr/theme.lua` (borders, shadow, cursor), share-picker stylesheet | re-runs `theme.lua`, sets the cursor |
@@ -164,7 +173,8 @@ Each file in `theme/base/targets/` handles one program. A target can set:
 | `swayosd/` | popup style sheet | restarts the popup service |
 | `satty.nix` | annotation palette and font | next screenshot |
 | `hyprtoolkit.nix` | `~/.config/hypr/hyprtoolkit.conf` (colors, icon theme, font) | restarts the polkit agent |
-| `spicetify/` | Spotify `color.ini` and `user.css` | nothing: Spicetify patches Spotify at build time, so Spotify keeps `modules.theme.default` |
+| `spicetify/` | Spotify `color.ini` and `user.css` (built into Spotify with `modules.theme.default`), `~/.config/theme/spicetify.css` | Spotify links that file after its built-in colors, and `theme.js` swaps changes in within 2 seconds |
+| `dunst.nix` | `~/.config/dunst/dunstrc` (colors per urgency, font, icons, Hyprland's rounding and borders) | `dunstctl reload` recolors open notifications too |
 
 Where a program reads a real style sheet, the rules live in a static file
 (`firefox/theme.css`, `swayosd/style.css`) that uses variables, and the

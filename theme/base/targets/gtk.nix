@@ -99,11 +99,18 @@ in {
     metadata.gtk = theme: lib.mapAttrs (_: value: toString (lib.gvariant.mkValue value)) (interface theme);
 
     # One dconf transaction, so apps re-theme once instead of once per key.
+    # The GTK portal draws other apps' file choosers (Firefox, Electron) and
+    # runs all session long, so it restarts to read the new gtk.css.
     reload.gtk = ''
       theme_get '"[/]", (.gtk | to_entries[] | "\(.key)=\(.value)")' |
         ${dconf} load /org/gnome/desktop/interface/
+      ${pkgs.systemd}/bin/systemctl --user try-restart xdg-desktop-portal-gtk.service
     '';
   };
+
+  # Restarted on every theme switch; cycling quickly mustn't hit the start
+  # limit, or file choosers stop opening.
+  systemd.user.services.xdg-desktop-portal-gtk.startLimitIntervalSec = 0;
 
   # Defaults for users who never switched; `theme` writes the user's own values.
   programs.dconf = {

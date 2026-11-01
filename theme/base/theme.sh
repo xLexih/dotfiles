@@ -2,8 +2,9 @@
 #   themes           directory with one rendered theme per name, plus dynamic/{dark,light}
 #   default_theme    theme used until the user picks one
 #   matugen_config   matugen config with the colors to harmonize
-#   dynamic_roles    JSON: palette key -> "<scheme>.<matugen color>" per mode, and the
-#                    overrides for single-color wallpapers (see dynamic.nix)
+#   dynamic_roles    JSON: palette key -> "<scheme>.<matugen color>" per mode, the
+#                    overrides for single-color wallpapers and the neutral tint
+#                    (see dynamic.nix)
 #   sentinels        JSON: palette key -> placeholder hex in the dynamic templates
 #   reload_hooks     script run with THEME_DIR after a switch
 #   hyprland_walls   directory with Hyprland's own wall*.png wallpapers
@@ -193,6 +194,70 @@ scheme() {
     die "can't read colors from $wallpaper"
 }
 
+# Gives the palette's neutrals (JSON $1) the hue of the seed color $2 at the
+# OKLCH chroma dynamic.nix sets for mode $3, keeping their lightness. Chroma is
+# reduced until the color fits sRGB; colors that already have more keep theirs.
+tint() {
+  jq -r --arg mode "$3" --slurpfile mapping "$dynamic_roles" \
+    'to_entries[] | "\(.key) \(.value) \($mapping[0].tint[$mode][.key] // 0)"' <<<"$1" |
+    awk -v seed="$2" -v reference="$(jq .tint.reference "$dynamic_roles")" '
+      function linear(byte) {
+        byte /= 255
+        return byte <= 0.04045 ? byte / 12.92 : ((byte + 0.055) / 1.055) ^ 2.4
+      }
+      function encode(c) {
+        c = c <= 0.0031308 ? 12.92 * c : 1.055 * c ^ (1 / 2.4) - 0.055
+        return int((c < 0 ? 0 : c > 1 ? 1 : c) * 255 + 0.5)
+      }
+      function cbrt(x) { return x < 0 ? -((-x) ^ (1 / 3)) : x ^ (1 / 3) }
+      # Sets L, A and B (OKLab) of a #rrggbb color.
+      function oklab(hex,    r, g, b, l, m, s) {
+        r = linear(strtonum("0x" substr(hex, 2, 2)))
+        g = linear(strtonum("0x" substr(hex, 4, 2)))
+        b = linear(strtonum("0x" substr(hex, 6, 2)))
+        l = cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b)
+        m = cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b)
+        s = cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b)
+        L = 0.2104542553 * l + 0.7936177850 * m - 0.0040720468 * s
+        A = 1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s
+        B = 0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s
+      }
+      # Sets R, G and Bl (linear sRGB) of an OKLCH color; true when in gamut.
+      function rgb(l, chroma, hue,    a, b, lc, mc, sc) {
+        a = chroma * cos(hue)
+        b = chroma * sin(hue)
+        lc = (l + 0.3963377774 * a + 0.2158037573 * b) ^ 3
+        mc = (l - 0.1055613458 * a - 0.0638541728 * b) ^ 3
+        sc = (l - 0.0894841775 * a - 1.2914855480 * b) ^ 3
+        R = 4.0767416621 * lc - 3.3077115913 * mc + 0.2309699292 * sc
+        G = -1.2684380046 * lc + 2.6097574011 * mc - 0.3413193965 * sc
+        Bl = -0.0041960863 * lc - 0.7034186147 * mc + 1.7076147010 * sc
+        return R > -1e-4 && R < 1.0001 && G > -1e-4 && G < 1.0001 && Bl > -1e-4 && Bl < 1.0001
+      }
+      BEGIN {
+        oklab(seed)
+        hue = atan2(B, A)
+        scale = sqrt(A * A + B * B) / reference
+        if (scale > 1) scale = 1
+      }
+      {
+        chroma = $3 * scale
+        oklab($2)
+        if (chroma <= sqrt(A * A + B * B)) { print $1, $2; next }
+        if (!rgb(L, chroma, hue)) {
+          low = 0
+          high = chroma
+          for (i = 0; i < 24; i++) {
+            chroma = (low + high) / 2
+            if (rgb(L, chroma, hue)) low = chroma; else high = chroma
+          }
+          rgb(L, low, hue)
+        }
+        printf "%s #%02x%02x%02x\n", $1, encode(R), encode(G), encode(Bl)
+      }' |
+    jq -Rn '[inputs | split(" ") | {(.[0]): .[1]}] | add'
+}
+
 # Renders the dynamic theme for the current wallpaper into the cache: the
 # template for the scheme's mode, with every placeholder color replaced in
 # each format targets write it (#rrggbb, rrggbb, r,g,b and r;g;b). The result
@@ -217,6 +282,7 @@ render_dynamic() {
         + (if seed($dominant) == seed($vivid) then $mapping[0].sameSource else {} end)
       | map_values(split(".") as [$scheme, $color]
           | $schemes[$scheme].colors[$color].default.color | ascii_downcase)')
+  palette=$(tint "$palette" "$(jq -r .colors.source_color.default.color <<<"$dominant")" "$mode")
   dir="$cache/dynamic"
 
   rm -f "$cache/dynamic.key"
@@ -290,7 +356,8 @@ apply() {
   mv -f "$state/files.new" "$state/files"
 
   echo "$1" >"$state/name"
-  THEME_DIR=$dir "$reload_hooks"
+  # Hooks run without the lock's descriptor, so nothing they start keeps it.
+  THEME_DIR=$dir "$reload_hooks" 9>&-
 }
 
 step() {
@@ -325,6 +392,15 @@ wallpaper() {
   fi
 }
 
+# Switches rewrite the same files and state; the bar starts one per click
+# without waiting, so overlapping runs would mix two themes. Each waits for
+# the previous one, so rapid clicks still advance one theme per click.
+lock() {
+  mkdir -p "$state"
+  exec 9>"$state/lock"
+  flock 9
+}
+
 case "${1:-current}" in
   current) current ;;
   list)
@@ -336,18 +412,20 @@ case "${1:-current}" in
     ;;
   set)
     [ -n "${2:-}" ] || die "set needs a theme name: $(names | paste -sd ' ')"
+    lock
     apply "$2"
     ;;
-  next) step 1 ;;
-  prev) step -1 ;;
-  apply) apply "$(current)" ;;
-  reload) THEME_DIR=$(theme_dir "$(current)") "$reload_hooks" ;;
+  next) lock && step 1 ;;
+  prev) lock && step -1 ;;
+  apply) lock && apply "$(current)" ;;
+  reload) lock && THEME_DIR=$(theme_dir "$(current)") "$reload_hooks" 9>&- ;;
   wallpaper)
     [ -n "${2:-}" ] || die "wallpaper needs an image: theme wallpaper <image> | default"
     image=$2
     if [ "$image" = default ]; then
       image=$(default_wallpaper)
     fi
+    lock
     wallpaper "$image"
     ;;
   help | -h | --help) usage ;;
