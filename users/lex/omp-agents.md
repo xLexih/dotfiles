@@ -64,7 +64,7 @@
 - Host is NixOS. Never use imperative package managers (apt, yum, pacman).
 - If the flake environment isn't loaded in the current shell (no `direnv`), wrap commands: `nix develop --command <cmd>`.
 - New projects with executable code, tests, build tooling, codegen, or dependencies:
-  - Create a `flake.nix` with a `devShell`. Use the repo's nixpkgs pin if present, otherwise current stable NixOS.
+  - Create a `flake.nix` with a `devShell`. Use the repo's nixpkgs pin if present, otherwise current stable NixOS. Point nixpkgs at the channel tarball `https://channels.nixos.org/<branch>/nixexprs.tar.zst` (e.g. `nixos-26.05`), not `github:NixOS/nixpkgs`.
   - Use the `{ ... } @ inputs:` outputs pattern with `inputs.<name>` references. Run `nix flake lock` to generate `flake.lock`.
   - Add a `.envrc` with `use flake`; ensure `.direnv/` is gitignored and never committed.
 - Existing projects: prefer the repo's tooling. Add a flake when asked, when tooling is missing or inconsistent, or when reproducibility would materially help.
