@@ -119,6 +119,13 @@ in {
     };
 
     services.gnome.gnome-keyring.enable = true;
+    # gcr only exports SSH_AUTH_SOCK to the systemd user env; the TTY-launched
+    # Hyprland session never reads that, so set it for login shells too.
+    environment.extraInit = ''
+      if [ -z "$SSH_AUTH_SOCK" ] && [ -n "$XDG_RUNTIME_DIR" ]; then
+        export SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/gcr/ssh"
+      fi
+    '';
     security.polkit.enable = true;
     security.pam.services = {
       login.enableGnomeKeyring = true;
