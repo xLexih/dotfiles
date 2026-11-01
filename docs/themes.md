@@ -1,5 +1,22 @@
 # Themes
 
+A named theme is a small file in `theme/` that sets colors; `theme/base`
+turns them into program configuration.
+
+Themes switch at runtime, without a rebuild: click the gear at the bottom of
+the bar (right click goes back), or run `theme next`, `theme set <name>`,
+`theme list`. Kitty, Hyprland borders, the bar, Firefox, VSCodium, the volume
+popup and the GTK dark/light preference change right away; GTK and Qt colors
+apply to apps started afterwards. The choice is kept per user across rebuilds;
+`modules.theme.default` is the theme before anyone picks one.
+
+`dynamic` takes its colors from the wallpaper: surfaces, the screen frame and
+text tinted with its dominant color, the accent from its most vivid one. Set
+one with `theme wallpaper <image>` (SVG works too), or go back to one of
+Hyprland's own with `theme wallpaper default`; from then on `dynamic` joins
+the cycle, and while it's active every new wallpaper recolors the desktop.
+Dark or light follows the image. `theme help` lists the commands and themes.
+
 ```
 theme/
   base/
