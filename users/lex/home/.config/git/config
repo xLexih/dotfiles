@@ -29,4 +29,20 @@
 
 [alias]
     private = !git-private
-    log2 = "!git log --color=always --pretty=format:\"%C(#b4befe)%h %C(#5a3d80)│ %C(#e0d0f0)%<(50,trunc)%s %C(#5a3d80)│ %C(#a6e3a1)%<|(77)%cr %C(#5a3d80)│ %C(#dbb0ff)%<(15)%an%Creset\" | awk '{printf \"%s%s\\033[0m\\n\", (NR%2?\"\\033[48;2;42;26;58m\":\"\\033[48;2;52;31;74m\"), $0}'"
+    # Oldest first, so the newest commit ends up above the prompt. Colors come
+    # from the active theme (read on every run, so switches apply at once);
+    # rows alternate between two of its backgrounds.
+    log2 = "!f() { \
+        p=\"${XDG_CONFIG_HOME:-$HOME/.config}/theme/palette.sh\"; [ -f \"$p\" ] && . \"$p\"; \
+        git log --reverse --color=always --pretty=format:\"\
+%C(${THEME_ACCENT:-#c6a0ff})%h %C(${THEME_BORDER:-#38274d})│ \
+%C(${THEME_FG:-#eee6f8})%<(50,trunc)%s %C(${THEME_BORDER:-#38274d})│ \
+%C(${THEME_GREEN:-#a6e3a1})%<|(77)%cr %C(${THEME_BORDER:-#38274d})│ \
+%C(${THEME_ACCENT_ALT:-#8bd5ca})%<(15)%an%Creset\" \"$@\" | \
+        awk -v odd=\"${THEME_SURFACE:-#251735}\" -v even=\"${THEME_PANEL_BG_ALT:-#130c1b}\" ' \
+            function bg(hex,  i, out) { \
+                for (i = 2; i <= 6; i += 2) out = out \";\" (index(\"0123456789abcdef\", tolower(substr(hex, i, 1))) - 1) * 16 + index(\"0123456789abcdef\", tolower(substr(hex, i + 1, 1))) - 1; \
+                return \"\\033[48;2\" out \"m\" } \
+            BEGIN { o = bg(odd); e = bg(even) } \
+            { printf \"%s%s\\033[0m\\n\", (NR % 2 ? o : e), $0 }'; \
+    }; f"
