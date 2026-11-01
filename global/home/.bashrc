@@ -29,6 +29,10 @@ alias lt="eza -la --icons --git --time-style=relative --sort modified"
 alias ltr="eza -la --icons --git --time-style=relative --sort modified --reverse"
 alias tree="eza --tree $EZA_BASE"
 
+rm() {
+    rmtrash "$@"
+}
+
 gpu () {
     __NV_PRIME_RENDER_OFFLOAD=1 \
     __GLX_VENDOR_LIBRARY_NAME=nvidia \

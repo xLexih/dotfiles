@@ -15,6 +15,7 @@ in {
     fzf
     jq
     kitty
+    rmtrash
     lazygit
     nautilus
     nix-direnv
