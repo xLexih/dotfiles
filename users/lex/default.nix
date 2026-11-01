@@ -29,5 +29,7 @@
     waydroid.enable = true;
   };
 
+  modules.services.project-cleanup.enable = true;
+
   hjem.users.lex.files.".local/share/lutris/runners/proton/GE-Proton".source = pkgs.proton-ge-bin.steamcompattool;
 }

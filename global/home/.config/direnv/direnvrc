@@ -1,1 +1,13 @@
 source "{{pkgs.nix-direnv}}/share/nix-direnv/direnvrc"
+
+# cleanup_on_idle <delay> <command>: run <command> in this project once no
+# process has had its working directory inside it for <delay> (30m, 2h, 1d).
+# `project-cleanup status` lists registered projects.
+cleanup_on_idle() {
+  if [ "$#" -ne 2 ]; then
+    log_error "usage: cleanup_on_idle <delay> <command>"
+    return 1
+  fi
+  "{{pkgs.project-cleanup}}/bin/project-cleanup" register "$PWD" "$1" || return 0
+  export PROJECT_CLEANUP="$2"
+}
