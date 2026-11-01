@@ -28,7 +28,6 @@
     colorMoved = default
 
 [alias]
-    private = !git-private
     # Oldest first, so the newest commit ends up above the prompt. Colors come
     # from the active theme (read on every run, so switches apply at once);
     # rows alternate between two of its backgrounds.

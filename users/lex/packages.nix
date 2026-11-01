@@ -49,7 +49,6 @@ in {
     # development
     android-tools
     ani-cli
-    git-private
     hid-send
 
     # kubernetes

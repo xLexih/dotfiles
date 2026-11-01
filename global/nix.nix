@@ -36,6 +36,17 @@
       ];
     };
 
+    # `nix flake init` without -t uses templates#templates.default, which is
+    # templates/project here. NixOS's templates: `-t nixos-templates#<name>`.
+    registry = {
+      templates.flake = inputs.self;
+      nixos-templates.to = {
+        type = "github";
+        owner = "NixOS";
+        repo = "templates";
+      };
+    };
+
     gc = {
       automatic = true;
       dates = "weekly";

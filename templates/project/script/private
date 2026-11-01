@@ -1,0 +1,475 @@
+#!/usr/bin/env bash
+# private: private files stay local in plaintext; git tracks age-encrypted
+# copies at the same path under .encrypted/.
+#
+#   private     .env, .env.*, *.private, *.private.*  (except *.example)
+#   encrypted   .encrypted/<path>.age                  (tracked)
+#   recipients  .encrypted/recipients                  (tracked, public keys)
+#   state       .git/private-state                    (local)
+#
+# The state file records both hashes of each path's last sync, so local edits
+# and pulled changes are told apart without decrypting. Only restoring needs
+# a key.
+set -Eeuo pipefail
+
+ENC=.encrypted
+RECIPIENTS=$ENC/recipients
+# keep in sync with .gitignore
+PRIVATE=(':(glob)**/.env' ':(glob)**/.env.*' ':(glob)**/*.private' ':(glob)**/*.private.*'
+  ':(exclude,glob)**/*.example' ":(exclude)$ENC" ':(exclude).direnv')
+AGE_KEY=${XDG_CONFIG_HOME:-$HOME/.config}/age/key.txt
+
+usage() {
+  cat <<'EOF'
+usage: script/private <command>
+  setup              install the git hooks, select a key, decrypt the private files
+  status             show the private files that are different from .encrypted/
+  encrypt [--force]  encrypt local changes (--force: local files replace changed encrypted copies)
+  decrypt [--force]  decrypt changes in .encrypted/ (--force: encrypted copies replace all local changes)
+  add-key <key>      give a key access: age1..., "ssh-ed25519 ...", or a key file
+  reencrypt          encrypt all files again for the keys in .encrypted/recipients
+  remove <path>      remove a private file and its encrypted copy
+  hook <name>        entry point for the git hooks in script/hook/
+
+The script uses the first of these keys that is a recipient: $AGE_IDENTITY
+(an age key file), ~/.config/age/key.txt, an ed25519 key in ~/.ssh.
+It asks for a passphrase one time.
+EOF
+}
+
+say() { printf 'private: %s\n' "$*" >&2; }
+die() { say "$*"; exit 1; }
+has_tty() { { : </dev/tty; } 2>/dev/null; }
+
+TMPFILES=()
+cleanup() { rm -f -- ${TMPFILES[@]+"${TMPFILES[@]}"}; }
+trap cleanup EXIT
+tmp_next_to() { # tmp_next_to <final path>: temp file in the same directory
+  local t
+  mkdir -p -- "$(dirname -- "$1")"
+  t=$(mktemp -- "$(dirname -- "$1")/.private-tmp.XXXXXX")
+  TMPFILES+=("$t")
+  printf '%s' "$t"
+}
+
+# ---------------------------------------------------------------- state
+
+declare -A P=() B=() SP=() SB=() # current and last-synced hashes by path
+PATHS=()
+STATE_CHANGED=0
+
+hash_into() { # hash_into <array> <prefix> <suffix> <paths...>
+  local -n into=$1
+  local pre=$2 suf=$3 i
+  shift 3
+  (($#)) || return 0
+  local -a keys=("$@") hashes
+  mapfile -t hashes < <(for i; do printf '%s%s%s\n' "$pre" "$i" "$suf"; done | git hash-object --no-filters --stdin-paths)
+  # shellcheck disable=SC2034 # nameref
+  for i in "${!keys[@]}"; do into[${keys[$i]}]=${hashes[$i]}; done
+}
+
+scan() {
+  local -a plain=() blobs=()
+  local p sp sb
+  P=() B=() SP=() SB=()
+  while IFS= read -r -d '' p; do
+    [[ $p != *[$'\t\n']* ]] || die "unsupported file name (tab or newline): $p"
+    plain+=("$p")
+  done < <(git ls-files -z --others -- "${PRIVATE[@]}")
+  if [ -d "$ENC" ]; then
+    while IFS= read -r -d '' p; do
+      p=${p#"$ENC"/}
+      blobs+=("${p%.age}")
+    done < <(find "$ENC" -type f -name '*.age' -print0)
+  fi
+  hash_into P '' '' ${plain[@]+"${plain[@]}"}
+  hash_into B "$ENC/" .age ${blobs[@]+"${blobs[@]}"}
+  if [ -f "$STATE" ]; then
+    while IFS=$'\t' read -r sp sb p; do SP[$p]=$sp SB[$p]=$sb; done <"$STATE"
+  fi
+  local -A seen=()
+  for p in "${!P[@]}" "${!B[@]}" "${!SP[@]}"; do seen[$p]=1; done
+  PATHS=()
+  if ((${#seen[@]})); then mapfile -d '' -t PATHS < <(printf '%s\0' "${!seen[@]}" | sort -z); fi
+}
+
+# CLASS of one path; an empty hash means "absent", so new and deleted files
+# fall out of the same comparisons:
+#   clean   both sides as last synced
+#   local   plaintext changed (or created, or deleted)    -> encrypt
+#   remote  encrypted copy changed (pull, checkout)       -> decrypt
+#   both    both changed, or never synced here            -> compare, else conflict
+#   gone    neither exists, only the state entry
+classify() {
+  local p=${P[$1]-} b=${B[$1]-} sp=${SP[$1]-} sb=${SB[$1]-}
+  if [ -z "$p$b" ]; then CLASS=gone
+  elif [ "$p" = "$sp" ] && [ "$b" = "$sb" ]; then CLASS=clean
+  elif [ "$b" = "$sb" ]; then CLASS=local
+  elif [ "$p" = "$sp" ]; then CLASS=remote
+  else CLASS=both
+  fi
+}
+
+mark() {
+  if [ -n "${P[$1]-}${B[$1]-}" ]; then
+    SP[$1]=${P[$1]-} SB[$1]=${B[$1]-}
+  else
+    unset 'SP[$1]' 'SB[$1]'
+  fi
+  STATE_CHANGED=1
+}
+
+save_state() {
+  ((STATE_CHANGED)) || return 0
+  local t p
+  t=$(tmp_next_to "$STATE")
+  for p in "${!SP[@]}"; do printf '%s\t%s\t%s\n' "${SP[$p]}" "${SB[$p]}" "$p"; done >"$t"
+  mv -f -- "$t" "$STATE"
+  STATE_CHANGED=0
+}
+
+# ---------------------------------------------------------------- keys
+
+recipients() { [ -f "$RECIPIENTS" ] && awk '!/^[[:space:]]*(#|$)/ { print $1 }' "$RECIPIENTS"; }
+
+KEY_KIND='' KEY_PATH='' ID_KEY='' ID_READY=0
+
+# find_key: a local key whose public key is a recipient; never prompts
+find_key() {
+  local want pub r
+  if [ -n "${AGE_IDENTITY:-}" ]; then
+    KEY_KIND=age KEY_PATH=$AGE_IDENTITY
+    return 0
+  fi
+  want=$(recipients) || return 1
+  if [ -f "$AGE_KEY" ] && r=$(age-keygen -y "$AGE_KEY" 2>/dev/null) && grep -qxF -- "$r" <<<"$want"; then
+    KEY_KIND=age KEY_PATH=$AGE_KEY
+    return 0
+  fi
+  for pub in "$HOME"/.ssh/*.pub; do
+    [ -f "${pub%.pub}" ] || continue
+    r=$(ssh-to-age -i "$pub" 2>/dev/null) || continue
+    if grep -qxF -- "$r" <<<"$want"; then
+      KEY_KIND=ssh KEY_PATH=${pub%.pub}
+      return 0
+    fi
+  done
+  return 1
+}
+
+# need_identity: an ssh key becomes an age identity in memory, so its
+# passphrase is asked once per command instead of once per file
+need_identity() {
+  ((ID_READY)) && return 0
+  find_key || { say "none of your keys is in $RECIPIENTS. Run: just setup"; return 1; }
+  if [ "$KEY_KIND" = ssh ] && ! ID_KEY=$(ssh-to-age -private-key -i "$KEY_PATH" 2>/dev/null); then
+    has_tty || { say "$KEY_PATH needs a passphrase. Run in a terminal: just private-decrypt"; return 1; }
+    local pass _
+    for _ in 1 2 3; do
+      printf 'private: passphrase for %s: ' "$KEY_PATH" >/dev/tty
+      IFS= read -rs pass </dev/tty || return 1
+      printf '\n' >/dev/tty
+      ID_KEY=$(SSH_TO_AGE_PASSPHRASE=$pass ssh-to-age -private-key -i "$KEY_PATH" 2>/dev/null) && break
+      ID_KEY=
+    done
+    [ -n "$ID_KEY" ] || { say "cannot unlock $KEY_PATH"; return 1; }
+  fi
+  ID_READY=1
+}
+
+age_d() {
+  if [ -n "$ID_KEY" ]; then age -d -i <(printf '%s\n' "$ID_KEY") "$@"; else age -d -i "$KEY_PATH" "$@"; fi
+}
+
+# to_recipient <key or key file>: sets R (age recipient) and LABEL
+to_recipient() {
+  local k=$1 line
+  if [ -f "$k" ] && grep -q '^-----BEGIN OPENSSH PRIVATE KEY-----' "$k"; then k=$k.pub; fi
+  if [ -f "$k" ] && grep -q '^AGE-SECRET-KEY-' "$k"; then
+    R=$(age-keygen -y "$k") LABEL="age key $k"
+    return 0
+  fi
+  if [ -f "$k" ]; then line=$(grep -v -e '^#' -e '^[[:space:]]*$' "$k" | head -n 1); else line=$k; fi
+  case $line in
+    age1*) R=${line%%[[:space:]]*} LABEL="age key" ;;
+    ssh-ed25519\ *)
+      R=$(ssh-to-age <<<"$line") || die "cannot convert ssh key: $1"
+      LABEL="ssh-ed25519 $(awk '{ print $3 }' <<<"$line")"
+      ;;
+    *) die "not an age or ed25519 ssh key: $1" ;;
+  esac
+}
+
+# ---------------------------------------------------------------- files
+
+encrypt_one() {
+  local out=$ENC/$1.age t
+  t=$(tmp_next_to "$out")
+  age -e -R "$RECIPIENTS" -o "$t" -- "$1" || die "cannot encrypt $1"
+  mv -f -- "$t" "$out"
+  git add -- "$out"
+  B[$1]=$(git hash-object --no-filters -- "$out")
+  mark "$1"
+  say "encrypted $1"
+}
+
+decrypt_one() {
+  local t
+  t=$(tmp_next_to "$1")
+  age_d -o "$t" -- "$ENC/$1.age" || die "cannot decrypt $1"
+  mv -f -- "$t" "$1"
+  P[$1]=$(git hash-object --no-filters -- "$1")
+  mark "$1"
+  say "decrypted $1"
+}
+
+drop_blob() {
+  rm -f -- "$ENC/$1.age"
+  git rm -q --cached --ignore-unmatch -- "$ENC/$1.age"
+  rmdir -p -- "$(dirname -- "$ENC/$1")" 2>/dev/null || true
+  unset 'B[$1]'
+  mark "$1"
+  say "removed encrypted copy of $1"
+}
+
+drop_plain() {
+  rm -f -- "$1"
+  unset 'P[$1]'
+  mark "$1"
+  say "deleted $1 (removed from $ENC)"
+}
+
+# both sides exist but were never synced here: equal content is just unrecorded
+same() { cmp -s -- "$1" <(age_d -- "$ENC/$1.age") && mark "$1"; }
+
+conflicts() {
+  local p
+  for p; do say "conflict: $p changed locally and in $ENC"; done
+  say "to keep your file: just private-encrypt --force. To use the encrypted copy: just private-decrypt --force"
+  save_state
+  exit 1
+}
+
+# ---------------------------------------------------------------- commands
+
+cmd_status() {
+  scan
+  local p hint dirty=0
+  for p in ${PATHS[@]+"${PATHS[@]}"}; do
+    classify "$p"
+    case $CLASS:${P[$p]:+p}${B[$p]:+b} in
+      clean:* | gone:*) continue ;;
+      local:pb | local:p) hint="changed here. The next commit encrypts it." ;;
+      local:b) hint="removed here. The next commit removes the encrypted copy. To restore it: just private-decrypt --force" ;;
+      remote:*b) hint="changed in $ENC. Run: just private-decrypt" ;;
+      remote:p) hint="removed from $ENC. Run just private-decrypt to remove it here." ;;
+      both:pb) hint="not synchronized here, or changed on both sides. Run: just private-decrypt" ;;
+      both:*) hint="conflict. To keep your file: just private-encrypt --force. To use the encrypted copy: just private-decrypt --force" ;;
+    esac
+    printf '%s  %s\n' "$p" "$hint"
+    dirty=1
+  done
+  while IFS= read -r -d '' p; do
+    printf '%s  plaintext tracked by git! run: git rm --cached -- %q\n' "$p" "$p"
+    dirty=1
+  done < <(git ls-files -z -- "${PRIVATE[@]}")
+  ((dirty)) || echo "all private files in sync"
+  if find_key; then echo "key: $KEY_PATH"; else echo "key: none of your keys is a recipient. Run: just setup"; fi
+}
+
+cmd_encrypt() {
+  local force=0 a p
+  for a; do case $a in --force) force=1 ;; *) die "usage: private encrypt [--force]" ;; esac; done
+  scan
+  local -a todo=() check=() conflict=()
+  for p in ${PATHS[@]+"${PATHS[@]}"}; do
+    classify "$p"
+    case $CLASS in
+      local) todo+=("$p") ;;
+      both) if ((force)); then todo+=("$p"); elif [ -n "${P[$p]-}" ] && [ -n "${B[$p]-}" ]; then check+=("$p"); else conflict+=("$p"); fi ;;
+      gone) mark "$p" ;;
+    esac
+  done
+  if ((${#check[@]})); then
+    if need_identity; then
+      for p in "${check[@]}"; do same "$p" || conflict+=("$p"); done
+    else
+      conflict+=("${check[@]}")
+    fi
+  fi
+  ((${#conflict[@]} == 0)) || conflicts "${conflict[@]}"
+  if ((${#todo[@]})); then
+    [ -n "$(recipients)" ] || die "no recipients in $RECIPIENTS. Run: just setup"
+    find_key || say "warning: none of your keys is a recipient, you cannot decrypt these"
+  fi
+  for p in ${todo[@]+"${todo[@]}"}; do
+    if [ -n "${P[$p]-}" ]; then encrypt_one "$p"; else drop_blob "$p"; fi
+  done
+  save_state
+}
+
+cmd_decrypt() {
+  local force=0 a p
+  for a; do case $a in --force) force=1 ;; *) die "usage: private decrypt [--force]" ;; esac; done
+  scan
+  local -a todo=() check=() conflict=()
+  for p in ${PATHS[@]+"${PATHS[@]}"}; do
+    classify "$p"
+    case $CLASS in
+      remote) todo+=("$p") ;;
+      # --force resets local edits and deletions, but never deletes a file
+      # that has no encrypted copy
+      local) if ((force)) && [ -n "${B[$p]-}" ]; then todo+=("$p"); fi ;;
+      both) if ((force)); then todo+=("$p"); elif [ -n "${P[$p]-}" ] && [ -n "${B[$p]-}" ]; then check+=("$p"); else conflict+=("$p"); fi ;;
+      gone) mark "$p" ;;
+    esac
+  done
+  if ((${#todo[@]} + ${#check[@]})); then need_identity || { save_state; exit 1; }; fi
+  for p in ${check[@]+"${check[@]}"}; do same "$p" || conflict+=("$p"); done
+  for p in ${todo[@]+"${todo[@]}"}; do
+    if [ -n "${B[$p]-}" ]; then decrypt_one "$p"; else drop_plain "$p"; fi
+  done
+  save_state
+  ((${#conflict[@]} == 0)) || conflicts "${conflict[@]}"
+}
+
+cmd_reencrypt() {
+  [ -n "$(recipients)" ] || die "no recipients in $RECIPIENTS"
+  scan
+  ((${#B[@]})) || { say "nothing to re-encrypt"; return 0; }
+  need_identity || exit 1
+  local p out t old
+  for p in "${!B[@]}"; do
+    out=$ENC/$p.age
+    t=$(tmp_next_to "$out")
+    age_d -- "$out" | age -e -R "$RECIPIENTS" -o "$t" || die "cannot re-encrypt $out"
+    mv -f -- "$t" "$out"
+    git add -- "$out"
+    old=${B[$p]}
+    B[$p]=$(git hash-object --no-filters -- "$out")
+    # same content: carry a current sync record over to the new ciphertext
+    if [ "${SB[$p]-}" = "$old" ]; then SB[$p]=${B[$p]} STATE_CHANGED=1; fi
+  done
+  save_state
+  git add -- "$RECIPIENTS"
+  say "re-encrypted ${#B[@]} file(s) to $(recipients | wc -l) recipient(s); commit them"
+}
+
+GRANT_PENDING=0
+cmd_add_key() {
+  (($# == 1)) || die 'usage: private add-key <age1... | "ssh-ed25519 ..." | key file>'
+  local R LABEL can=0
+  to_recipient "$1"
+  if recipients | grep -qxF -- "$R"; then say "already a recipient: $LABEL"; return 0; fi
+  # resolve our key first: the new one can read nothing until the reencrypt
+  if [ -n "$(find "$ENC" -name '*.age' -print -quit 2>/dev/null)" ]; then
+    if find_key && need_identity; then can=1; else can=-1; fi
+  fi
+  mkdir -p -- "$ENC"
+  printf '# %s (added %s)\n%s\n' "$LABEL" "$(date +%F)" "$R" >>"$RECIPIENTS"
+  git add -- "$RECIPIENTS"
+  say "added $LABEL"
+  if ((can == 1)); then
+    cmd_reencrypt
+  elif ((can == -1)); then
+    say "none of your other keys can read $ENC. Commit and push $RECIPIENTS."
+    say "A person with access must run \`just private-reencrypt\` and push. Then \`git pull\` decrypts the files."
+    GRANT_PENDING=1
+  fi
+}
+
+cmd_remove() {
+  (($# == 1)) || die "usage: private remove <path>"
+  local p=${1#./}
+  [ -e "$p" ] || [ -e "$ENC/$p.age" ] || die "no private file $p"
+  scan
+  [ -z "${B[$p]-}" ] || drop_blob "$p"
+  rm -f -- "$p"
+  unset 'P[$p]'
+  mark "$p"
+  save_state
+  say "removed $p"
+}
+
+choose_key() {
+  has_tty || die "none of your keys is in $RECIPIENTS; run \`just setup\` in a terminal, or set AGE_IDENTITY."
+  local -a opts=() labels=()
+  local pub i choice
+  if [ -f "$AGE_KEY" ]; then opts+=("$AGE_KEY") labels+=("age key $AGE_KEY"); else opts+=(new) labels+=("new age key at $AGE_KEY"); fi
+  for pub in "$HOME"/.ssh/*.pub; do
+    [ -f "${pub%.pub}" ] && [ "$(awk '{ print $1; exit }' "$pub")" = ssh-ed25519 ] || continue
+    opts+=("${pub%.pub}") labels+=("ssh key ${pub%.pub}")
+  done
+  {
+    echo "None of your keys can read this repo's private files. Use:"
+    for i in "${!opts[@]}"; do printf '  %d) %s\n' $((i + 1)) "${labels[$i]}"; done
+    printf 'choice [1]: '
+  } >/dev/tty
+  IFS= read -r choice </dev/tty || die "no choice made"
+  choice=${choice:-1}
+  if ! [[ $choice =~ ^[0-9]+$ ]] || ((choice < 1 || choice > ${#opts[@]})); then die "invalid choice: $choice"; fi
+  choice=${opts[$((choice - 1))]}
+  if [ "$choice" = new ]; then
+    mkdir -p -- "$(dirname -- "$AGE_KEY")"
+    (umask 077 && age-keygen -o "$AGE_KEY" 2>/dev/null)
+    choice=$AGE_KEY
+  fi
+  cmd_add_key "$choice"
+}
+
+cmd_setup() {
+  git config core.hooksPath script/hook
+  say "git hooks: script/hook"
+  if [ ! -f "$RECIPIENTS" ]; then
+    mkdir -p -- "$ENC"
+    echo "# age recipients: each key here can decrypt $ENC/. Add a key: just private-add-key. After you remove a key: just private-reencrypt" >"$RECIPIENTS"
+    git add -- "$RECIPIENTS"
+  fi
+  if find_key; then say "key: $KEY_PATH"; else choose_key; fi
+  ((GRANT_PENDING)) || cmd_decrypt
+}
+
+cmd_hook() {
+  case ${1:-} in
+    pre-commit)
+      local -a staged=()
+      mapfile -d '' -t staged < <(git diff --cached --name-only -z --diff-filter=ACMR -- "${PRIVATE[@]}")
+      if ((${#staged[@]})); then
+        say "refusing to commit plaintext: ${staged[*]}"
+        die "unstage with: git rm --cached -- <path>"
+      fi
+      # `git commit <paths>` commits a temporary index: encrypted copies
+      # staged into it would not reach the real index
+      if [[ ${GIT_INDEX_FILE:-} == */next-index-* ]]; then
+        scan
+        local p
+        for p in ${PATHS[@]+"${PATHS[@]}"}; do
+          classify "$p"
+          [[ $CLASS == local || $CLASS == both ]] && die "private files changed. Run \`just private-encrypt\` first, or commit without paths."
+        done
+        return 0
+      fi
+      cmd_encrypt
+      ;;
+    # restoring must never fail a checkout, merge or rebase
+    post-checkout | post-merge | post-rewrite | post-commit)
+      (trap cleanup EXIT && cmd_decrypt) || say "not all private files are decrypted. Run: just private-decrypt"
+      ;;
+    *) die "unknown hook: ${1:-}" ;;
+  esac
+}
+
+((BASH_VERSINFO[0] >= 5)) || die "needs bash >= 5"
+case ${1:-} in '' | -h | --help | help) usage; exit 0 ;; esac
+ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || die "not inside a git work tree"
+cd -- "$ROOT"
+STATE=$(git rev-parse --git-path private-state)
+cmd=$1
+shift
+case $cmd in
+  setup | status | reencrypt) (($# == 0)) || die "usage: private $cmd"; "cmd_$cmd" ;;
+  encrypt | decrypt | remove | hook) "cmd_$cmd" "$@" ;;
+  add-key) cmd_add_key "$@" ;;
+  *) usage >&2; exit 1 ;;
+esac

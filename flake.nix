@@ -71,10 +71,11 @@
 
     packages.${system} = removeAttrs ownPackages ["omp-extensions"] // lib.filterAttrs (_: lib.isDerivation) ownPackages.omp-extensions;
 
-    templates.git-private = {
-      path = ./templates/git-private;
-      description = "Git repository with age-encrypted private files";
+    templates.project = {
+      path = ./templates/project;
+      description = "Blank project: dev shell, just, AGENTS.md and age-encrypted private files";
     };
+    templates.default = self.templates.project;
 
     formatter.${system} = pkgs.alejandra;
 
