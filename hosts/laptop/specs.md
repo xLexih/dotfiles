@@ -1,32 +1,34 @@
 # laptop
 
-Hardware of the `laptop` host, read from the running system on 2026-10-01 and
-re-checked on 2026-10-21 against the vendor listings.
+Hardware of the `laptop` host, read from the running system on 2026-10-01,
+re-checked against vendor listings on 2026-10-21 and against the case, battery
+and adapter labels on 2026-11-03.
 
 ## Model
 
 | | |
 | --- | --- |
 | Retail model | Captiva Advanced Gaming I84-740 (16", i9-14900HX, 32 GB, 2 TB SSD, RTX 4060 8 GB, no OS) |
+| Captiva article | Art.-Nr. 84740, EAN 4046373847404 |
 | Captiva case code | GB6 946IG 24T1 |
-| Barebone | Uniwill GM6IX0B (SMBIOS OEM strings 11-12) |
-| Same barebone | TUXEDO Stellaris 16 Gen6 (Intel), board family `GM6IXxB` |
+| Barebone | Uniwill GM6IX0B (base label, SMBIOS OEM strings 11-12) |
+| Same barebone | TUXEDO Stellaris 16 Gen6 (Intel), XMG NEO 16 (E24) with RTX 4060/4070, Eluktronics Hydroc 16 G1; board family `GM6IXxB` |
 | Size and weight | 356.68 × 245.02 × 26.6 mm, 2.6 kg |
-| Power adapter | 240 W, 20 V |
+| Power input | 20 V, 12 A (base label) |
 
 DMI reports every vendor, product and board field as "Standard"; only the
 SMBIOS OEM strings name the barebone (`sudo dmidecode -t 11`). The touchpad's
 ACPI ID (`UNIW0001`) and the Uniwill WMI GUIDs agree.
 
-No page for the I84-740 itself was reachable or archived. The case code, size,
-weight and adapter come from the archived page of the I84-744, the same
-configuration with Windows 11 Home
+No page for the I84-740 itself was reachable or archived. The case code, size
+and weight come from the archived page of the I84-744, the same configuration
+with Windows 11 Home
 ([captiva-power.de, 2025-11-16](https://web.archive.org/web/20251116063413/https://www.captiva-power.de/produkte/nbs/advanced-gaming-i84-744)).
 That page disagrees with the hardware in a few places:
 
 | | Captiva page | This unit |
 | --- | --- | --- |
-| Battery | 80 Wh | 99 Wh design, as on the TUXEDO Stellaris 16 Gen6 |
+| Battery | 80 Wh | 99.9 Wh; the bay and cable also take the 80 Wh pack |
 | Wi-Fi | Wi-Fi 6 | Wi-Fi 6E (AX211) |
 | Memory speed | DDR5-5200 | DDR5-5600 |
 | Maximum memory | 64 GB | 64 GiB per SMBIOS; TUXEDO sells the barebone with up to 96 GB (2 × 48 GB), untested here |
@@ -43,8 +45,8 @@ That page disagrees with the hardware in a few places:
 | Display | BOE NE160QDM-NZA, 16" 2560×1600, 240 Hz |
 | Wi-Fi / Bluetooth | Intel Wi-Fi 6E AX211 (CNVi) |
 | Ethernet | Motorcomm YT6801, 1 Gbit |
-| Battery | Li-ion 4S, 99 Wh design (6400 mAh at 15.48 V) |
-| Firmware | AMI UEFI 2.80, BIOS N.1.07STD03 (2024-07-11), EC 1.23 |
+| Battery | Li-polymer 4S1P, 99.9 Wh (PHID1-13-17-4S1P-0) |
+| Firmware | AMI Aptio (UEFI 2.80), BIOS N.1.07STD03 (2024-07-11), EC 1.23 |
 
 ## CPU
 
@@ -175,19 +177,53 @@ cTGP. It isn't loaded automatically; on an Eluktronics unit of the same
 chassis the EC accepted the charge mode but kept charging to 100%
 ([tongfang-uniwill-dkms](https://github.com/arbitrary-string/tongfang-uniwill-dkms)).
 
-## Battery and power
+## Battery
 
 | | |
 | --- | --- |
-| Design capacity | 6400 mAh (about 99 Wh) |
-| Current full charge | 4200 mAh (about 65 Wh), 66% of design (2026-10-21) |
+| Pack | PHID1-13-17-4S1P-0, Uniwill part BATRPHID13-4104, made 2024-08-14 by HuiZhou GanFeng LiEnergy |
+| Cells | Li-polymer, 4 in series (4ICP5/63/128) |
+| Rating | 15.48 V; 6450 mAh / 99.9 Wh typical, 6300 mAh / 97.6 Wh rated; 17.8 V charge limit |
+| Cable | CABRG6B261-5301, labelled `BATTERY,GM6IX0B,60/80W`; the pack plugs into it, not into the board |
+| Design capacity | 6400 mAh, 99.1 Wh (EC) |
+| Current full charge | 4500 mAh, 69.7 Wh: 70% of design (2026-11-03; 66% on 2026-10-21) |
+| Cycle count | not reported (EC returns 0) |
 | Charge limits | charge modes via `uniwill_gm6ix`, untested (see Platform drivers) |
-| Charger | 240 W barrel adapter (`AC0`) and USB-C power delivery (UCSI) |
+
+The EC ends every charge at about 16.75 V (4.19 V per cell, peak 16.77 V in
+upower's history since 2026-10-27), not at the 17.8 V on the label, and then
+reports 100%. Cells rated to 4.45 V hold about 15-20% more above 4.2 V, so the
+70% figure probably under-reads the pack (unconfirmed). To check, bind
+`uniwill_gm6ix`, set `Standard` (see `docs/power.md`) and charge once: a
+voltage above 17 V and a larger full charge mean the pack is healthier than
+reported.
+
+## Power supply
+
+| | |
+| --- | --- |
+| Adapter | FSP Group FSP240-ACBU3, part AICR010240-2004, 20 V 12 A, 240 W |
+| DC plug | barrel 5.5/2.5 mm, 12.5 mm long (`AC0`) |
+| Mains inlet | IEC C6; takes a C5 (cloverleaf) cord |
+| USB-C | Thunderbolt port, USB PD at 20 V / 5 A (100 W) only; CPU and GPU throttle |
+
+USB-C charging needs a 5 A (e-marked) cable; chargers below 100 W don't
+charge it.
+
+Power profiles and what they change are documented in `power.nix` and
+`docs/power.md`.
+
+## Firmware
+
+| | |
+| --- | --- |
+| BIOS | AMI Aptio, N.1.07STD03 (2024-07-11), release 5.27 |
+| EC | 1.23 |
+| CPU microcode | 0x120 in the BIOS; Linux loads 0x137 early |
 | Secure Boot | disabled |
 
 fwupd (LVFS) offers nothing for this machine except Microsoft's UEFI dbx,
-which only matters with Secure Boot on (checked 2026-10-27). BIOS, EC and ME
-updates come only from Captiva or Uniwill as AMI images.
-
-Power profiles and what they change are documented in `power.nix` and the
-README's Power section.
+which only matters with Secure Boot on (checked 2026-10-27). Captiva publishes
+no BIOS or EC updates. XMG's newest image for the same board, N1.07A08
+(2024-11-12), has the same BIOS line and EC 1.23
+([XMG downloads, archived](https://web.archive.org/web/20250714092222/https://download.schenker-tech.de/package/xmg-neo-16-17-e24-xne16e24-xne17e24/)).
