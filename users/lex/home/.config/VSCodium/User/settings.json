@@ -165,6 +165,10 @@
   "cmake.showConfigureWithDebuggerNotification": false,
 
   "java.jdt.ls.java.home": "{{pkgs.jdk}}/lib/openjdk",
+  "java.configuration.runtimes": [
+    { "name": "JavaSE-21", "path": "{{pkgs.jdk21}}/lib/openjdk" },
+    { "name": "JavaSE-25", "path": "{{pkgs.jdk25}}/lib/openjdk", "default": true }
+  ],
   "[java]": {
     "editor.defaultFormatter": "redhat.java"
   },
