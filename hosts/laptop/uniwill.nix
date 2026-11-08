@@ -5,15 +5,11 @@
 # uniwill_gm6ix, uses TUXEDO's descriptor for this board under `force=1`:
 # charge modes, fan and temperature sensors, NVIDIA cTGP/Dynamic Boost.
 #
-# Not loaded automatically: the same chassis from another reseller accepted
-# the charge mode but kept charging to 100%. Test before adding it to
-# boot.kernelModules (see README):
+# Not loaded automatically. Its charge modes don't limit charging on this
+# unit: Trickle ended a charge at the same voltage as Standard (see
+# docs/power.md). Load it for the fan and EC temperature sensors:
 #   sudo modprobe uniwill_gm6ix force=1
-{
-  config,
-  pkgs,
-  ...
-}: let
+{config, ...}: let
   uniwill-gm6ix = config.boot.kernelPackages.callPackage ({
     stdenv,
     kernel,
@@ -48,11 +44,4 @@
     }) {};
 in {
   boot.extraModulePackages = [uniwill-gm6ix];
-
-  # "Trickle" is TUXEDO's Stationary profile (charges to 80%); "Long Life" is
-  # Balanced (90%), "Standard" charges to 100%. Set whenever the driver binds;
-  # it restores the mode itself after suspend.
-  services.udev.extraRules = ''
-    ACTION=="bind", SUBSYSTEM=="platform", DRIVER=="uniwill", RUN+="${pkgs.bash}/bin/sh -c 'echo Trickle > /sys/class/power_supply/BAT0/charge_types'"
-  '';
 }

@@ -1,5 +1,5 @@
 # Battery and power profiles for this machine (i9-14900HX, yt6801 ethernet at
-# 3a:00.0, Uniwill chassis; charge modes only via uniwill.nix, untested).
+# 3a:00.0, Uniwill chassis; no working charge limit, see docs/power.md).
 #
 # TLP applies one of three profiles, switchable from the bar's battery icon:
 #   performance  (manual)      no limits, performance EPP

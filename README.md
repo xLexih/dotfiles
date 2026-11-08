@@ -45,7 +45,7 @@ Start a new repo with `git init && nix flake init && just setup`.
 - [Dotfiles](docs/dotfiles.md): home layers, merge rules, placeholders
 - [Themes](docs/themes.md): named and dynamic themes, switching, targets
 - [Desktop](docs/desktop.md): bar and keybinds
-- [Power](docs/power.md): power profiles, NVIDIA, suspend, laptop charge limit
+- [Power](docs/power.md): power profiles, NVIDIA, suspend, laptop charging
 - [Project cleanup](docs/project-cleanup.md): idle cleanup for direnv projects
 
 <div align="right">
