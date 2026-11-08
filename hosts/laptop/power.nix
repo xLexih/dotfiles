@@ -43,7 +43,15 @@
     '';
   };
 in {
-  services.upower.enable = true;
+  services.upower = {
+    enable = true;
+    # HybridSleep stays suspended, and s2idle draws about 3 W here: the last
+    # 2% would run the pack down to its cutoff. Hibernating at 5% leaves about
+    # 3.5 Wh in the pack and stops the drain.
+    percentageCritical = 8;
+    percentageAction = 5;
+    criticalPowerAction = "Hibernate";
+  };
   # D-Bus activation started it only once the session asked, after
   # WirePlumber had already failed to read the battery level.
   systemd.services.upower.wantedBy = ["multi-user.target"];

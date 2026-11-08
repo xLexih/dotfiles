@@ -54,3 +54,6 @@ Standard. A charge from 77% in Trickle (TUXEDO's Stationary) also ended at
 16.75 V and reached 100%. TUXEDO units with the same EC charge to a lower
 voltage in Stationary
 ([TCC issue #268](https://github.com/tuxedocomputers/tuxedo-control-center/issues/268)).
+
+At 5% upower hibernates the laptop, which keeps the pack above its cutoff
+voltage.
