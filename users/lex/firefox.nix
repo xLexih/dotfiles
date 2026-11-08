@@ -33,6 +33,8 @@ in {
         "extensions.pocket.enabled" = false;
         "findbar.highlightAll" = true;
         "layout.css.color-mix-multi-color.enabled" = true;
+        # Website appearance: dark (0), not "Automatic" (2).
+        "layout.css.prefers-color-scheme.content-override" = 0;
         "signon.autofillForms" = false;
         "signon.rememberSignons" = false;
         "widget.gtk.hide-pointer-while-typing.enabled" = false;

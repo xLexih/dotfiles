@@ -40,22 +40,20 @@ room to migrate.
 Nix builds use at most `modules.performance.buildThreads` CPU threads (28 of
 32 on the laptop, 12 of 16 on the desktop) at batch priority.
 
-## Laptop charge limit (untested)
+## Laptop charging
 
-The firmware has no charge limit Linux can use without a platform driver.
-`hosts/laptop/uniwill.nix` builds a copy of the mainline `uniwill-laptop`
-driver restricted to this barebone's features; binding it sets the charge mode
-to Trickle (stop at 80%). Another reseller's unit of the same chassis kept
-charging to 100% in that mode, so test it once, plugged in, above 80%:
+The laptop charges to 100% and has no working charge limit. The EC ends every
+charge at about 16.75 V (4.19 V per cell), well below the 17.8 V the pack is
+rated for.
 
-```sh
-sudo modprobe uniwill_gm6ix force=1
-cat /sys/class/power_supply/BAT0/charge_types      # [Trickle] Standard Long Life
-cat /sys/class/power_supply/BAT0/{status,current_now}   # not "Charging" above 80%
-```
+`hosts/laptop/uniwill.nix` builds `uniwill_gm6ix`, a copy of the mainline
+`uniwill-laptop` driver restricted to this barebone's features. It isn't
+loaded automatically: it needs `force=1`, which taints the kernel, and its
+charge modes don't change anything here. On 2026-11-03 the EC was in
+Standard. A charge from 77% in Trickle (TUXEDO's Stationary) also ended at
+16.75 V and reached 100%. TUXEDO units with the same EC charge to a lower
+voltage in Stationary
+([TCC issue #268](https://github.com/tuxedocomputers/tuxedo-control-center/issues/268)).
 
-If it keeps charging, `sudo modprobe -r uniwill_gm6ix` and leave it unloaded.
-If it stops, add `uniwill_gm6ix` to `boot.kernelModules` with
-`boot.extraModprobeConfig = "options uniwill_gm6ix force=1"`. Before a trip,
-`echo Standard | sudo tee /sys/class/power_supply/BAT0/charge_types` charges
-to 100% until the next boot.
+At 5% upower hibernates the laptop, which keeps the pack above its cutoff
+voltage.

@@ -77,4 +77,21 @@
   # omp's headless Chrome) to 2.1 GB.
   services.journald.settings.Journal.SystemMaxUse = "500M";
   systemd.coredump.settings.Coredump.MaxUse = "500M";
+
+  # /tmp lives on the root disk; a crashed cargo-mutants run left 74 GB there.
+  boot.tmp.cleanOnBoot = true;
+
+  # Items in any of the user's trash cans (home and other volumes) are
+  # deleted a week after they were trashed.
+  systemd.user.services.trash-expire = {
+    description = "Delete trash older than a week";
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "${pkgs.trash-cli}/bin/trash-empty -f 7";
+      Nice = 10;
+      IOSchedulingClass = "idle";
+    };
+    startAt = "daily";
+  };
+  systemd.user.timers.trash-expire.timerConfig.Persistent = true;
 }

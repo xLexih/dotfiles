@@ -156,26 +156,24 @@ combo jack, DC-in and a Kensington slot.
 | Chipset | Intel HM770 |
 
 Sensors: CPU (`coretemp`), NVMe, memory modules (`spd5118`), ACPI thermal
-zones, Wi-Fi. Fan speeds aren't exposed (see Platform drivers).
+zones, Wi-Fi. Fan speeds and the EC's CPU and GPU temperatures need
+`uniwill_gm6ix` (see Platform drivers).
 
 ## Platform drivers
 
 `tuxedo-drivers` and the mainline `uniwill-laptop` driver (in the running 7.2
 kernel) both support this board as `GM6IXxB_MB1`/`GM6IXxB_MB2`, but they match
 on DMI vendor `TUXEDO` and that board name. This firmware reports "Standard",
-so neither binds: charge limits, fan readings, fan control and TDP limits stay
-unavailable, and `tuxedo-keyboard` fails its compatibility check. The lightbar
-works because `ite_8291_lb` matches by USB ID.
+so neither binds on its own, and `tuxedo-keyboard` fails its compatibility
+check. The lightbar works because `ite_8291_lb` matches by USB ID.
 The Uniwill/Clevo WMI modules that the board's GUIDs would autoload, and the
 unused ASUS and `xe` drivers, are blacklisted in `hardware.nix`.
 
 `uniwill-laptop` takes `force=1` to skip the DMI check, but then enables every
 feature, including EC writes for hardware this board lacks. `uniwill.nix`
 builds a copy (`uniwill_gm6ix`) that uses TUXEDO's GM6IXxB feature set
-instead: charge modes (80/90/100%), fan and temperature sensors, NVIDIA
-cTGP. It isn't loaded automatically; on an Eluktronics unit of the same
-chassis the EC accepted the charge mode but kept charging to 100%
-([tongfang-uniwill-dkms](https://github.com/arbitrary-string/tongfang-uniwill-dkms)).
+instead: charge modes, fan and temperature sensors (read-only), NVIDIA cTGP,
+Fn lock and the WMI hotkeys. It isn't loaded automatically.
 
 ## Battery
 
@@ -188,15 +186,12 @@ chassis the EC accepted the charge mode but kept charging to 100%
 | Design capacity | 6400 mAh, 99.1 Wh (EC) |
 | Current full charge | 4500 mAh, 69.7 Wh: 70% of design (2026-11-03; 66% on 2026-10-21) |
 | Cycle count | not reported (EC returns 0) |
-| Charge limits | charge modes via `uniwill_gm6ix`, untested (see Platform drivers) |
+| Charge mode | Standard (EC setting on 2026-11-03); no charge limit |
 
-The EC ends every charge at about 16.75 V (4.19 V per cell, peak 16.77 V in
-upower's history since 2026-10-27), not at the 17.8 V on the label, and then
-reports 100%. Cells rated to 4.45 V hold about 15-20% more above 4.2 V, so the
-70% figure probably under-reads the pack (unconfirmed). To check, bind
-`uniwill_gm6ix`, set `Standard` (see `docs/power.md`) and charge once: a
-voltage above 17 V and a larger full charge mean the pack is healthier than
-reported.
+The EC ends a charge at about 16.75 V (4.19 V per cell, peak 16.77 V in
+upower's history since 2026-10-27), well below the 17.8 V on the label, and
+then reports 100%. A charge in Trickle (Stationary) via `uniwill_gm6ix` ended
+at the same voltage and also reached 100% (2026-11-03).
 
 ## Power supply
 

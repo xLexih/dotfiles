@@ -1,5 +1,5 @@
 # Battery and power profiles for this machine (i9-14900HX, yt6801 ethernet at
-# 3a:00.0, Uniwill chassis; charge modes only via uniwill.nix, untested).
+# 3a:00.0, Uniwill chassis; no working charge limit, see docs/power.md).
 #
 # TLP applies one of three profiles, switchable from the bar's battery icon:
 #   performance  (manual)      no limits, performance EPP
@@ -43,7 +43,15 @@
     '';
   };
 in {
-  services.upower.enable = true;
+  services.upower = {
+    enable = true;
+    # HybridSleep stays suspended, and s2idle draws about 3 W here: the last
+    # 2% would run the pack down to its cutoff. Hibernating at 5% leaves about
+    # 3.5 Wh in the pack and stops the drain.
+    percentageCritical = 8;
+    percentageAction = 5;
+    criticalPowerAction = "Hibernate";
+  };
   # D-Bus activation started it only once the session asked, after
   # WirePlumber had already failed to read the battery level.
   systemd.services.upower.wantedBy = ["multi-user.target"];
