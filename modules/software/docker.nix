@@ -22,6 +22,13 @@ in {
       enable = true;
       enableOnBoot = false; # start on demand
       daemon.settings.insecure-registries = cfg.insecureRegistries;
+      # Weekly, starting Docker if needed: stopped containers, unused images
+      # and build cache older than a week (cache had grown past 100 GB).
+      # Volumes are kept.
+      autoPrune = {
+        enable = true;
+        flags = ["--all" "--filter" "until=168h"];
+      };
     };
 
     hardware.nvidia-container-toolkit.enable = cfg.nvidia.enable;
