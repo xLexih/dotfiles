@@ -1,5 +1,5 @@
 # Visual settings for omp, passed with `--config` by users/lex/omp.nix.
-# These keys win over ~/.omp/agent/config.yml; behaviour lives in
+# These keys win over ~/.config/omp/agent/config.yml; behaviour lives in
 # omp-behavior.yml. Needs omp >= 18.4.3.
 theme:
   dark: dark-catppuccin

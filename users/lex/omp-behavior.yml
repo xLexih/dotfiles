@@ -1,15 +1,15 @@
 # Managed omp behaviour, passed with `--config` by users/lex/omp.nix.
-# These keys win over ~/.omp/agent/config.yml. That file is not managed by the
-# repo: it holds only what the user owns by hand (model roles, and whatever
-# omp writes itself). Do NOT add modelRoles or retry.fallbackChains here; they
-# would shadow the manual settings.
+# These keys win over ~/.config/omp/agent/config.yml. That file is not managed
+# by the repo: it holds only what the user owns by hand (model roles, and
+# whatever omp writes itself). Do NOT add modelRoles or retry.fallbackChains
+# here; they would shadow the manual settings.
 personality: pragmatic
 extendedContext: true
 checkpoint:
   enabled: true
 plan:
   autosave: true
-  autosaveDir: /home/lex/.omp/agent/plans
+  autosaveDir: ~/.config/omp/agent/plans
 compaction:
   # Fixed trigger instead of a share of the window. omp clamps it to
   # contextWindow - 1, so models with a window of 400k or less compact only at

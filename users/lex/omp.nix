@@ -2,8 +2,9 @@
 # conventions, and every extension from pkgs/omp-extensions.
 #
 # omp-look.yml (appearance) and omp-behavior.yml (behaviour) are passed with
-# --config, so their keys win over ~/.omp/agent/config.yml. That file is not
-# deployed from the repo and holds only what the user owns by hand: model roles.
+# --config, so their keys win over ~/.config/omp/agent/config.yml. That file is
+# not deployed from the repo and holds only what the user owns by hand: model
+# roles.
 {
   lib,
   pkgs,
