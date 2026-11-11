@@ -7,7 +7,6 @@
     alsa.enable = true;
     alsa.support32Bit = true;
     pulse.enable = true;
-    jack.enable = true;
 
     # The X11 bell module connects to Xwayland and segfaults PipeWire when
     # Xwayland goes away (every logout and shutdown).
