@@ -33,10 +33,16 @@ rm() {
     rmtrash "$@"
 }
 
+# Runs a command on the NVIDIA GPU. Hybrid hosts have nvidia-offload, which
+# also lifts the offloadOnly restrictions (EGL and Vulkan limited to the iGPU).
 gpu () {
-    __NV_PRIME_RENDER_OFFLOAD=1 \
-    __GLX_VENDOR_LIBRARY_NAME=nvidia \
-    "$@"
+    if command -v nvidia-offload >/dev/null; then
+        nvidia-offload "$@"
+    else
+        __NV_PRIME_RENDER_OFFLOAD=1 \
+        __GLX_VENDOR_LIBRARY_NAME=nvidia \
+        "$@"
+    fi
 }
 
 eval "$(direnv hook bash)"
