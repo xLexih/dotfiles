@@ -7,6 +7,11 @@ hl.monitor({ output = "", mode = "preferred", position = "auto", scale = 1 })
 
 hl.env("XDG_SESSION_TYPE", "wayland")
 
+-- Hyprland itself imports the session variables and starts
+-- hyprland-session.target, but not before this hook runs: `theme reload`
+-- asked for the portal while graphical-session.target was still inactive,
+-- and the portal's start failed. Importing and starting here as well is a
+-- no-op for Hyprland's own call and makes the reload wait for the target.
 hl.on("hyprland.start", function()
     hl.exec_cmd("dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY HYPRLAND_INSTANCE_SIGNATURE XDG_CURRENT_DESKTOP XDG_SESSION_DESKTOP XDG_SESSION_TYPE && systemctl --user start hyprland-session.target && theme reload")
 end)
@@ -40,7 +45,6 @@ hl.config({
         smart_split = false,
         smart_resizing = true,
         permanent_direction_override = false,
-        special_scale_factor = 0.933333,
         split_width_multiplier = 1.0,
         use_active_for_splits = true,
         default_split_ratio = 1.0,
@@ -125,6 +129,8 @@ hl.window_rule({ name = "jetbrains-all", match = { class = "(jetbrains-.*)" }, n
 hl.window_rule({ name = "quickshell-notes", match = { title = "^Notes$" }, float = true, size = { 320, 400 }, center = true })
 hl.window_rule({ name = "quickshell-nmtui", match = { class = "^nmtui$" }, float = true, size = { 760, 560 }, center = true })
 hl.window_rule({ name = "satty", match = { class = "^com.gabm.satty$" }, float = true, center = true })
+-- Replaces the removed dwindle.special_scale_factor = 0.933333 (about 3.3% margin per side on 1920x1200).
+hl.workspace_rule({ workspace = "s[true]", gaps_out = { top = 42, right = 66, bottom = 42, left = 66 } })
 
 hl.gesture({ fingers = 3, direction = "horizontal", action = "workspace" })
 
