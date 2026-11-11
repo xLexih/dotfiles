@@ -64,11 +64,10 @@ in {
     systemd.oomd.enableUserSlices = true;
     systemd.slices."-".sliceConfig.ManagedOOMSwap = "kill";
 
-    # Local builds (the CachyOS kernel has no binary cache) yield to the
-    # desktop: batch CPU and idle I/O scheduling, at most buildThreads CPU
-    # threads in total, and their compilers are the kernel OOM killer's first
-    # pick instead of the browser or the session. Evaluation runs in the nix
-    # client, outside the quota.
+    # Local builds yield to the desktop: batch CPU and idle I/O scheduling, at
+    # most buildThreads CPU threads in total, and their compilers are the
+    # kernel OOM killer's first pick instead of the browser or the session.
+    # Evaluation runs in the nix client, outside the quota.
     nix.daemonCPUSchedPolicy = "batch";
     nix.daemonIOSchedClass = "idle";
     nix.settings.cores = cfg.buildThreads;

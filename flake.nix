@@ -18,15 +18,16 @@
       url = "github:nix-community/nix-index-database";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    # Not following nixpkgs: the `pinned` overlay builds the kernels with the
+    # nixpkgs upstream's Hydra used, so they come from cache.lantian.pub
+    # instead of being compiled locally.
     nix-cachyos-kernel = {
       url = "github:xddxdd/nix-cachyos-kernel/release";
-      inputs.nixpkgs.follows = "nixpkgs";
       inputs.flake-parts.inputs.nixpkgs-lib.follows = "nixpkgs";
     };
-    llm-agents = {
-      url = "github:numtide/llm-agents.nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    # Not following nixpkgs: cache.numtide.com builds match only llm-agents'
+    # locked nixpkgs, so following would compile codex & co. locally.
+    llm-agents.url = "github:numtide/llm-agents.nix";
     spicetify-nix = {
       url = "github:Gerg-L/spicetify-nix";
       inputs.nixpkgs.follows = "nixpkgs";
