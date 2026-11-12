@@ -13,20 +13,22 @@ Singleton {
     readonly property string name: adapter.label
     readonly property var colors: adapter.colors
 
-    readonly property color background: colors.bg
-    readonly property color backgroundDark: colors.bgDark
-    readonly property color backgroundDarker: colors.bgDarker
-    readonly property color surface: colors.surface
-    readonly property color border: colors.border
-    readonly property color text: colors.fg
-    readonly property color muted: colors.fgMuted
-    readonly property color accent: colors.accent
-    readonly property color accentAlt: colors.accentAlt
-    readonly property color accentBright: colors.accentBright
-    readonly property color selection: colors.selectionBg
-    readonly property color selectionText: colors.selectionFg
-    readonly property color danger: colors.red
-    readonly property color warning: colors.yellow
+    // theme.json loads after the first evaluation; without a fallback every
+    // color logged "Unable to assign [undefined] to QColor" at startup.
+    readonly property color background: colors.bg ?? "transparent"
+    readonly property color backgroundDark: colors.bgDark ?? "transparent"
+    readonly property color backgroundDarker: colors.bgDarker ?? "transparent"
+    readonly property color surface: colors.surface ?? "transparent"
+    readonly property color border: colors.border ?? "transparent"
+    readonly property color text: colors.fg ?? "transparent"
+    readonly property color muted: colors.fgMuted ?? "transparent"
+    readonly property color accent: colors.accent ?? "transparent"
+    readonly property color accentAlt: colors.accentAlt ?? "transparent"
+    readonly property color accentBright: colors.accentBright ?? "transparent"
+    readonly property color selection: colors.selectionBg ?? "transparent"
+    readonly property color selectionText: colors.selectionFg ?? "transparent"
+    readonly property color danger: colors.red ?? "transparent"
+    readonly property color warning: colors.yellow ?? "transparent"
 
     readonly property string iconFont: "Material Symbols Rounded"
 
