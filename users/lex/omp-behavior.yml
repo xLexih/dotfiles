@@ -11,10 +11,11 @@ plan:
   autosave: true
   autosaveDir: ~/.config/omp/agent/plans
 compaction:
-  # Fixed trigger instead of a share of the window. omp clamps it to
-  # contextWindow - 1, so models with a window of 400k or less compact only at
-  # the very edge of their context.
-  thresholdTokens: 400000
+  # Share of the model window, not a fixed token count: a fixed 400k trigger
+  # clamped to contextWindow - 1, so 400k models only compacted at the edge.
+  # GLM-5.3-Flash starts emitting degenerate reasoning around 154k, so 35%
+  # compacts a 400k model at 140k while 1M models still reach 350k.
+  thresholdPercent: 35
   idleEnabled: true
   handoffSaveToDisk: true
   methodOrder:
@@ -29,11 +30,14 @@ mnemopi:
 advisor:
   syncBacklog: "3"
 prewalk:
-  enabled: true
+  enabled: false
 task:
   enableLsp: true
   maxRecursionDepth: 3
   showResolvedModelBadge: true
+  crossInstance: true
+  maxRuntimeMs: 3600000
+  eager: preferred
 features:
   unexpectedStopDetection: smart
 tools:
@@ -47,6 +51,9 @@ retry:
   # a hard limit; modelFallback switches to fallbackChains entries.
   modelFallback: false
   usageAwareFallback: false
+gc:
+  compress: true
+  autoCompress: true
 error:
   notify: "on"
 recap:
