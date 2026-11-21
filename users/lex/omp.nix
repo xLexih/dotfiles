@@ -23,6 +23,7 @@
         --add-flags "--config ${./omp-behavior.yml}" \
         --run 'export PI_CONFIG_DIR=.config/omp' \
         --unset PI_CODING_AGENT_DIR \
+        --set-default ONNXRUNTIME_NODE_INSTALL_CUDA skip \
         --prefix LD_LIBRARY_PATH : ${lib.getLib pkgs.stdenv.cc.cc}/lib
     '';
 
