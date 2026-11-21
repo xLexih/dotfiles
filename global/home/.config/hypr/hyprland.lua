@@ -128,7 +128,6 @@ hl.window_rule({ name = "intellij-stayfocused", match = { class = "^(jetbrains-i
 hl.window_rule({ name = "jetbrains-all", match = { class = "(jetbrains-.*)" }, no_anim = true, no_initial_focus = true })
 hl.window_rule({ name = "quickshell-notes", match = { title = "^Notes$" }, float = true, size = { 320, 400 }, center = true })
 hl.window_rule({ name = "quickshell-nmtui", match = { class = "^nmtui$" }, float = true, size = { 760, 560 }, center = true })
-hl.window_rule({ name = "satty", match = { class = "^com.gabm.satty$" }, float = true, center = true })
 -- Replaces the removed dwindle.special_scale_factor = 0.933333 (about 3.3% margin per side on 1920x1200).
 hl.workspace_rule({ workspace = "s[true]", gaps_out = { top = 42, right = 66, bottom = 42, left = 66 } })
 

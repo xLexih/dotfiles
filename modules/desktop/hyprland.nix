@@ -221,7 +221,7 @@ in {
         playerctl
         quickshell
         rofi
-        satty # screenshot annotation
+        flameshot # screenshot annotation
         slurp
         swayosd
         wev
