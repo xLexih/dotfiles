@@ -5,6 +5,9 @@ import type {OAuthLoginCallbacks} from "@oh-my-pi/pi-ai/oauth/types";
 import {openBrokerCompat} from "./compat.ts";
 import {fetchBrokerModels, OPENBROKER_BASE_URL, validateOpenBrokerApiKey} from "./catalog.ts";
 import {normalizeAssistantContent} from "./normalize.ts";
+import type {ReasoningProfile} from "./profiles.ts";
+
+const reasoningProfiles = new Map<string, ReasoningProfile>();
 
 async function loginOpenBroker(callbacks: OAuthLoginCallbacks): Promise<string> {
   const apiKey = (await callbacks.onPrompt({message: "Paste your OpenBroker API key", placeholder: "obk-..."})).trim();
@@ -16,17 +19,23 @@ async function loginOpenBroker(callbacks: OAuthLoginCallbacks): Promise<string> 
 }
 
 function openBrokerStream(requested: Model, context: Context, options?: SimpleStreamOptions) {
-  const strictContent = requested.id.toLowerCase().includes("minimax");
+  const carried = (requested as Model & {openBrokerProfile?: ReasoningProfile}).openBrokerProfile;
+  const profile = carried ?? reasoningProfiles.get(requested.id);
+  if (!profile) {
+    throw new Error(
+      `OpenBroker metadata for ${requested.id} is unavailable; refresh model discovery or select another model`,
+    );
+  }
   const outer = createAssistantMessageEventStream();
   const openaiModel: Model<"openai-completions"> = {
     ...requested,
     api: "openai-completions",
-    compat: requested.compat ?? openBrokerCompat(requested),
+    compat: requested.compat ?? openBrokerCompat(requested, profile),
   } as Model<"openai-completions">;
   const streamOptions: SimpleStreamOptions = {
     ...options,
     onPayload: (payload: unknown, model?: Model<"openai-completions">) => {
-      const normalized = strictContent ? normalizeAssistantContent(payload) : payload;
+      const normalized = profile.strictContent ? normalizeAssistantContent(payload) : payload;
       return options?.onPayload?.(normalized, model);
     },
   };
@@ -50,10 +59,22 @@ const openBrokerProvider: ExtensionFactory = pi => {
     ...(environmentKey ? {apiKey: environmentKey} : {}),
     authHeader: true,
     oauth: {name: "OpenBroker", login: loginOpenBroker},
-    fetchDynamicModels: async () => (await fetchBrokerModels()).map(model => {
-      const registered: Model = {...model, provider: "openbroker", api: "openbroker-completions", baseUrl};
-      return {...registered, compat: openBrokerCompat(registered)};
-    }),
+    fetchDynamicModels: async () => {
+      const entries = await fetchBrokerModels();
+      reasoningProfiles.clear();
+      return entries.map(({model, profile}) => {
+        reasoningProfiles.set(model.id, profile);
+        const registered = {
+          ...model,
+          provider: "openbroker",
+          api: "openbroker-completions",
+          baseUrl,
+          openBrokerProfile: profile,
+          ...(model.thinking ? {thinking: model.thinking as unknown as Model["thinking"]} : {}),
+        } as Model;
+        return {...registered, compat: openBrokerCompat(registered, profile)};
+      });
+    },
   });
 };
 
