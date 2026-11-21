@@ -21,7 +21,8 @@
   # Merged recursively; a more specific layer overrides individual keys.
   mergeSuffixes = [".json"];
   # The most specific layer replaces the others.
-  replaceSuffixes = [".jsonc" ".qml" ".qmldir" ".svg" ".toml" ".yaml" ".yml"];
+  # qmldir files have no extension (asset/qmldir).
+  replaceSuffixes = [".jsonc" ".qml" "/qmldir" ".svg" ".toml" ".yaml" ".yml"];
   # Copied as-is: no placeholders, no header.
   binarySuffixes = [".png" ".jpg" ".jpeg" ".webp" ".gif" ".ico" ".ttf" ".otf" ".woff2"];
 

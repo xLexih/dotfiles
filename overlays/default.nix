@@ -5,8 +5,8 @@ inputs: let
   local = lib.filterAttrs (name: type: type == "regular" && name != "default.nix" && lib.hasSuffix ".nix" name) (builtins.readDir ./.);
 in
   [
-    inputs.nix-cachyos-kernel.overlays.default
-    inputs.llm-agents.overlays.shared-nixpkgs
+    inputs.nix-cachyos-kernel.overlays.pinned
+    (final: _: {llm-agents = inputs.llm-agents.packages.${final.stdenv.hostPlatform.system};})
     inputs.nix-vscode-extensions.overlays.default
     (final: _:
       lib.packagesFromDirectoryRecursive {

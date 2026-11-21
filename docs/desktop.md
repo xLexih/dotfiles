@@ -22,4 +22,4 @@ and `users/lex/home/.config/hypr/hyprland.lua`):
 | volume, mute, mic mute, brightness keys | change the value and show the swayosd popup |
 | `SUPER + N` | night light on/off; it also follows the schedule in `global/home/.config/hypr/hyprsunset.conf` (4500 K from 21:00 to 07:00) |
 | `SUPER + Print` | region screenshot to the clipboard |
-| `SUPER + SHIFT + Print` | region screenshot into satty for annotation (Enter copies) |
+| `SUPER + SHIFT + Print` | region screenshot into flameshot for annotation |

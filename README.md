@@ -5,7 +5,7 @@
 **NixOS flake for my laptop and desktop: system, dotfiles and themes in one repo**
 
 [![NixOS](https://img.shields.io/badge/NixOS-26.11-5277C3?logo=nixos&logoColor=white)](https://nixos.org)
-[![Hyprland](https://img.shields.io/badge/Hyprland-0.56.2-58E1FF?logo=hyprland&logoColor=white)](https://hyprland.org)
+[![Hyprland](https://img.shields.io/badge/Hyprland-0.57.1-58E1FF?logo=hyprland&logoColor=white)](https://hyprland.org)
 [![Quickshell](https://img.shields.io/badge/Quickshell-0.3.2-C6A0FF)](https://quickshell.org)
 
 </div>

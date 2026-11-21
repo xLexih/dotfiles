@@ -18,31 +18,49 @@ tries to reconstruct them from an empty environment variable.
 
 ## Models and startup
 
-The extension uses OMP's `fetchDynamicModels` to discover chat models from the public
-`https://api.openbroker.gonka.gg/v1/models` catalog with a five-second request timeout.
-That endpoint returns bare `{id}` entries with no context/output metadata, so serving
-limits come from a curated table in `src/catalog.ts` (Gonka devshard serving profile
-for MiniMax/DeepSeek/GLM, upstream model card for Qwen), with conservative
-128k/16k defaults for unknown ids so new models register instead of disappearing.
-When the broker does publish rich `context_length`/`max_output_length` fields, those
-take precedence over the table. New models are included and absent models are omitted
-on each successful discovery.
+The extension uses OMP's `fetchDynamicModels` to discover the live catalog. It fetches
+two public endpoints in parallel, each with a five-second timeout:
 
-Entries require positive integer context/output limits and text input/output support
-when modalities are supplied. Embedding-only and malformed entries are skipped.
-Supported text/image inputs and the `reasoning` feature are read from broker metadata;
-missing reasoning metadata is treated as false, even for previously known models.
-Missing names fall back to the model ID, and missing modalities default to text.
+- `https://api.openbroker.gonka.gg/v1/models` lists the active chat ids.
+- `https://rpc.gonka.gg/chain-api/productscience/inference/inference/models_all`
+  publishes each model's serving `model_args`.
+
+Serving behavior comes from the chain args, not from a curated table. `--max-model-len`
+sets `contextWindow`; `--reasoning-parser` selects the reasoning profile;
+`--tool-call-parser` is retained as serving metadata. There are no fallback limits.
+Discovery fails loudly when a live broker id is absent from the chain, when
+`--max-model-len` is missing or invalid, or when a reasoning parser is unknown. The
+error leaves the model unavailable so another model can be selected manually.
+
+The chain publishes no served output-token ceiling. The extension therefore sets
+`omitMaxOutputTokens` and does not send a `max_tokens` request field. A local 16k
+output budget remains only for OMP's accounting.
+
+Broker entries require a non-empty id. Text input/output support is checked when
+modalities are supplied; malformed or non-chat entries are skipped. Missing names use
+the model id, and missing input modalities default to text.
 
 OMP owns discovery scheduling; the extension no longer polls or re-registers on a timer.
-Failed or empty discovery raises an error rather than substituting hard-coded models;
-initial availability therefore depends on the catalog endpoint. Local high-context
-warnings and model recommendations have also been removed. Request compatibility
-handling remains unchanged.
+Local high-context warnings and model recommendations have also been removed.
 
 There are no governance, CoinGecko, or balance requests on startup. OMP only has a
 USD-per-million-token cost field; until OpenBroker exposes an authoritative USD quote,
 models report no synthetic USD cost rather than incorrect cost totals.
+
+## Reasoning
+
+The chain `--reasoning-parser` is the single source of truth:
+
+| Parser | Profile |
+|---|---|
+| `deepseek_v4` | Separate reasoning stream; off sends `none`; efforts low/high/max; 300s idle timeout |
+| `glm45` | Separate reasoning stream; off maps to low; efforts low/high/max, default max |
+| `kimi_k2` | Separate reasoning stream; Kimi markup healing and Moonshot tool schema; 300s idle timeout |
+| `minimax_m2_append_think` | Thinking is inline in `content`; no reasoning field or switch |
+| absent | Non-reasoning model; no effort fields |
+
+An unknown parser fails discovery. OpenBroker can wait up to 20 minutes for response
+headers, so the provider uses that first-event budget for every model.
 
 ## Strict request compatibility
 
@@ -56,5 +74,5 @@ becomes a `[empty]` placeholder (whitespace is rejected too), names are always
 non-empty, and tool-call fields are preserved.
 
 The wrapper delegates all streaming, function calling, reasoning, and response handling
-to OMP's built-in `openai-completions` handler. It also uses OpenBroker's documented
-`max_tokens` request field.
+to OMP's built-in `openai-completions` handler. Output caps are omitted because the
+chain does not publish a served output ceiling.

@@ -188,7 +188,6 @@ Each file in `theme/base/targets/` handles one program. A target can set:
 | `firefox/` | `~/.config/theme/firefox.css` | Firefox reloads it within 250 ms |
 | `vscode.nix` | colors and token rules in `theme.json` | writes them to VSCodium's `settings.json` as color customizations over Default Dark/Light Modern |
 | `swayosd/` | popup style sheet | restarts the popup service |
-| `satty.nix` | annotation palette and font | next screenshot |
 | `hyprtoolkit.nix` | `~/.config/hypr/hyprtoolkit.conf` (colors, icon theme, font) | restarts the polkit agent |
 | `spicetify/` | Spotify `color.ini` and `user.css` (built into Spotify with `modules.theme.default`), `~/.config/theme/spicetify.css` | Spotify links that file after its built-in colors, and `theme.js` swaps changes in within 2 seconds |
 | `dunst.nix` | `~/.config/dunst/dunstrc` (colors per urgency, font, icons, Hyprland's rounding and borders) | `dunstctl reload` recolors open notifications too |

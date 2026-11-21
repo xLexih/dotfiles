@@ -6,7 +6,8 @@
 }: let
   cfg = config.modules.desktop.hyprland;
 
-  # Session services start with Hyprland and stop when it exits.
+  # Session services start with Hyprland (hyprland-session.target ships with
+  # the package; Hyprland and hyprland.lua start it) and stop when it exits.
   sessionService = description: command: {
     inherit description;
     partOf = ["graphical-session.target"];
@@ -127,10 +128,10 @@ in {
       fi
     '';
     security.polkit.enable = true;
-    security.pam.services = {
-      login.enableGnomeKeyring = true;
-      hyprland.enableGnomeKeyring = true;
-    };
+    security.pam.services.login.enableGnomeKeyring = true;
+    # Installs hyprlock with its PAM service; without /etc/pam.d/hyprlock it
+    # falls back to pam.d/other, which denies, and the screen can't be unlocked.
+    programs.hyprlock.enable = true;
 
     # programs.hyprland already adds its portal, built against the configured
     # Hyprland; listing pkgs.xdg-desktop-portal-hyprland again would install a
@@ -143,15 +144,6 @@ in {
         "org.freedesktop.impl.portal.Settings" = ["gtk"];
         "org.freedesktop.impl.portal.FileChooser" = ["gtk"];
       };
-    };
-
-    # Started and stopped from hyprland.lua so user services can bind to the session.
-    systemd.user.targets.hyprland-session = {
-      description = "Hyprland compositor session";
-      documentation = ["man:systemd.special(7)"];
-      bindsTo = ["graphical-session.target"];
-      wants = ["graphical-session-pre.target"];
-      after = ["graphical-session-pre.target"];
     };
 
     systemd.user.services = {
@@ -220,7 +212,6 @@ in {
         grim
         hyprcursor
         hypridle
-        hyprlock
         hyprpicker
         hyprshot
         hyprsunset
@@ -230,7 +221,7 @@ in {
         playerctl
         quickshell
         rofi
-        satty # screenshot annotation
+        flameshot # screenshot annotation
         slurp
         swayosd
         wev
@@ -241,7 +232,6 @@ in {
       NIXOS_OZONE_WL = "1";
       ELECTRON_OZONE_PLATFORM_HINT = "auto";
       MOZ_ENABLE_WAYLAND = "1";
-      GDK_BACKEND = "wayland,x11";
       QT_QPA_PLATFORM = "wayland;xcb";
       CLUTTER_BACKEND = "wayland";
       XDG_CURRENT_DESKTOP = "Hyprland";

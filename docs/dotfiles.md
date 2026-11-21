@@ -16,7 +16,7 @@ generated (dotfiles.files)  ->  global/home  ->  hosts/<host>/home  ->  users/<u
   keys it changes (nested objects merge too, lists are replaced). A host could
   ship `hosts/laptop/home/.config/VSCodium/User/settings.json` containing just
   `{"window.zoomLevel": 1}`.
-- `.jsonc`, `.yaml`, `.yml`, `.toml`, `.qml`, `.qmldir` and `.svg` can't be
+- `.jsonc`, `.yaml`, `.yml`, `.toml`, `.qml`, `qmldir` and `.svg` can't be
   combined, so the most specific layer wins.
 - Images and fonts are copied unchanged.
 

@@ -1,5 +1,5 @@
 # Visual settings for omp, passed with `--config` by users/lex/omp.nix.
-# These keys win over ~/.omp/agent/config.yml; behaviour lives in
+# These keys win over ~/.config/omp/agent/config.yml; behaviour lives in
 # omp-behavior.yml. Needs omp >= 18.4.3.
 theme:
   dark: dark-catppuccin
@@ -8,6 +8,7 @@ symbolPreset: nerd
 composer:
   shape: claude
   tokenRate: true
+  predictions: false
 statusLine:
   preset: custom
   separator: powerline
@@ -63,6 +64,8 @@ display:
   showTokenUsage: true
   showTurnTime: true
   cacheMissMarker: true
+  pinnedAgents: full
+  subagentLivePreview: true
 read:
   renderMarkdown: true
   toolResultPreview: true

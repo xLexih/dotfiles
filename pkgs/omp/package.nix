@@ -1,5 +1,5 @@
-# Oh My Pi from the upstream release binary. Pinned ahead of nixpkgs (18.1.21)
-# and llm-agents (18.3.2); this replaces nixpkgs' `omp` for the whole system.
+# Oh My Pi from the upstream release binary; this replaces nixpkgs' `omp`
+# for the whole system.
 {
   autoPatchelfHook,
   fetchurl,
@@ -9,11 +9,11 @@
 }:
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "omp";
-  version = "18.4.6";
+  version = "19.0.0";
 
   src = fetchurl {
     url = "https://github.com/can1357/oh-my-pi/releases/download/v${finalAttrs.version}/omp-linux-x64";
-    hash = "sha256-nrBmjTzKt4w5WYt3F0YfhiETYRRhg4faIrPd1FT7Fjs=";
+    hash = "sha256-x8xcjVBQU8j/rxgEF+XVx4EjW52TbyhoEFYBURIBCb8=";
   };
 
   dontUnpack = true;
