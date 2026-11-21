@@ -29,6 +29,13 @@ Singleton {
     readonly property color selectionText: colors.selectionFg ?? "transparent"
     readonly property color danger: colors.red ?? "transparent"
     readonly property color warning: colors.yellow ?? "transparent"
+    // No theme has an orange role. The notification dot keeps this color so
+    // it reads as "attention" on every theme, light or dark.
+    readonly property color attention: "#f59e0b"
+    readonly property color attentionBright: "#fbbf24"
+
+    // Hover tint for flat list rows (the center's rows sit on the panel).
+    readonly property color hover: colors.hoverBg ?? "transparent"
 
     readonly property string iconFont: "Material Symbols Rounded"
 

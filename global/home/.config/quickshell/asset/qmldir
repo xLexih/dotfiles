@@ -1,1 +1,4 @@
 singleton Theme 1.0 Theme.qml
+singleton Notifications 1.0 Notifications.qml
+singleton Reminders 1.0 Reminders.qml
+singleton Projects 1.0 Projects.qml

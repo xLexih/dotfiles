@@ -14,7 +14,8 @@ declare -A paths=() delays=() lasts=() statuses=() by_path=() active=()
 usage() {
   cat >&2 <<'USAGE'
 usage:
-  project-cleanup status         list projects, their last activity and cleanup state
+  project-cleanup status [--json]
+      list projects, their last activity and cleanup state
   project-cleanup now [DIR]      run the cleanup of the project containing DIR (default .)
   project-cleanup forget [DIR]   unregister the project containing DIR (default .)
   project-cleanup docker-stop    stop Compose containers whose working_dir is inside .
@@ -251,6 +252,61 @@ cmd_status() {
   done < <(printf '%s\0' "${!by_path[@]}" | sort -z)
 }
 
+# Machine-readable form of `status` for the notification center. `due_at` and
+# `due_in` are null unless the project is waiting for or past its delay.
+cmd_status_json() {
+  if [ -d "$root" ]; then
+    load_projects
+  fi
+  scan_processes
+
+  local now=$EPOCHSECONDS path key state delay_seconds due_at due_in first=1
+  {
+    printf '{"now":%d,"projects":[' "$now"
+    while IFS= read -r -d '' path; do
+      key=${by_path[$path]}
+      delay_seconds=0
+      parse_delay "${delays[$key]}" && delay_seconds=$REPLY
+      due_at=null
+      due_in=null
+      if [ -n "${active[$key]-}" ]; then
+        state=in_use
+      elif [ ! -d "$path" ]; then
+        state=missing
+      elif [ "${statuses[$key]}" != pending ]; then
+        state=${statuses[$key]}
+      elif ((delay_seconds > 0)); then
+        due_at=$((${lasts[$key]} + delay_seconds))
+        if ((due_at > now)); then
+          state=due_in
+          due_in=$((due_at - now))
+        else
+          state=due
+          due_in=0
+        fi
+      else
+        state=due
+      fi
+      if ((first)); then
+        first=0
+      else
+        printf ','
+      fi
+      jq -nc \
+        --arg path "$path" \
+        --arg name "${path##*/}" \
+        --arg delay "${delays[$key]}" \
+        --arg state "$state" \
+        --argjson delay_seconds "$delay_seconds" \
+        --argjson last_seen "${lasts[$key]}" \
+        --argjson due_at "$due_at" \
+        --argjson due_in "$due_in" \
+        '{path: $path, name: $name, delay: $delay, delay_seconds: $delay_seconds, last_seen: $last_seen, state: $state, due_at: $due_at, due_in: $due_in}'
+    done < <(printf '%s\0' "${!by_path[@]}" | sort -z)
+    printf ']}\n'
+  } | jq .
+}
+
 cmd_now() {
   [ "$#" -le 1 ] || die "usage: project-cleanup now [DIR]"
   find_project "${1:-.}"
@@ -315,7 +371,13 @@ command="${1:-}"
 [ "$#" -eq 0 ] || shift
 case "$command" in
   scan) cmd_scan "$@" ;;
-  status) cmd_status "$@" ;;
+  status)
+    case "${1:-}" in
+      --json) cmd_status_json ;;
+      "") cmd_status ;;
+      *) die "usage: project-cleanup status [--json]" ;;
+    esac
+    ;;
   now) cmd_now "$@" ;;
   forget) cmd_forget "$@" ;;
   docker-stop) cmd_docker_stop "$@" ;;

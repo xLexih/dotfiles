@@ -190,7 +190,6 @@ Each file in `theme/base/targets/` handles one program. A target can set:
 | `swayosd/` | popup style sheet | restarts the popup service |
 | `hyprtoolkit.nix` | `~/.config/hypr/hyprtoolkit.conf` (colors, icon theme, font) | restarts the polkit agent |
 | `spicetify/` | Spotify `color.ini` and `user.css` (built into Spotify with `modules.theme.default`), `~/.config/theme/spicetify.css` | Spotify links that file after its built-in colors, and `theme.js` swaps changes in within 2 seconds |
-| `dunst.nix` | `~/.config/dunst/dunstrc` (colors per urgency, font, icons, Hyprland's rounding and borders) | `dunstctl reload` recolors open notifications too |
 
 Where a program reads a real style sheet, the rules live in a static file
 (`firefox/theme.css`, `swayosd/style.css`) that uses variables, and the

@@ -27,7 +27,7 @@ next cleanup.
 
 | Command | Action |
 | --- | --- |
-| `project-cleanup status` | projects, their last activity and cleanup state |
+| `project-cleanup status [--json]` | projects, their last activity and cleanup state; `--json` feeds the notification center |
 | `project-cleanup now [DIR]` | run the cleanup now |
 | `project-cleanup forget [DIR]` | unregister a project |
 | `project-cleanup docker-stop` | stop the Compose containers whose project directory is inside the current one |

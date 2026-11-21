@@ -2,12 +2,14 @@ import Quickshell
 import QtQuick
 import "../asset" as Asset
 
-// Label shown to the right of the hovered sidebar item. The item needs a
-// `tooltipText` property; the label follows it while the pointer stays.
+// Label shown next to the hovered sidebar item. The item needs a
+// `tooltipText` property; the label follows it while the pointer stays. An
+// item can set `tooltipEdge` to Edges.Left when it sits on the right edge.
 PopupWindow {
     id: root
 
     property var target: null
+    readonly property int edge: root.target?.tooltipEdge ?? Edges.Right
 
     function show(item) {
         root.target = item;
@@ -21,15 +23,16 @@ PopupWindow {
 
     visible: target !== null && target.tooltipText !== ""
     anchor.item: target
-    anchor.edges: Edges.Right
-    anchor.gravity: Edges.Right
+    anchor.edges: root.edge
+    anchor.gravity: root.edge
     color: "transparent"
     implicitWidth: label.implicitWidth + 28
     implicitHeight: label.implicitHeight + 12
 
     Rectangle {
         anchors.fill: parent
-        anchors.leftMargin: 8
+        anchors.leftMargin: root.edge === Edges.Right ? 8 : 0
+        anchors.rightMargin: root.edge === Edges.Left ? 8 : 0
         radius: 7
         color: Asset.Theme.backgroundDark
         border.color: Asset.Theme.border

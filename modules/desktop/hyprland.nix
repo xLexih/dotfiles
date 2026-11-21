@@ -207,7 +207,6 @@ in {
         awww
         brightnessctl
         cliphist
-        dunst
         egl-wayland
         grim
         hyprcursor
