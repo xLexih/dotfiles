@@ -5,6 +5,7 @@
   coreutils,
   direnv,
   findutils,
+  jq,
   libnotify,
   systemd,
   util-linux,
@@ -12,6 +13,6 @@
 }:
 writeShellApplication {
   name = "project-cleanup";
-  runtimeInputs = [bash coreutils direnv findutils libnotify systemd util-linux];
+  runtimeInputs = [bash coreutils direnv findutils jq libnotify systemd util-linux];
   text = builtins.readFile ./project-cleanup.sh;
 }

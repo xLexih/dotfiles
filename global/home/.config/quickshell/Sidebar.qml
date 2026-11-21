@@ -237,6 +237,38 @@ Scope {
                     onTapped: notePopup.toggle()
                 }
             }
+
+            Rectangle {
+                x: visualPanel.width - root.outlineThickness * 4
+                y: 0
+                width: root.outlineThickness * 4
+                height: root.outlineThickness * 4
+                color: Asset.Theme.collisionColor
+
+                Widget.NotificationDot {
+                    anchors.fill: parent
+                    screenName: visualPanel.modelData.name
+                    tooltip: tooltip
+                }
+            }
+        }
+    }
+
+    Variants {
+        model: Quickshell.screens
+
+        Widget.NotificationCenter {
+            required property var modelData
+            shellScreen: modelData
+        }
+    }
+
+    Variants {
+        model: Quickshell.screens
+
+        Widget.ToastStack {
+            required property var modelData
+            shellScreen: modelData
         }
     }
 

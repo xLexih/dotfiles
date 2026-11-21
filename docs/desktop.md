@@ -12,7 +12,12 @@ frame is the bar, top to bottom:
 | Network | connection | left: nmtui, right: Wi-Fi on/off | |
 | Battery (laptops), power profile icon (desktop) | level, time left, power profile | cycle power profile | |
 | Gear (bottom) | current theme | left: next theme, right: previous | |
+| Dot in the top-right corner | notification count | notification center | |
 | Dot in the bottom-right corner | | notes popup | |
+
+The top-right dot pulses orange while notifications are unread. The center
+lists notifications, reminders, and the projects registered with
+`project-cleanup`; click a project to open a terminal in its directory.
 
 Keys beyond the usual window management (`global/home/.config/hypr/hyprland.lua`
 and `users/lex/home/.config/hypr/hyprland.lua`):
